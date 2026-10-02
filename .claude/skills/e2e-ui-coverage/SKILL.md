@@ -150,6 +150,22 @@ test would catch.
   `launchOptions.executablePath` rather than downloading; CI installs its own
   with `npx playwright install --with-deps chromium`. Launch with
   `--no-proxy-server` where an HTTP proxy is set, or it swallows `localhost`.
+- **Coverage vanishes across a full navigation on newer Chromium.** With
+  Chromium's RenderDocument on, each cross-document navigation (`page.reload`,
+  `window.location.assign`, a plain link) gets a new frame host and DevTools
+  agent. The old agent's exit stops precise coverage, which resets V8's
+  counters, so whatever ran in the replaced document is missing from the read
+  at the end of the test. It shows up as a handful of lines the suite plainly
+  runs reading as uncovered in CI and not locally, where the browser builds
+  differ. `resetOnNavigation: false` does not help. Reading coverage from a
+  route handler that holds the navigation does not work either: Chromium holds
+  DevTools messages to the page while a navigation is pending, so the read
+  deadlocks. Launch with RenderDocument disabled instead. Chromium honours
+  only the **last** `--disable-features` switch, so a second one silently
+  discards every feature Playwright disables. Read the switch Playwright
+  actually passed (`launchServer(...).process().spawnargs`) in a worker-scoped
+  `launchOptions` fixture and append to it. To reproduce on an older build,
+  launch with `--enable-features=RenderDocument:level/all-frames`.
 
 ## Where this is least certain
 
@@ -162,3 +178,8 @@ test would catch.
   one with no source equivalent. If a gap points at code with no branch in it,
   read the mapped position before writing a test for it — and say so in the
   PR rather than working around it.
+- The RenderDocument diagnosis was reproduced on Chromium 141 (build 1194)
+  by forcing the feature on. The CI browser (Chrome for Testing 153) was not
+  run locally. If disabling the feature stops working on some later build,
+  the feature may have been removed and made unconditional, and coverage
+  will need reading before each navigation some other way.
