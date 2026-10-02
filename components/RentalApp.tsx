@@ -1,7 +1,6 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { useRouter } from 'next/navigation';
 import { api, ApiError } from '@/lib/client/api';
 import type { ApartmentView, PortfolioItem } from '@/lib/domain/types';
 import { ErrorNote, Icon, YearPicker } from '@/components/ui';
@@ -59,7 +58,6 @@ async function fetchSnapshot(): Promise<Snapshot> {
 export type Account = { userId: string; email: string; emailVerified: boolean; taxpayerName: string };
 
 export default function RentalApp() {
-  const router = useRouter();
   const thisYear = new Date().getFullYear();
 
   const [account, setAccount] = useState<Account | null>(null);
@@ -70,13 +68,8 @@ export default function RentalApp() {
   const [year, setYear] = useState(thisYear);
   const [error, setError] = useState('');
 
-  const fail = useCallback(
-    (e: unknown) => {
-      if (e instanceof ApiError && e.status === 401) router.replace('/sign-in');
-      else setError(e instanceof Error ? e.message : String(e));
-    },
-    [router],
-  );
+  // A 401 has already sent the browser to /sign-in (lib/client/api.ts).
+  const fail = useCallback((e: unknown) => setError((e as Error).message), []);
 
   const loadApartment = useCallback(
     async (id: string) => {
