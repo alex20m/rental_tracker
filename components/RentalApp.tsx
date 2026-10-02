@@ -165,7 +165,7 @@ export default function RentalApp() {
   };
 
   return (
-    <div className="app">
+    <div className="app shell">
       <header className="topbar">
         <div style={{ minWidth: 0 }}>
           <h1>{titles[tab]}</h1>
@@ -203,45 +203,53 @@ export default function RentalApp() {
 
       <ErrorNote message={error} />
 
-      {tab === 'portfolio' && (
-        <Portfolio
-          items={items}
-          details={details}
-          year={year}
-          account={account}
-          onOpen={open}
-          onChanged={loadPortfolio}
-          onAccountChanged={(a) => setAccount(a)}
-          onCreated={async (id) => {
-            await loadPortfolio();
-            open(id, 'overview');
-          }}
-        />
-      )}
-      {needsApartment && <div className="empty">Add an apartment on the Portfolio tab first.</div>}
-      {apt && tab === 'overview' && <Overview apt={apt} year={year} go={setTab} />}
-      {apt && tab === 'rent' && <RentLog apt={apt} year={year} onChanged={reloadSelected} />}
-      {apt && tab === 'costs' && <Costs apt={apt} year={year} onChanged={reloadSelected} />}
-      {apt && tab === 'tax' && <Tax apt={apt} year={year} taxpayerName={account.taxpayerName} go={setTab} />}
-      {apt && tab === 'settings' && (
-        <SettingsPage
-          apt={apt}
-          account={account}
-          onChanged={reloadSelected}
-          onGone={async () => {
-            setSelectedId(null);
-            setTab('portfolio');
-            await loadPortfolio();
-          }}
-        />
-      )}
+      <main className={'page page-' + tab}>
+        {tab === 'portfolio' && (
+          <Portfolio
+            items={items}
+            details={details}
+            year={year}
+            account={account}
+            onOpen={open}
+            onChanged={loadPortfolio}
+            onAccountChanged={(a) => setAccount(a)}
+            onCreated={async (id) => {
+              await loadPortfolio();
+              open(id, 'overview');
+            }}
+          />
+        )}
+        {needsApartment && <div className="empty">Add an apartment on the Portfolio tab first.</div>}
+        {apt && tab === 'overview' && <Overview apt={apt} year={year} go={setTab} />}
+        {apt && tab === 'rent' && <RentLog apt={apt} year={year} onChanged={reloadSelected} />}
+        {apt && tab === 'costs' && <Costs apt={apt} year={year} onChanged={reloadSelected} />}
+        {apt && tab === 'tax' && <Tax apt={apt} year={year} taxpayerName={account.taxpayerName} go={setTab} />}
+        {apt && tab === 'settings' && (
+          <SettingsPage
+            apt={apt}
+            account={account}
+            onChanged={reloadSelected}
+            onGone={async () => {
+              setSelectedId(null);
+              setTab('portfolio');
+              await loadPortfolio();
+            }}
+          />
+        )}
+      </main>
 
-      <nav className="nav">
+      <nav className="nav" aria-label="Sections">
+        <div className="nav-brand">Rental Tracker</div>
         <div className="nav-inner">
           {TABS.map((t) => (
-            <button key={t.id} className={tab === t.id ? 'on' : ''} onClick={() => setTab(t.id)}>
+            <button
+              key={t.id}
+              className={tab === t.id ? 'on' : ''}
+              aria-current={tab === t.id ? 'page' : undefined}
+              onClick={() => setTab(t.id)}
+            >
               {t.icon}
-              {t.label}
+              <span>{t.label}</span>
             </button>
           ))}
         </div>
