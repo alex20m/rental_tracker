@@ -10,6 +10,16 @@ const config = [
   ...nextConfig,
   ...typescriptConfig,
   {
+    // Output of `npm run test:e2e`.
+    ignores: ['.next-e2e/**', 'coverage-e2e/**', 'playwright-report/**', 'test-results/**'],
+  },
+  {
+    // Playwright fixtures hand values on with a function named `use`, which
+    // React's hooks rule mistakes for React's own `use`.
+    files: ['e2e/**'],
+    rules: { 'react-hooks/rules-of-hooks': 'off' },
+  },
+  {
     rules: {
       // A leading underscore marks a parameter the signature requires but the
       // implementation deliberately does not use.
