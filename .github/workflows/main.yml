@@ -1,0 +1,58 @@
+name: Main
+
+# The platform's Git integration deploys every push to main by itself, and its
+# build applies the migrations (vercel.json), so this workflow neither deploys
+# nor migrates — it is the record of whether what landed is sound. A red check
+# here means main is broken *and already deployed*; the gate that actually holds
+# is the identical check on the pull request, before the merge.
+on:
+  push:
+    branches: [main]
+  # Re-run the checks against the current main without pushing a commit.
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+# Every commit on main gets its own verdict, so a later push queues rather than
+# cancelling the run that was still checking the earlier one.
+concurrency:
+  group: main
+  cancel-in-progress: false
+
+env:
+  # Match the Node major the platform builds with; bump here and in
+  # pull-request.yml together.
+  NODE_VERSION: '22'
+
+jobs:
+  verify:
+    name: Checks
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint
+        if: ${{ !cancelled() }}
+        run: npm run lint
+
+      - name: Typecheck
+        if: ${{ !cancelled() }}
+        run: npm run typecheck
+
+      - name: Test
+        if: ${{ !cancelled() }}
+        run: npm test
+
+      - name: Build
+        if: ${{ !cancelled() }}
+        run: npm run build
