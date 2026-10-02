@@ -3,24 +3,28 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { api, ApiError } from '@/lib/client/api';
+import { pct } from '@/lib/domain/tax';
 import type { ApartmentView, PortfolioItem } from '@/lib/domain/types';
-import { ErrorNote, Icon, YearPicker } from '@/components/ui';
+import { Avatar, ErrorNote, Icon, Sheet, YearStepper } from '@/components/ui';
+import AddApartment from '@/components/AddApartment';
+import MenuSheet from '@/components/MenuSheet';
 import Portfolio from '@/components/pages/Portfolio';
-import Overview from '@/components/pages/Overview';
+import Home from '@/components/pages/Home';
 import RentLog from '@/components/pages/RentLog';
 import Costs from '@/components/pages/Costs';
 import Tax from '@/components/pages/Tax';
 import SettingsPage from '@/components/pages/SettingsPage';
 
-export type Tab = 'portfolio' | 'overview' | 'rent' | 'costs' | 'tax' | 'settings';
-export type Go = (t: Tab) => void;
+export type Tab = 'home' | 'rent' | 'costs' | 'tax' | 'settings' | 'portfolio';
+/** Where a tap can lead: a page, or the account menu. */
+export type Destination = Tab | 'account';
+export type Go = (to: Destination) => void;
+/** Whose figures to show for an apartment owned by several people. */
+export type Scope = 'mine' | 'whole';
 
-type ApartmentTab = Exclude<Tab, 'portfolio' | 'settings'>;
-
-const TABS: { id: Exclude<Tab, 'settings'>; label: string; icon: React.ReactNode }[] = [
-  { id: 'portfolio', label: 'Portfolio', icon: Icon.portfolio },
-  { id: 'overview', label: 'Overview', icon: Icon.home },
-  { id: 'rent', label: 'Rent log', icon: Icon.rent },
+const SECTIONS: { id: 'home' | 'rent' | 'costs' | 'tax'; label: string; icon: React.ReactNode }[] = [
+  { id: 'home', label: 'Home', icon: Icon.home },
+  { id: 'rent', label: 'Rent', icon: Icon.rent },
   { id: 'costs', label: 'Costs', icon: Icon.cost },
   { id: 'tax', label: 'Tax', icon: Icon.tax },
 ];
@@ -50,13 +54,20 @@ async function fetchSnapshot(): Promise<Snapshot> {
   const [me, list, profile] = await Promise.all([api.me(), api.portfolio(), api.profile()]);
   const views = await Promise.all(list.apartments.map((a) => api.apartment(a.id).catch(() => null)));
   return {
-    account: { userId: me.userId, email: me.email, emailVerified: list.emailVerified, taxpayerName: profile.taxpayerName },
+    account: {
+      userId: me.userId,
+      email: me.email,
+      emailVerified: list.emailVerified,
+      taxpayerName: profile.taxpayerName,
+    },
     items: list.apartments,
     details: Object.fromEntries(views.flatMap((v) => (v ? [[v.id, v]] : []))),
   };
 }
 
 export type Account = { userId: string; email: string; emailVerified: boolean; taxpayerName: string };
+
+type SheetName = 'switch' | 'menu' | null;
 
 export default function RentalApp() {
   const router = useRouter();
@@ -66,8 +77,11 @@ export default function RentalApp() {
   const [items, setItems] = useState<PortfolioItem[] | null>(null);
   const [details, setDetails] = useState<Record<string, ApartmentView>>({});
   const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [tab, setTab] = useState<Tab>('portfolio');
+  const [tab, setTab] = useState<Tab>('home');
   const [year, setYear] = useState(thisYear);
+  const [scope, setScope] = useState<Scope>('mine');
+  const [sheet, setSheet] = useState<SheetName>(null);
+  const [adding, setAdding] = useState(false);
   const [error, setError] = useState('');
 
   const fail = useCallback(
@@ -140,120 +154,216 @@ export default function RentalApp() {
     return [...set].filter(Boolean).sort((a, b) => b - a);
   }, [details, thisYear]);
 
-  const open = (id: string, to: ApartmentTab = 'overview') => {
+  const go: Go = (to) => {
+    if (to === 'account') setSheet('menu');
+    else setTab(to);
+  };
+
+  /** Pick an apartment; stay on the same section so switching never loses your place. */
+  const open = (id: string) => {
     setSelectedId(id);
-    setTab(to);
+    setTab((t) => (t === 'portfolio' || t === 'settings' ? 'home' : t));
+    setSheet(null);
+    setAdding(false);
   };
 
   if (!account || !items) {
     return (
       <div className="app">
         <ErrorNote message={error} />
-        {!error && <div className="empty">Loading…</div>}
+        {!error && <div className="spinner" role="status" aria-label="Loading" />}
       </div>
     );
   }
 
-  const needsApartment = tab !== 'portfolio' && !apt;
-  const titles: Record<Tab, string> = {
-    portfolio: 'Portfolio',
-    overview: apt?.settings.name || 'Overview',
-    rent: 'Rent log',
-    costs: 'Costs & receipts',
-    tax: 'Tax declaration',
-    settings: 'Apartment settings',
-  };
+  const menuButton = (
+    <button className="menubtn" aria-label="Menu" onClick={() => setSheet('menu')}>
+      <Avatar text={account.taxpayerName || account.email} />
+    </button>
+  );
+
+  const menuSheet = sheet === 'menu' && (
+    <MenuSheet
+      account={account}
+      apartmentName={apt?.settings.name}
+      onSettings={() => {
+        setSheet(null);
+        setTab('settings');
+      }}
+      onClose={() => setSheet(null)}
+      onAccountChanged={setAccount}
+      onImported={loadPortfolio}
+    />
+  );
+
+  // Nothing to show yet: one field, one button.
+  if (items.length === 0) {
+    return (
+      <div className="app">
+        <header className="topbar">
+          <div className="grow brand">Rental Tracker</div>
+          {menuButton}
+        </header>
+        <ErrorNote message={error} />
+        <div className="welcome">
+          <div className="logo">{Icon.building}</div>
+          <div>
+            <h1>Add your first apartment</h1>
+            <p className="lead" style={{ marginTop: 8 }}>
+              Just a name to start — you can fill in the rest later.
+            </p>
+          </div>
+          <AddApartment
+            autoFocus
+            onCreated={async (id) => {
+              await loadPortfolio();
+              open(id);
+            }}
+          />
+          <button className="link" style={{ alignSelf: 'flex-start' }} onClick={() => setSheet('menu')}>
+            Or import a backup from the old version
+          </button>
+        </div>
+        {menuSheet}
+      </div>
+    );
+  }
+
+  const inPortfolio = tab === 'portfolio';
+  const pillName = inPortfolio
+    ? 'All apartments'
+    : (apt?.settings.name ?? items.find((i) => i.id === selectedId)?.name ?? '…');
 
   return (
     <div className="app shell">
       <header className="topbar">
-        <div style={{ minWidth: 0 }}>
-          <h1>{titles[tab]}</h1>
-          {tab !== 'portfolio' && apt && items.length > 1 && (
-            <select
-              className="switcher"
-              aria-label="Apartment"
-              value={apt.id}
-              onChange={(e) => setSelectedId(e.target.value)}
-            >
-              {items.map((i) => (
-                <option key={i.id} value={i.id}>
-                  {i.name}
-                </option>
-              ))}
-            </select>
-          )}
-          {tab !== 'portfolio' && apt && items.length <= 1 && apt.settings.address && (
-            <div className="sub">{apt.settings.address}</div>
-          )}
+        <div className="grow">
+          <button className="pill" aria-haspopup="dialog" onClick={() => setSheet('switch')}>
+            <span>{pillName}</span>
+            {Icon.down}
+          </button>
         </div>
-        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-          {tab !== 'settings' && <YearPicker year={year} years={years} onChange={setYear} />}
-          {apt && tab !== 'portfolio' && (
-            <button
-              className="iconbtn"
-              aria-label="Apartment settings"
-              onClick={() => setTab(tab === 'settings' ? 'overview' : 'settings')}
-            >
-              {Icon.gear}
-            </button>
-          )}
-        </div>
+        {tab !== 'settings' && <YearStepper year={year} years={years} onChange={setYear} />}
+        {menuButton}
       </header>
 
       <ErrorNote message={error} />
 
       <main className={'page page-' + tab}>
-        {tab === 'portfolio' && (
-          <Portfolio
-            items={items}
-            details={details}
-            year={year}
-            account={account}
-            onOpen={open}
-            onChanged={loadPortfolio}
-            onAccountChanged={(a) => setAccount(a)}
-            onCreated={async (id) => {
-              await loadPortfolio();
-              open(id, 'overview');
-            }}
-          />
+        {inPortfolio && <Portfolio items={items} details={details} year={year} account={account} onOpen={open} />}
+        {!inPortfolio && !apt && (
+          <div className="empty">
+            Couldn’t load this apartment.
+            <button className="btn" onClick={() => selectedId && void loadApartment(selectedId)}>
+              Try again
+            </button>
+          </div>
         )}
-        {needsApartment && <div className="empty">Add an apartment on the Portfolio tab first.</div>}
-        {apt && tab === 'overview' && <Overview apt={apt} year={year} go={setTab} />}
+        {apt && tab === 'home' && (
+          <Home apt={apt} year={year} account={account} scope={scope} onScope={setScope} go={go} />
+        )}
         {apt && tab === 'rent' && <RentLog apt={apt} year={year} onChanged={reloadSelected} />}
         {apt && tab === 'costs' && <Costs apt={apt} year={year} onChanged={reloadSelected} />}
-        {apt && tab === 'tax' && <Tax apt={apt} year={year} taxpayerName={account.taxpayerName} go={setTab} />}
+        {apt && tab === 'tax' && (
+          <Tax apt={apt} year={year} taxpayerName={account.taxpayerName} scope={scope} onScope={setScope} go={go} />
+        )}
         {apt && tab === 'settings' && (
           <SettingsPage
             apt={apt}
             account={account}
+            onBack={() => setTab('home')}
             onChanged={reloadSelected}
             onGone={async () => {
               setSelectedId(null);
-              setTab('portfolio');
+              setTab('home');
               await loadPortfolio();
             }}
           />
         )}
       </main>
 
-      <nav className="nav" aria-label="Sections">
-        <div className="nav-brand">Rental Tracker</div>
-        <div className="nav-inner">
-          {TABS.map((t) => (
+      {inPortfolio && <div className="side-brand">Rental Tracker</div>}
+      {!inPortfolio && (
+        <nav className="nav" aria-label="Sections">
+          <div className="nav-brand">Rental Tracker</div>
+          <div className="nav-inner">
+            {SECTIONS.map((s) => (
+              <button key={s.id} aria-current={tab === s.id ? 'page' : undefined} onClick={() => setTab(s.id)}>
+                {s.icon}
+                <span>{s.label}</span>
+              </button>
+            ))}
+          </div>
+        </nav>
+      )}
+
+      {sheet === 'switch' && (
+        <Sheet
+          title="Apartments"
+          onClose={() => {
+            setSheet(null);
+            setAdding(false);
+          }}
+        >
+          <ul className="list">
+            {items.length > 1 && (
+              <li>
+                <button
+                  className="row-btn"
+                  onClick={() => {
+                    setTab('portfolio');
+                    setSheet(null);
+                  }}
+                >
+                  {Icon.stack}
+                  <div className="main">
+                    <div className="t">All apartments</div>
+                    <div className="s">Your share, added together</div>
+                  </div>
+                  {inPortfolio && Icon.check}
+                </button>
+              </li>
+            )}
+            {items.map((i) => (
+              <li key={i.id}>
+                <button className="row-btn" onClick={() => open(i.id)}>
+                  {Icon.building}
+                  <div className="main">
+                    <div className="t">{i.name}</div>
+                    <div className="s">
+                      {[i.mySharePct !== 100 && `${pct(i.mySharePct)} yours`, i.address].filter(Boolean).join(' · ') ||
+                        'Yours'}
+                    </div>
+                  </div>
+                  {!inPortfolio && i.id === selectedId && Icon.check}
+                </button>
+              </li>
+            ))}
+          </ul>
+          {adding ? (
+            <div style={{ marginTop: 16 }}>
+              <AddApartment
+                autoFocus
+                onCreated={async (id) => {
+                  await loadPortfolio();
+                  open(id);
+                }}
+              />
+            </div>
+          ) : (
             <button
-              key={t.id}
-              className={tab === t.id ? 'on' : ''}
-              aria-current={tab === t.id ? 'page' : undefined}
-              onClick={() => setTab(t.id)}
+              className="row-btn"
+              style={{ borderBottom: 0, color: 'var(--brand)', fontWeight: 600 }}
+              onClick={() => setAdding(true)}
             >
-              {t.icon}
-              <span>{t.label}</span>
+              {Icon.plus}
+              <div className="main">New apartment</div>
             </button>
-          ))}
-        </div>
-      </nav>
+          )}
+        </Sheet>
+      )}
+
+      {menuSheet}
     </div>
   );
 }
