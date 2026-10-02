@@ -81,7 +81,7 @@ export default function Tax({ apt, year, taxpayerName, go }: Props) {
                 </span>
               )}
             </span>
-            <Amount shared={shared} total={l.amount} part={mine.lines.find((m) => m.category === l.category)?.amount ?? 0} />
+            <Amount shared={shared} total={l.amount} part={mine.lines.find((m) => m.category === l.category)!.amount} />
           </div>
         ))}
         {t.depreciation > 0 && (

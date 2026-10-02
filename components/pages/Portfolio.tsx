@@ -220,7 +220,7 @@ function AccountCard({
         import it here to bring that apartment, its rent log, costs and receipt photos over.
       </div>
       <div className="row">
-        <button className="btn" onClick={() => fileRef.current?.click()} disabled={busy}>
+        <button className="btn" onClick={() => fileRef.current!.click()} disabled={busy}>
           Import backup (.json)
         </button>
         <button className="btn danger" onClick={signOut}>

@@ -48,7 +48,8 @@ function useAction(onDone: () => Promise<void>) {
  * only; the rest of each owner's portfolio stays private to them.
  */
 function Owners({ apt, account, onChanged, onGone }: Props) {
-  const me = apt.owners.find((o) => o.userId === account.userId);
+  // The viewer reaches an apartment only as one of its owners.
+  const me = apt.owners.find((o) => o.userId === account.userId)!;
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState<Record<string, string>>({});
   const [email, setEmail] = useState('');
@@ -109,7 +110,7 @@ function Owners({ apt, account, onChanged, onGone }: Props) {
                 step="0.01"
                 min="0"
                 max="100"
-                value={draft[r.key] ?? ''}
+                value={draft[r.key]}
                 onChange={(e) => setDraft({ ...draft, [r.key]: e.target.value })}
               />
             ) : (
@@ -177,7 +178,7 @@ function Owners({ apt, account, onChanged, onGone }: Props) {
               inputMode="decimal"
               step="0.01"
               min="0.01"
-              max={me?.sharePct ?? 100}
+              max={me.sharePct}
               placeholder="%"
               value={inviteShare}
               onChange={(e) => setInviteShare(e.target.value)}
@@ -187,12 +188,12 @@ function Owners({ apt, account, onChanged, onGone }: Props) {
             </button>
           </div>
           <div className="note" style={{ marginTop: 6 }}>
-            Their share is taken from yours ({pct(me?.sharePct ?? 0)} now); adjust everyone afterwards with
+            Their share is taken from yours ({pct(me.sharePct)} now); adjust everyone afterwards with
             “Change shares”. Only this apartment is shared — your other apartments stay private.
           </div>
         </form>
       )}
-      {me && apt.owners.length > 1 && !editing && (
+      {apt.owners.length > 1 && !editing && (
         <button
           className="btn danger"
           style={{ marginTop: 12 }}

@@ -117,7 +117,7 @@ function CostForm({
 
   const save = () =>
     run(async () => {
-      const entry = { date, category, description: description.trim(), amount: Number(amount) || 0 };
+      const entry = { date, category, description: description.trim(), amount: Number(amount) };
       const id = cost ? (await api.updateCost(apt.id, cost.id, entry), cost.id) : (await api.createCost(apt.id, entry)).id;
       if (newImage) await api.putReceipt(apt.id, id, newImage);
       else if (removeImage && cost?.hasReceipt) await api.deleteReceipt(apt.id, id);
@@ -171,7 +171,7 @@ function CostForm({
       <label>Receipt</label>
       <input ref={fileRef} type="file" accept="image/*" capture="environment" hidden onChange={(e) => pick(e.target.files?.[0])} />
       <div className="row">
-        <button className="btn" onClick={() => fileRef.current?.click()} disabled={busy}>
+        <button className="btn" onClick={() => fileRef.current!.click()} disabled={busy}>
           {busy ? 'Processing…' : preview ? 'Replace photo' : 'Take / choose photo'}
         </button>
         {preview && (

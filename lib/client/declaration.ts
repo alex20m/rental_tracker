@@ -100,7 +100,7 @@ export function buildPdf(apt: ApartmentView, t: TaxResult, share: OwnerShare, ta
   h2('Taxpayer & property');
   row('Taxpayer', taxpayerName || '—');
   row('Ownership share', pctText(share.sharePct));
-  row('Property', s.name || '—');
+  row('Property', s.name);
   row('Address', s.address || '—');
   row('Housing company', s.housingCompany || '—');
   row('Purchased', s.purchaseDate ? `${s.purchaseDate} for ${money(s.purchasePrice)}` : '—');
@@ -129,7 +129,7 @@ export function buildPdf(apt: ApartmentView, t: TaxResult, share: OwnerShare, ta
   );
 
   h2('Expenses (Vähennyskelpoiset menot)', true);
-  const mineFor = (category: string) => share.lines.find((l) => l.category === category)?.amount ?? 0;
+  const mineFor = (category: string) => share.lines.find((l) => l.category === category)!.amount;
   for (const l of t.lines.filter((l) => l.deductible)) amount(`${l.label} (${l.fi})`, l.amount, mineFor(l.category));
   amount('Total deductible expenses', t.deductibleCosts, share.deductibleCosts, true);
   if (t.depreciation) {
