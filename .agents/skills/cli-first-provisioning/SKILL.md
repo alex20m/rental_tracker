@@ -442,7 +442,7 @@ Client side, `createAuthClient()` from `@neondatabase/auth/next`, and the vanill
 client takes the auth URL directly. A React SPA installs `@neondatabase/neon-js`
 instead and reads `VITE_NEON_AUTH_URL`.
 
-Nine things that bite:
+Ten things that bite:
 
 - **The catch-all segment must be `[...path]`.** The handler reads `params.path`,
   so any other name routes nothing. The package's own JSDoc example says
@@ -482,6 +482,25 @@ Nine things that bite:
   Skipping it is a delayed failure: sign-up works, but confirmation and
   password-reset links point at localhost, and only the developer fails to
   notice.
+- **Anything granted by email address needs a verified email, and
+  verification is off until you turn it on.** An invite, a share or a role
+  keyed on an address is claimable by whoever signs up with that address
+  first, unless the grant checks that the provider proved it. The session's
+  user carries `emailVerified`; map it into your own session type, treat a
+  missing flag as `false`, and check it at the point of granting. Turn
+  verification on by CLI, and prefer a **code** to a link — a code is typed
+  into your own page and verified with a plain POST through the auth proxy,
+  so it never meets the redirect trap in the next item:
+  `neonctl neon-auth config email-password update --project-id <id> --branch <branch> --require-email-verification true --email-verification-method otp --send-verification-email-on-sign-up true`
+  (flags read from `neonctl@7.0.6`'s `--help`). On the client that is
+  `authClient.emailOtp.verifyEmail({ email, otp })`, with
+  `emailOtp.sendVerificationOtp({ email, type: 'email-verification' })` to
+  resend — `emailOTPClient` is among the plugins `@neondatabase/auth@0.5.0-beta`
+  bundles. Not yet confirmed end to end against a live project: exactly how
+  sign-in reports an unverified account (Better Auth's `EMAIL_NOT_VERIFIED`,
+  status 403, is what to expect), and whether a session that existed before
+  verification picks up `emailVerified: true` before its cached session-data
+  cookie expires.
 - **A proxy in front of a hosted auth service must not let `fetch` follow the
   redirect**, or the session it just minted is lost. This is the shape: the
   provider's SDK mounts a catch-all route that forwards each request upstream
