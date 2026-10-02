@@ -150,7 +150,9 @@ describe('moving between apartments', () => {
     await user().click(await screen.findByRole('button', { name: 'Costs' }));
 
     await user().click(screen.getByRole('button', { name: 'Alpha' }));
-    await user().click(within(screen.getByRole('dialog', { name: 'Apartments' })).getByRole('button', { name: /Beta/ }));
+    await user().click(
+      within(screen.getByRole('dialog', { name: 'Apartments' })).getByRole('button', { name: /Beta/ }),
+    );
 
     expect(screen.getByRole('button', { name: 'Beta' })).toBeTruthy();
     expect(screen.getByRole('button', { name: 'Costs' }).getAttribute('aria-current')).toBe('page');
@@ -371,6 +373,17 @@ describe('the home screen', () => {
     // …and lands on the rent log, with the months still waiting to be logged
     expect(screen.getByRole('button', { name: /^Feb/ }).className).toContain('todo-m');
     expect(screen.getByRole('button', { name: 'Rent' }).getAttribute('aria-current')).toBe('page');
+  });
+
+  it('lists recent activity with readable months and no fake income for an unpaid month', async () => {
+    const unpaid: RentEntry = { month: '2026-06', status: 'unpaid', amount: 0, receivedDate: '', note: '' };
+    serve([view('a1', 'Alpha', { rents: [paid('2026-05'), unpaid] })]);
+    render(<RentalApp />);
+
+    const may = await screen.findByRole('button', { name: /Rent May 2026/ });
+    expect(may.textContent).toMatch(/\+\s?700,00/);
+    const jun = screen.getByRole('button', { name: /Unpaid June 2026/ });
+    expect(jun.textContent).not.toMatch(/\+|0,00/);
   });
 
   it('marks the active section in the bottom navigation', async () => {

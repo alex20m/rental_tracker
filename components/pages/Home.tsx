@@ -4,7 +4,7 @@ import type { ApartmentView } from '@/lib/domain/types';
 import { CATEGORIES } from '@/lib/domain/types';
 import { computeTax, eur, MONTHS, ownerShare } from '@/lib/domain/tax';
 import { buildChecklist } from '@/lib/domain/checklist';
-import { eurWhole, shortDate } from '@/lib/ui/format';
+import { eurWhole, monthTitle, shortDate } from '@/lib/ui/format';
 import type { Account, Go, Scope } from '@/components/RentalApp';
 import ScopeToggle from '@/components/ScopeToggle';
 import { VerifyNotice } from '@/components/Notices';
@@ -47,10 +47,10 @@ export default function Home({ apt, year, account, scope, onScope, go }: Props) 
       key: 'r' + r.month,
       to: 'rent' as const,
       date: r.receivedDate || r.month + '-01',
-      title:
-        r.status === 'paid' ? `Rent ${r.month}` : r.status === 'vacant' ? `Vacant ${r.month}` : `Unpaid ${r.month}`,
+      title: `${r.status === 'paid' ? 'Rent' : r.status === 'vacant' ? 'Vacant' : 'Unpaid'} ${monthTitle(r.month)}`,
       amt: r.amount,
-      sign: 1,
+      // Vacant and unpaid months bring in nothing: show a dash, not "+0,00 €".
+      sign: r.status === 'paid' ? 1 : 0,
     })),
     ...apt.costs.map((c) => ({
       key: 'c' + c.id,
@@ -206,10 +206,14 @@ export default function Home({ apt, year, account, scope, onScope, go }: Props) 
                     <div className="t">{r.title}</div>
                     <div className="s">{shortDate(r.date)}</div>
                   </div>
-                  <div className={'strong num ' + (r.sign > 0 ? 'pos' : '')}>
-                    {r.sign > 0 ? '+' : '−'}
-                    {eur(r.amt)}
-                  </div>
+                  {r.sign === 0 ? (
+                    <div className="dim">—</div>
+                  ) : (
+                    <div className={'strong num ' + (r.sign > 0 ? 'pos' : '')}>
+                      {r.sign > 0 ? '+' : '−'}
+                      {eur(r.amt)}
+                    </div>
+                  )}
                 </button>
               </li>
             ))}
