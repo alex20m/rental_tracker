@@ -236,7 +236,7 @@ configured"** — the same: auth variables missing from that deployment.
 
 **A shared apartment never shows up for the other owner** — they are signed in
 with a different email than the one invited, or their email is not verified
-(the Portfolio tab says so and links to verification). Check
+(the Home screen says so and links to verification). Check
 `neon-auth config email-password get` has `require_email_verification` on.
 
 **A preview deployment has no data and no accounts** — expected: a preview gets
