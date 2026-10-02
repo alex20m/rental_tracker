@@ -1,0 +1,11 @@
+node_modules/
+.next/
+.vercel/
+*.tsbuildinfo
+next-env.d.ts
+
+# Pulled from the platform with `vercel env pull` — never committed, never
+# hand-edited.
+.env
+.env.local
+.env*.local
