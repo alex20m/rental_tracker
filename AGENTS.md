@@ -177,7 +177,8 @@ To keep a skill worth having:
 
 Existing skills follow this: `merge-on-green`, `test-first`,
 `isolated-task-branch`, `cli-first-provisioning`, `deploy-gate`,
-`capture-a-discovery`, `attach-a-repo`, `deadline-fair-batch`. Improve one
+`capture-a-discovery`, `attach-a-repo`, `deadline-fair-batch`,
+`e2e-ui-coverage`. Improve one
 rather than writing a near-duplicate — if a new situation is a variation on something already
 covered, extend that skill.
 
@@ -256,8 +257,38 @@ in the MR which ones you replaced and why.
   on unchanged code is broken; fix the timing, ordering, or shared-state
   dependency instead of re-running until it goes green.
 
-New features are not finished until their tests exist and pass, and the suite
-runs clean locally before pushing.
+### End-to-end UI tests: Playwright, 100 % coverage
+
+Every app's UI is tested end to end, and **the end-to-end suite must cover 100 %
+of the code that runs in the browser.** Unit tests cannot see what only happens
+once the pieces are connected in a real browser; this is the suite that can, and
+the coverage gate is what proves no reachable code was left unrun.
+
+- **Playwright, against the production build, in a real browser,** run by CI on
+  every pull request and every push to `main`, with retries at 0.
+- **100 % of statements, branches, functions and lines** of every module that
+  runs in the browser (in Next, every `'use client'` file and what it imports
+  for the browser), measured from the browser through source maps. A file the
+  suite never loads counts as uncovered, not as absent. Below 100 % the run
+  fails.
+- **No way around it:** no excluded files, no `v8 ignore` / `istanbul ignore`
+  comments, no lowered threshold. A gap is closed by a test of behaviour the
+  user can see; code no test can reach is deleted, not ignored.
+- **Coverage is the floor, not the goal.** End-to-end tests follow every rule
+  above — assert what the user sees and what was sent, never just that a page
+  loaded.
+- **Fake the backend at the network boundary**, never with a test mode inside
+  the app. Server code (route handlers, server components) is not measured from
+  the browser; it is covered by the unit and integration suite, and server
+  components stay thin.
+
+**Use the `e2e-ui-coverage` skill** for how — the harness, faking the API,
+deciding whether a gap needs a test or a deletion, and the traps that make the
+number lie.
+
+New features are not finished until their tests exist and pass — unit and end
+to end, with the coverage gate green — and both suites run clean locally before
+pushing.
 
 ---
 
@@ -422,6 +453,8 @@ Before finishing work, verify tests and pipeline status:
   possible, and each one seen failing before it passes. See
   [Tests Are the Review](#tests-are-the-review--test-driven-by-default) for the
   quality bar.
+- Run the end-to-end suite and keep its UI coverage at 100 % — see
+  [End-to-end UI tests](#end-to-end-ui-tests-playwright-100--coverage).
 - If the task fixed a bug, add a regression test for it — see
   [Bug Fixes Always Get a Regression Test](#bug-fixes-always-get-a-regression-test).
   Verify it fails without the fix.

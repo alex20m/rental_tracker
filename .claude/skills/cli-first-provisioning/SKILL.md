@@ -496,11 +496,19 @@ Ten things that bite:
   `authClient.emailOtp.verifyEmail({ email, otp })`, with
   `emailOtp.sendVerificationOtp({ email, type: 'email-verification' })` to
   resend — `emailOTPClient` is among the plugins `@neondatabase/auth@0.5.0-beta`
-  bundles. Not yet confirmed end to end against a live project: exactly how
-  sign-in reports an unverified account (Better Auth's `EMAIL_NOT_VERIFIED`,
-  status 403, is what to expect), and whether a session that existed before
-  verification picks up `emailVerified: true` before its cached session-data
-  cookie expires.
+  bundles. **Its client throws; it does not return `{ data, error }`.** Plain
+  Better Auth hands a failed call back as `{ error }`, but Neon's fetch wrapper
+  throws a normalised `AuthError` for any non-2xx response, with its own codes:
+  an unverified sign-in (Better Auth's `EMAIL_NOT_VERIFIED`) arrives as a thrown
+  error with `code: 'email_not_confirmed'` and the message "Email verification
+  required". Code that checks `result.error` never runs, so the user is stuck on
+  a sign-in form showing that message instead of being asked for their code.
+  Catch, and test with `isAuthError(e) && e.code === 'email_not_confirmed'`
+  (`isAuthError` is exported from `@neondatabase/auth/next`). Read from the
+  package's `adapter-core` and `better-auth-helpers` modules, and exercised in
+  a browser against a faked auth proxy — not yet against a live project, and
+  neither is whether a session that existed before verification picks up
+  `emailVerified: true` before its cached session-data cookie expires.
 - **A proxy in front of a hosted auth service must not let `fetch` follow the
   redirect**, or the session it just minted is lost. This is the shape: the
   provider's SDK mounts a catch-all route that forwards each request upstream
