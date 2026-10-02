@@ -90,7 +90,7 @@ export default function SignIn() {
     });
 
   return (
-    <div className="app">
+    <div className="app auth">
       <header className="topbar">
         <div>
           <h1>Rental Tracker</h1>
