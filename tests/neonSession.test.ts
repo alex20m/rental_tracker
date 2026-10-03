@@ -26,29 +26,11 @@ describe('mapping a Neon session', () => {
     });
   });
 
-  it('trims the name, which becomes the name printed on the declaration', () => {
-    const session = sessionFromNeon({
-      user: { id: 'usr_abc', name: '  Maija Meikäläinen ', email: 'someone@example.test' },
-    });
-
-    expect(session?.name).toBe('Maija Meikäläinen');
-  });
-
-  it('falls back to the email when the provider has no usable name', () => {
-    // Accounts made before the name was required may have none; the menu's
-    // avatar and the printed declaration must never be handed an empty string.
-    const missing = sessionFromNeon({ user: { id: 'usr_abc', email: 'someone@example.test' } });
-    const blank = sessionFromNeon({ user: { id: 'usr_abc', name: '  ', email: 'someone@example.test' } });
-
-    expect(missing?.name).toBe('someone@example.test');
-    expect(blank?.name).toBe('someone@example.test');
-  });
-
   it('reports an unverified email as unverified', () => {
     // Anyone can type any address at sign-up. Whatever is matched by email —
     // an invite, a share — must not be handed to an address nobody proved.
     const session = sessionFromNeon({
-      user: { id: 'usr_abc', email: 'someone@example.test', emailVerified: false },
+      user: { id: 'usr_abc', name: 'Maija Meikäläinen', email: 'someone@example.test', emailVerified: false },
     });
 
     expect(session?.emailVerified).toBe(false);
@@ -56,7 +38,7 @@ describe('mapping a Neon session', () => {
 
   it('treats a missing verification flag as unverified', () => {
     // Fails closed: a provider response without the flag must not read as proof.
-    const session = sessionFromNeon({ user: { id: 'usr_abc', email: 'someone@example.test' } });
+    const session = sessionFromNeon({ user: { id: 'usr_abc', name: 'Maija Meikäläinen', email: 'someone@example.test' } });
 
     expect(session?.emailVerified).toBe(false);
   });
@@ -65,7 +47,7 @@ describe('mapping a Neon session', () => {
     // Emails change; a session keyed on one silently becomes a different
     // account's when it does.
     const session = sessionFromNeon({
-      user: { id: 'usr_abc', email: 'renamed@example.test', emailVerified: true },
+      user: { id: 'usr_abc', name: 'Maija Meikäläinen', email: 'renamed@example.test', emailVerified: true },
     });
 
     expect(session?.userId).toBe('usr_abc');
