@@ -149,6 +149,9 @@ label { display: flex; align-items: center; min-height: 24px; font-size: 14px; c
 .amount-input { font-size: 34px; font-weight: 700; letter-spacing: -0.03em; padding: 10px 14px; text-align: left; font-variant-numeric: tabular-nums; }
 .pct-input { width: 92px; text-align: right; flex: none; }
 
+.otp { display: flex; gap: 8px; }
+.otp input { width: 100%; padding: 10px 0; text-align: center; font-size: 22px; font-weight: 700; font-variant-numeric: tabular-nums; }
+
 .seg { display: flex; padding: 3px; gap: 2px; background: var(--tint); border-radius: 12px; }
 .seg button { flex: 1; border: 0; background: none; padding: 8px 10px; border-radius: 9px; font-weight: 600; font-size: 14px; color: var(--text-2); }
 .seg button[aria-checked='true'] { background: var(--card); color: var(--text); box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12); }

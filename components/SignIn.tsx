@@ -6,7 +6,7 @@ import { isAuthError } from '@neondatabase/auth/next';
 import { authClient } from '@/lib/client/authClient';
 import { useI18n } from '@/components/I18nProvider';
 import LanguagePicker from '@/components/LanguagePicker';
-import { ErrorNote, Icon } from '@/components/ui';
+import { ErrorNote, Icon, OtpInput } from '@/components/ui';
 
 type Mode = 'sign-in' | 'sign-up' | 'verify';
 
@@ -84,9 +84,14 @@ export default function SignIn() {
       setInfo(t('auth.codeSentSignUp', { email: email.trim() }));
     });
 
-  const verify = () =>
+  const verify = (otp: string) =>
     step(async () => {
-      await auth.emailOtp.verifyEmail({ email: email.trim(), otp: code.trim() });
+      try {
+        await auth.emailOtp.verifyEmail({ email: email.trim(), otp });
+      } catch (e) {
+        setCode('');
+        throw e;
+      }
       const session = await auth.getSession();
       if (session.data?.user) return enter();
       setMode('sign-in');
@@ -109,7 +114,10 @@ export default function SignIn() {
         <form
           onSubmit={(e) => {
             e.preventDefault();
-            void (mode === 'sign-in' ? signIn() : mode === 'sign-up' ? signUp() : verify());
+            // No submit control renders in 'verify' mode (see the button
+            // below), so reaching here at all means 'sign-in' or 'sign-up'.
+            if (mode === 'sign-in') void signIn();
+            else void signUp();
           }}
         >
           {info && (
@@ -149,28 +157,24 @@ export default function SignIn() {
             </>
           ) : (
             <>
-              <label htmlFor="code">{t('auth.code')}</label>
-              <input
-                id="code"
-                inputMode="numeric"
-                autoComplete="one-time-code"
-                required
+              <label>{t('auth.code')}</label>
+              <OtpInput
+                label={t('auth.code')}
+                digitLabel={(n) => t('auth.codeDigit', { n })}
                 value={code}
-                onChange={(e) => setCode(e.target.value)}
+                onChange={setCode}
+                onComplete={(otp) => void verify(otp)}
+                disabled={busy}
               />
             </>
           )}
 
           <ErrorNote message={error} />
-          <button className="btn primary block" style={{ marginTop: 18 }} disabled={busy}>
-            {busy
-              ? t('auth.wait')
-              : mode === 'sign-in'
-                ? t('auth.signIn')
-                : mode === 'sign-up'
-                  ? t('auth.create')
-                  : t('auth.verify')}
-          </button>
+          {mode !== 'verify' && (
+            <button className="btn primary block" style={{ marginTop: 18 }} disabled={busy}>
+              {busy ? t('auth.wait') : mode === 'sign-in' ? t('auth.signIn') : t('auth.create')}
+            </button>
+          )}
 
           <div style={{ display: 'flex', gap: 18, marginTop: 16 }}>
             {mode === 'sign-in' && (
