@@ -76,20 +76,39 @@ test.describe('signing in', () => {
     api.failNext('POST', /sign-up\/email$/, { status: 200, body: { token: 'tok', user: { id: 'usr_me' } } });
     await page.goto('/sign-in');
     await page.getByRole('button', { name: 'New here? Create an account' }).click();
+    await page.getByLabel('Name').fill('  Me Myself ');
     await page.getByLabel('Email', { exact: true }).fill('me@example.test');
     await page.getByLabel('Password').fill('correct horse');
     api.signedIn = true;
     await page.getByRole('button', { name: 'Create account' }).click();
 
     await expect(page.getByRole('heading', { name: 'Add your first apartment' })).toBeVisible();
-    // No name given: the email stands in for it.
-    expect(api.callsTo('POST /api/auth/sign-up/email')[0]!.body).toMatchObject({ name: 'me@example.test' });
+    expect(api.callsTo('POST /api/auth/sign-up/email')[0]!.body).toMatchObject({ name: 'Me Myself' });
+  });
+
+  test('will not create an account without a name, because the declaration is printed in it', async ({ page, api }) => {
+    await page.goto('/sign-in');
+    await page.getByRole('button', { name: 'New here? Create an account' }).click();
+    await page.getByLabel('Email', { exact: true }).fill('me@example.test');
+    await page.getByLabel('Password').fill('correct horse');
+
+    // Left empty: the browser itself refuses to submit.
+    await page.getByRole('button', { name: 'Create account' }).click();
+    await expect(page.getByLabel('Name')).toHaveJSProperty('validity.valueMissing', true);
+    expect(api.callsTo('POST /api/auth/sign-up/email')).toHaveLength(0);
+
+    // Only spaces get past the browser, so the form refuses it too.
+    await page.getByLabel('Name').fill('   ');
+    await page.getByRole('button', { name: 'Create account' }).click();
+    await expect(page.locator('.alert[role=alert]')).toHaveText('Enter your name');
+    expect(api.callsTo('POST /api/auth/sign-up/email')).toHaveLength(0);
   });
 
   test('explains a failed sign-up and can switch back to signing in', async ({ page, api }) => {
     api.accounts.set('me@example.test', { password: 'x', verified: true, userId: 'usr_me' });
     await page.goto('/sign-in');
     await page.getByRole('button', { name: 'New here? Create an account' }).click();
+    await page.getByLabel('Name').fill('Me Myself');
     await page.getByLabel('Email', { exact: true }).fill('me@example.test');
     await page.getByLabel('Password').fill('correct horse');
     await page.getByRole('button', { name: 'Create account' }).click();
@@ -288,8 +307,11 @@ test.describe('the one-time code boxes', () => {
       el.dispatchEvent(new Event('input', { bubbles: true }));
     });
 
-    await expect.poll(() => values(boxes)).toEqual(['1', '2', '3', '4', '5', '6']);
+    // The boxes are not read back: once the code is accepted the page leaves
+    // the verify step and unmounts them, so reading them races that. What was
+    // sent shows all six digits were taken from the one autofilled box.
     await expect.poll(() => verifyCalls(api).length).toBe(1);
+    expect(verifyCalls(api)[0]!.body).toMatchObject({ email: 'me@example.test', otp: '123456' });
   });
 });
 

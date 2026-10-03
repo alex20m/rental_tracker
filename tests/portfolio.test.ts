@@ -454,18 +454,6 @@ describe("an apartment's ledger", () => {
   });
 });
 
-describe('a profile', () => {
-  it('is blank until set, then remembered per person', async () => {
-    expect(await p.profile(alice.userId)).toEqual({ taxpayerName: '' });
-
-    await p.setProfile(alice.userId, { taxpayerName: 'Alice Aalto' });
-    await p.setProfile(alice.userId, { taxpayerName: 'Alice Aaltonen' });
-
-    expect(await p.profile(alice.userId)).toEqual({ taxpayerName: 'Alice Aaltonen' });
-    expect(await p.profile(bob.userId)).toEqual({ taxpayerName: '' });
-  });
-});
-
 describe('deleting an account', () => {
   it('deletes apartments the user owns alone, with their rents, costs and receipts', async () => {
     const id = await p.create(alice, flat('Solo'));
@@ -524,14 +512,16 @@ describe('deleting an account', () => {
   it('removes the profile and invites addressed to the user, and nobody else’s data', async () => {
     const mine = await p.create(alice, flat('Mine'));
     const theirs = await p.create(bob, flat('Theirs'));
-    await p.setProfile(alice.userId, { taxpayerName: 'Alice A' });
-    await p.setProfile(bob.userId, { taxpayerName: 'Bob B' });
+    // The table is no longer written by the app, but rows from before remain.
+    await db.query(`insert into user_profiles (user_id, taxpayer_name) values ($1, 'Alice A'), ($2, 'Bob B')`, [
+      alice.userId,
+      bob.userId,
+    ]);
     expect((await p.invite(bob, theirs, { email: alice.email, sharePct: 10 })).ok).toBe(true);
 
     await p.deleteAccount(alice);
 
-    expect(await p.profile(alice.userId)).toEqual({ taxpayerName: '' });
-    expect(await p.profile(bob.userId)).toEqual({ taxpayerName: 'Bob B' });
+    expect(await db.query('select user_id from user_profiles')).toEqual([{ user_id: bob.userId }]);
     expect(await p.get(bob.userId, theirs)).not.toBeNull();
     expect(await p.get(alice.userId, mine)).toBeNull();
     expect(await db.query('select 1 from apartment_invites')).toEqual([]);

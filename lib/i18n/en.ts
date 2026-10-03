@@ -55,13 +55,7 @@ export const en = {
 
   // — account menu —
   'menu.title': 'Menu',
-  'menu.signedIn': 'Signed in',
   'menu.apartmentSettings': 'Apartment settings',
-  'menu.nameLabel': 'Your name on declarations',
-  'menu.nameAbout': 'your name',
-  'menu.nameInfo': 'This is the name printed on the declaration. Don’t enter a personal identity number — it isn’t needed.',
-  'menu.saveName': 'Save name',
-  'menu.saved': 'Saved.',
   'menu.signOut': 'Sign out',
   'menu.deleteAccount': 'Delete account',
   'menu.deleteAccountAbout': 'your account',
@@ -206,8 +200,6 @@ export const en = {
   'tax.packageFailed': 'Could not build the package: {message}',
 
   // — checklist —
-  'check.name.ok': 'Name on the declaration',
-  'check.name.todo': 'Add your name for the declaration',
   'check.price.ok': 'Purchase price set',
   'check.price.todo': 'Add the purchase price (for depreciation and yield)',
   'check.logged.ok': 'Every month logged',
@@ -293,6 +285,7 @@ export const en = {
   'auth.checkEmail': 'Check your email',
   'auth.lead': 'Rent, costs and tax declarations for your rental apartments.',
   'auth.name': 'Name',
+  'auth.nameRequired': 'Enter your name',
   'auth.email': 'Email',
   'auth.password': 'Password',
   'auth.code': 'Code from the email',

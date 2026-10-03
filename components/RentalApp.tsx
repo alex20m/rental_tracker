@@ -16,8 +16,8 @@ import Tax from '@/components/pages/Tax';
 import SettingsPage from '@/components/pages/SettingsPage';
 
 export type Tab = 'home' | 'rent' | 'costs' | 'tax' | 'settings' | 'portfolio';
-/** Where a tap can lead: a page, or the account menu. */
-export type Destination = Tab | 'account';
+/** Where a tap can lead: a page. */
+export type Destination = Tab;
 export type Go = (to: Destination) => void;
 /** Whose figures to show for an apartment owned by several people. */
 export type Scope = 'mine' | 'whole';
@@ -50,21 +50,21 @@ function recallSelected(): string | null {
 type Snapshot = { account: Account; items: PortfolioItem[]; details: Record<string, ApartmentView> };
 
 async function fetchSnapshot(): Promise<Snapshot> {
-  const [me, list, profile] = await Promise.all([api.me(), api.portfolio(), api.profile()]);
+  const [me, list] = await Promise.all([api.me(), api.portfolio()]);
   const views = await Promise.all(list.apartments.map((a) => api.apartment(a.id).catch(() => null)));
   return {
     account: {
       userId: me.userId,
       email: me.email,
       emailVerified: list.emailVerified,
-      taxpayerName: profile.taxpayerName,
+      name: me.name,
     },
     items: list.apartments,
     details: Object.fromEntries(views.flatMap((v) => (v ? [[v.id, v]] : []))),
   };
 }
 
-export type Account = { userId: string; email: string; emailVerified: boolean; taxpayerName: string };
+export type Account = { userId: string; name: string; email: string; emailVerified: boolean };
 
 type SheetName = 'switch' | 'menu' | null;
 
@@ -152,8 +152,7 @@ export default function RentalApp() {
   }, [details, thisYear]);
 
   const go: Go = (to) => {
-    if (to === 'account') setSheet('menu');
-    else setTab(to);
+    setTab(to);
   };
 
   /** Pick an apartment; stay on the same section so switching never loses your place. */
@@ -175,7 +174,7 @@ export default function RentalApp() {
 
   const menuButton = (
     <button className="menubtn" aria-label={t('nav.menu')} onClick={() => setSheet('menu')}>
-      <Avatar text={account.taxpayerName || account.email} />
+      <Avatar text={account.name} />
     </button>
   );
 
@@ -188,7 +187,6 @@ export default function RentalApp() {
         setTab('settings');
       }}
       onClose={() => setSheet(null)}
-      onAccountChanged={setAccount}
     />
   );
 
@@ -263,7 +261,7 @@ export default function RentalApp() {
           {apt && tab === 'rent' && <RentLog apt={apt} year={year} onChanged={reloadSelected} />}
           {apt && tab === 'costs' && <Costs apt={apt} year={year} onChanged={reloadSelected} />}
           {apt && tab === 'tax' && (
-            <Tax apt={apt} year={year} taxpayerName={account.taxpayerName} scope={scope} onScope={setScope} go={go} />
+            <Tax apt={apt} year={year} taxpayerName={account.name} scope={scope} onScope={setScope} go={go} />
           )}
           {apt && tab === 'settings' && (
             <SettingsPage

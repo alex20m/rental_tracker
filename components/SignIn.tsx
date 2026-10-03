@@ -77,7 +77,9 @@ export default function SignIn() {
 
   const signUp = () =>
     step(async () => {
-      const { data } = await auth.signUp.email({ name: name.trim() || email.trim(), email: email.trim(), password });
+      // The name is printed on the declaration, so there is no signing up without one.
+      if (!name.trim()) throw new Error(t('auth.nameRequired'));
+      const { data } = await auth.signUp.email({ name: name.trim(), email: email.trim(), password });
       if (data?.token) return enter();
       // Verification required before the first sign-in; the code is sent on sign-up.
       setMode('verify');
@@ -129,7 +131,7 @@ export default function SignIn() {
           {mode === 'sign-up' && (
             <>
               <label htmlFor="name">{t('auth.name')}</label>
-              <input id="name" autoComplete="name" value={name} onChange={(e) => setName(e.target.value)} />
+              <input id="name" autoComplete="name" required value={name} onChange={(e) => setName(e.target.value)} />
             </>
           )}
           {mode !== 'verify' && (

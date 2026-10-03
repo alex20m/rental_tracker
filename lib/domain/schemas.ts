@@ -100,4 +100,3 @@ export const receiptSchema = z
     return { contentType: contentType!, base64: base64! };
   });
 
-export const profileSchema = z.object({ taxpayerName: text(200) }).strict();

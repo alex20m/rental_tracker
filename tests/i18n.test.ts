@@ -106,10 +106,10 @@ describe('the checklist in another language', () => {
 
   it('is worded in the chosen language, with the same items', () => {
     const tax = computeTax(apt, 2025, new Date('2026-06-15T12:00:00Z'));
-    const args = { apt, tax, taxpayerName: '' };
+    const args = { apt, tax };
     const swedish = buildChecklist(args, translator('sv'));
     expect(swedish.map((i) => i.id)).toEqual(buildChecklist(args).map((i) => i.id));
     expect(swedish.find((i) => i.id === 'logged')!.text).toBe('12 månader är inte loggade ännu');
-    expect(swedish.find((i) => i.id === 'name')!.text).toBe('Lägg till ditt namn för deklarationen');
+    expect(swedish.find((i) => i.id === 'price')!.text).toBe('Ange inköpspriset (för avskrivning och avkastning)');
   });
 });

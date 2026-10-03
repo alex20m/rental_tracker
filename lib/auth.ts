@@ -24,6 +24,8 @@ import { neonAuthConfig } from '@/lib/neonSession';
 export type Session = {
   /** Stable identifier for the account. Never an email — those change. */
   userId: string;
+  /** The name given at sign-up; printed on the declaration. Never empty. */
+  name: string;
   email: string;
   /**
    * Whether the provider has proved this person controls `email`. Anything

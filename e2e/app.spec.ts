@@ -53,7 +53,7 @@ test.describe('loading', () => {
   });
 
   test('explains a server that answers without saying why', async ({ page, api }) => {
-    api.failNext('GET', /^\/api\/profile$/, { status: 502, text: 'Bad gateway' });
+    api.failNext('GET', /^\/api\/me$/, { status: 502, text: 'Bad gateway' });
     await page.goto('/');
 
     await expect(alert(page)).toHaveText('Request failed (502)');
@@ -126,14 +126,12 @@ test.describe('home', () => {
 
     const todo = page.locator('.todo');
     for (const [item, arrival] of [
-      ['Add your name for the declaration', page.getByRole('dialog', { name: 'Menu' })],
       ['8 months not logged yet', page.getByRole('heading', { name: 'Months' })],
       ['3 costs have no receipt photo', page.getByRole('button', { name: 'Add cost' })],
       ['1 invited owner hasn’t joined yet — check the shares are final', page.getByRole('heading', { name: 'Apartment settings' })],
     ] as const) {
       await todo.getByRole('button', { name: item }).click();
       await expect(arrival).toBeVisible();
-      await page.keyboard.press('Escape'); // closes the menu when that is where it led
       await section(page, 'Home');
     }
   });
@@ -147,7 +145,6 @@ test.describe('home', () => {
       note: '',
     }));
     api.addApartment({ name: 'Done', purchasePrice: 1000 }, { rents });
-    api.profile = { taxpayerName: 'Aino Aalto' };
     await page.clock.setFixedTime(new Date(`${YEAR}-12-15T12:00:00`));
     await page.goto('/');
 
@@ -238,8 +235,8 @@ test.describe('home', () => {
     api.addApartment({ name: 'Flat' });
     await page.goto('/');
     const menu = await openMenu(page);
-    await menu.getByRole('button', { name: 'About your name' }).click();
-    await expect(page.getByRole('note')).toContainText('personal identity number');
+    await menu.getByRole('button', { name: 'About your account' }).click();
+    await expect(page.getByRole('note')).toContainText('permanently deletes your account');
 
     await page.keyboard.press('Escape');
     await expect(page.getByRole('note')).toHaveCount(0);
@@ -373,31 +370,13 @@ test.describe('switching apartments', () => {
 });
 
 test.describe('the menu', () => {
-  test("saves the viewer's name for declarations, and only when it changed", async ({ page, api }) => {
+  test('shows the name given at sign-up, which is the name on the declaration, and offers no way to retype it', async ({ page, api }) => {
     api.addApartment({ name: 'Flat' });
     await page.goto('/');
     const menu = await openMenu(page);
-    await expect(menu).toContainText('Signed in');
-    const save = menu.getByRole('button', { name: 'Save name' });
-    await expect(save).toBeDisabled();
 
-    await menu.getByLabel('Your name on declarations').fill('Aino Aalto ');
-    await save.click();
-
-    await expect(menu.getByText('Saved.')).toBeVisible();
-    await expect(save).toBeDisabled();
     await expect(menu.locator('.t').first()).toHaveText('Aino Aalto');
-    expect(api.profile).toEqual({ taxpayerName: 'Aino Aalto' });
-  });
-
-  test('says why the name could not be saved', async ({ page, api }) => {
-    api.failNext('PUT', /^\/api\/profile$/, { status: 400, body: { error: 'taxpayerName: Too long' } });
-    api.addApartment({ name: 'Flat' });
-    await page.goto('/');
-    const menu = await openMenu(page);
-    await menu.getByLabel('Your name on declarations').fill('x');
-    await menu.getByRole('button', { name: 'Save name' }).click();
-
-    await expect(alert(page)).toHaveText('taxpayerName: Too long');
+    await expect(menu.getByLabel('Your name on declarations')).toHaveCount(0);
+    await expect(menu.getByRole('button', { name: 'Save name' })).toHaveCount(0);
   });
 });

@@ -50,13 +50,7 @@ export const sv: Record<MessageKey, string> = {
 
   // — account menu —
   'menu.title': 'Meny',
-  'menu.signedIn': 'Inloggad',
   'menu.apartmentSettings': 'Lägenhetens inställningar',
-  'menu.nameLabel': 'Ditt namn på deklarationen',
-  'menu.nameAbout': 'ditt namn',
-  'menu.nameInfo': 'Det här är namnet som skrivs ut på deklarationen. Ange inget personnummer – det behövs inte.',
-  'menu.saveName': 'Spara namn',
-  'menu.saved': 'Sparat.',
   'menu.signOut': 'Logga ut',
   'menu.deleteAccount': 'Ta bort konto',
   'menu.deleteAccountAbout': 'ditt konto',
@@ -206,8 +200,6 @@ export const sv: Record<MessageKey, string> = {
   'tax.packageFailed': 'Det gick inte att skapa paketet: {message}',
 
   // — checklist —
-  'check.name.ok': 'Namn på deklarationen',
-  'check.name.todo': 'Lägg till ditt namn för deklarationen',
   'check.price.ok': 'Inköpspris angivet',
   'check.price.todo': 'Ange inköpspriset (för avskrivning och avkastning)',
   'check.logged.ok': 'Varje månad är loggad',
@@ -294,6 +286,7 @@ export const sv: Record<MessageKey, string> = {
   'auth.checkEmail': 'Kontrollera din e-post',
   'auth.lead': 'Hyra, kostnader och skattedeklarationer för dina hyreslägenheter.',
   'auth.name': 'Namn',
+  'auth.nameRequired': 'Ange ditt namn',
   'auth.email': 'E-post',
   'auth.password': 'Lösenord',
   'auth.code': 'Koden från e-postmeddelandet',

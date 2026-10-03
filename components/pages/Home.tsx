@@ -22,7 +22,7 @@ export default function Home({ apt, year, account, scope, onScope, go }: Props) 
   const f = shared && scope === 'whole' ? tax : mine;
   const y = String(year);
 
-  const todo = buildChecklist({ apt, tax, taxpayerName: account.taxpayerName }, i18n).filter((i) => !i.ok);
+  const todo = buildChecklist({ apt, tax }, i18n).filter((i) => !i.ok);
   const hasData = apt.rents.some((r) => r.month.startsWith(y)) || apt.costs.some((c) => c.date.startsWith(y));
 
   const rentByMonth = Array(12).fill(0) as number[];

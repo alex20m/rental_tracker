@@ -11,13 +11,12 @@ import * as invites from '@/app/api/apartments/[id]/invites/route';
 import * as invite from '@/app/api/apartments/[id]/invites/[inviteId]/route';
 import * as shares from '@/app/api/apartments/[id]/shares/route';
 import * as owners from '@/app/api/apartments/[id]/owners/[userId]/route';
-import * as profile from '@/app/api/profile/route';
 import * as me from '@/app/api/me/route';
 import { setMailerForTesting } from '@/lib/mail';
 import { testDb, type TestDb } from './support/testDb';
 
-const alice: Session = { userId: 'usr_alice', email: 'alice@example.test', emailVerified: true };
-const bob: Session = { userId: 'usr_bob', email: 'bob@example.test', emailVerified: true };
+const alice: Session = { userId: 'usr_alice', name: 'Alice Aalto', email: 'alice@example.test', emailVerified: true };
+const bob: Session = { userId: 'usr_bob', name: 'Bob Berg', email: 'bob@example.test', emailVerified: true };
 const bobUnverified: Session = { ...bob, emailVerified: false };
 
 let db: TestDb;
@@ -94,8 +93,6 @@ describe('every route, signed out', () => {
       invite.DELETE(req('DELETE'), p),
       shares.PUT(req('PUT', { owners: [], invites: [] }), p),
       owners.DELETE(req('DELETE'), p),
-      profile.GET(req('GET')),
-      profile.PUT(req('PUT', { taxpayerName: 'x' })),
       me.DELETE(req('DELETE')),
     ]);
 
