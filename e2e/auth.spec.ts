@@ -42,6 +42,7 @@ test.describe('signing in', () => {
 
     await expect(page.getByRole('heading', { name: 'Check your email' })).toBeVisible();
     await expect(page.getByText('We sent a code to me@example.test.')).toBeVisible();
+    await expect(page.getByLabel('Email', { exact: true })).toHaveCount(0);
     expect(api.sentCodes).toEqual(['me@example.test']);
 
     await fillCode(page, '000000');
@@ -301,8 +302,7 @@ test.describe('verifying from inside the app', () => {
     await page.getByRole('link', { name: 'Verify your email' }).click();
 
     await expect(page.getByRole('heading', { name: 'Check your email' })).toBeVisible();
-    await expect(page.getByLabel('Email', { exact: true })).toHaveValue('me@example.test');
-    await expect(page.getByLabel('Email', { exact: true })).not.toBeEditable();
+    await expect(page.getByLabel('Email', { exact: true })).toHaveCount(0);
     await page.getByRole('button', { name: 'Send a new code' }).click();
     await fillCode(page, '123456');
 

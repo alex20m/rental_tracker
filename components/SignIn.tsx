@@ -132,16 +132,19 @@ export default function SignIn() {
               <input id="name" autoComplete="name" value={name} onChange={(e) => setName(e.target.value)} />
             </>
           )}
-          <label htmlFor="email">{t('auth.email')}</label>
-          <input
-            id="email"
-            type="email"
-            autoComplete="email"
-            required
-            value={email}
-            readOnly={mode === 'verify' && !!verifyEmail}
-            onChange={(e) => setEmail(e.target.value)}
-          />
+          {mode !== 'verify' && (
+            <>
+              <label htmlFor="email">{t('auth.email')}</label>
+              <input
+                id="email"
+                type="email"
+                autoComplete="email"
+                required
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+              />
+            </>
+          )}
           {mode !== 'verify' ? (
             <>
               <label htmlFor="password">{t('auth.password')}</label>
