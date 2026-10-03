@@ -509,22 +509,27 @@ describe('deleting an account', () => {
     expect(await db.query('select 1 from apartment_invites')).toEqual([]);
   });
 
-  it('removes the profile and invites addressed to the user, and nobody else’s data', async () => {
+  it('removes invites addressed to the user, and nobody else’s data', async () => {
     const mine = await p.create(alice, flat('Mine'));
     const theirs = await p.create(bob, flat('Theirs'));
-    // The table is no longer written by the app, but rows from before remain.
-    await db.query(`insert into user_profiles (user_id, taxpayer_name) values ($1, 'Alice A'), ($2, 'Bob B')`, [
-      alice.userId,
-      bob.userId,
-    ]);
     expect((await p.invite(bob, theirs, { email: alice.email, sharePct: 10 })).ok).toBe(true);
 
     await p.deleteAccount(alice);
 
-    expect(await db.query('select user_id from user_profiles')).toEqual([{ user_id: bob.userId }]);
     expect(await p.get(bob.userId, theirs)).not.toBeNull();
     expect(await p.get(alice.userId, mine)).toBeNull();
     expect(await db.query('select 1 from apartment_invites')).toEqual([]);
+  });
+
+  it('does not need the retired user_profiles table, so that table can be dropped without breaking it', async () => {
+    // Simulates the schema after the migration that drops it, which runs while
+    // the previous deployment is still serving: this code must already cope.
+    await db.query('drop table user_profiles');
+    await p.create(alice, flat('Mine'));
+
+    await expect(p.deleteAccount(alice)).resolves.toBeUndefined();
+
+    expect(await db.query('select 1 from apartments')).toEqual([]);
   });
 
   it('removes the sign-in identity from the auth schema when it exists', async () => {
