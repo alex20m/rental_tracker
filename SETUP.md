@@ -155,6 +155,25 @@ Trust the deployed URL (otherwise emails point at localhost):
 npx neonctl neon-auth domain add https://<your-app-url> --project-id "$PROJECT_ID" --branch main
 ```
 
+Send the verification codes from your own sender instead of Neon's shared one
+(by default the code arrives from Neon, under Neon's name). Neon Auth takes a
+custom SMTP provider; Resend offers one, so the sender domain verified for the
+share email in [Email](#email-resend) works here too — the username is the
+literal `resend`, the password is the Resend API key:
+
+```bash
+npx neonctl neon-auth config email-provider update --project-id "$PROJECT_ID" --branch main \
+  --type standard --host smtp.resend.com --port 465 \
+  --username resend --password "re_..." \
+  --sender-email "rentals@your-domain" --sender-name "Rental Tracker"
+npx neonctl neon-auth config email-provider test --project-id "$PROJECT_ID" --branch main \
+  --recipient-email you@example.com          # must arrive from the new sender
+npx neonctl neon-auth config email-provider get --project-id "$PROJECT_ID" --branch main
+```
+
+This is per Neon branch, so repeat it for any branch whose sign-up emails should
+carry the app's name (`--type shared` switches back to Neon's sender).
+
 Set the two variables. The cookie secret is yours to generate and must be
 **at least 32 characters** or the SDK throws:
 
@@ -238,6 +257,7 @@ place.
 - [ ] Neon added through Vercel; `DATABASE_URL` visible in `vercel env ls`
 - [ ] `npm run migrate` applied; the seven tables exist
 - [ ] Neon Auth enabled, email verification required with OTP, deployed URL trusted
+- [ ] Neon Auth sends from the app's own sender (`email-provider test` arrived from it)
 - [ ] `NEON_AUTH_BASE_URL`, `NEON_AUTH_COOKIE_SECRET`, `APP_URL` set for production, preview, development
 - [ ] Git integration connected with automatic deploys on
 - [ ] `/api/health` reports everything `true`
