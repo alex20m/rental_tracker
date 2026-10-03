@@ -304,6 +304,9 @@ test.describe('verifying from inside the app', () => {
     await expect(page.getByRole('heading', { name: 'Check your email' })).toBeVisible();
     await expect(page.getByLabel('Email', { exact: true })).toHaveCount(0);
     await page.getByRole('button', { name: 'Send a new code' }).click();
+    // The boxes are disabled while the code is being sent; digits typed
+    // before that finishes are lost, so wait for the "sent" notice first.
+    await expect(page.getByText(/^We sent a code to /)).toBeVisible();
     await fillCode(page, '123456');
 
     await expect(page.locator('button.pill')).toHaveText('Flat');
