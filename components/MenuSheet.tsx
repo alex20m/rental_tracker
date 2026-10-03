@@ -50,6 +50,18 @@ export default function MenuSheet({
     router.replace('/sign-in');
   };
 
+  const deleteAccount = async () => {
+    if (!confirm(t('menu.deleteAccountConfirm'))) return;
+    setError('');
+    try {
+      await api.deleteAccount();
+    } catch (e) {
+      setError((e as Error).message);
+      return;
+    }
+    await signOut();
+  };
+
   return (
     <Sheet title={t('menu.title')} onClose={onClose}>
       <div className="row" style={{ borderBottom: 0, paddingTop: 4 }}>
@@ -108,6 +120,11 @@ export default function MenuSheet({
           <div className="t">{t('menu.signOut')}</div>
         </div>
       </button>
+
+      <button className="link danger" style={{ marginTop: 14 }} onClick={deleteAccount}>
+        {t('menu.deleteAccount')}
+      </button>
+      <Info about={t('menu.deleteAccountAbout')}>{t('menu.deleteAccountInfo')}</Info>
     </Sheet>
   );
 }

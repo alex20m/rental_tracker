@@ -77,6 +77,8 @@ export const api = {
   ) => call('PUT', `${apt(id)}/shares`, shares),
   removeOwner: (id: string, userId: string) => call('DELETE', `${apt(id)}/owners/${encodeURIComponent(userId)}`),
 
+  deleteAccount: () => call('DELETE', '/api/me'),
+
   profile: () => call<{ taxpayerName: string }>('GET', '/api/profile'),
   setProfile: (taxpayerName: string) => call('PUT', '/api/profile', { taxpayerName }),
 };
