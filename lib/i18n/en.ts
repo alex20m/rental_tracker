@@ -63,6 +63,10 @@ export const en = {
   'menu.saveName': 'Save name',
   'menu.saved': 'Saved.',
   'menu.signOut': 'Sign out',
+  'menu.deleteAccount': 'Delete account',
+  'menu.deleteAccountAbout': 'your account',
+  'menu.deleteAccountInfo': 'This permanently deletes your account and the apartments only you own, with their rents, costs and receipts. Apartments you share stay with the other owners, who also receive your share.',
+  'menu.deleteAccountConfirm': 'Permanently delete your account and all your data? This cannot be undone.',
 
   // — notices —
   'verify.link': 'Verify your email',

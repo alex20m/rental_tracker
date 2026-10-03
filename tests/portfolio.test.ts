@@ -465,3 +465,90 @@ describe('a profile', () => {
     expect(await p.profile(bob.userId)).toEqual({ taxpayerName: '' });
   });
 });
+
+describe('deleting an account', () => {
+  it('deletes apartments the user owns alone, with their rents, costs and receipts', async () => {
+    const id = await p.create(alice, flat('Solo'));
+    await p.putRent(alice.userId, id, '2025-01', { status: 'vacant', amount: 0, receivedDate: '', note: '' });
+    const costId = (await p.createCost(alice.userId, id, {
+      date: '2025-01-05',
+      category: 'repairs',
+      description: 'Tap',
+      amount: 40,
+    }))!;
+    await p.putReceipt(alice.userId, id, costId, { contentType: 'image/png', base64: 'AAAA' });
+
+    await p.deleteAccount(alice);
+
+    for (const table of ['apartments', 'apartment_owners', 'rents', 'costs', 'receipts']) {
+      expect(await db.query(`select 1 from ${table}`), table).toEqual([]);
+    }
+  });
+
+  it('hands a co-owned apartment, and the leaver’s share, to the remaining owner', async () => {
+    const id = await p.create(alice, flat('Shared'));
+    expect((await p.invite(alice, id, { email: bob.email, sharePct: 30 })).ok).toBe(true);
+    await p.claimInvites(bob);
+
+    await p.deleteAccount(bob);
+
+    expect(await sharesOf(alice, id)).toEqual({ owners: { 'alice@example.test': 100 }, invites: {} });
+    expect(await p.get(bob.userId, id)).toBeNull();
+  });
+
+  it('gives a leaver’s share to the co-owner holding the most, when there are several', async () => {
+    const id = await p.create(alice, flat('Trio'));
+    expect((await p.invite(alice, id, { email: bob.email, sharePct: 20 })).ok).toBe(true);
+    expect((await p.invite(alice, id, { email: carol.email, sharePct: 30 })).ok).toBe(true);
+    await p.claimInvites(bob);
+    await p.claimInvites(carol);
+
+    await p.deleteAccount(bob);
+
+    expect(await sharesOf(alice, id)).toEqual({
+      owners: { 'alice@example.test': 70, 'carol@example.test': 30 },
+      invites: {},
+    });
+  });
+
+  it('deletes an apartment whose only other claimant is an unclaimed invite', async () => {
+    const id = await p.create(alice, flat('Pending'));
+    expect((await p.invite(alice, id, { email: 'eve@example.test', sharePct: 40 })).ok).toBe(true);
+
+    await p.deleteAccount(alice);
+
+    expect(await db.query('select 1 from apartments')).toEqual([]);
+    expect(await db.query('select 1 from apartment_invites')).toEqual([]);
+  });
+
+  it('removes the profile and invites addressed to the user, and nobody else’s data', async () => {
+    const mine = await p.create(alice, flat('Mine'));
+    const theirs = await p.create(bob, flat('Theirs'));
+    await p.setProfile(alice.userId, { taxpayerName: 'Alice A' });
+    await p.setProfile(bob.userId, { taxpayerName: 'Bob B' });
+    expect((await p.invite(bob, theirs, { email: alice.email, sharePct: 10 })).ok).toBe(true);
+
+    await p.deleteAccount(alice);
+
+    expect(await p.profile(alice.userId)).toEqual({ taxpayerName: '' });
+    expect(await p.profile(bob.userId)).toEqual({ taxpayerName: 'Bob B' });
+    expect(await p.get(bob.userId, theirs)).not.toBeNull();
+    expect(await p.get(alice.userId, mine)).toBeNull();
+    expect(await db.query('select 1 from apartment_invites')).toEqual([]);
+  });
+
+  it('removes the sign-in identity from the auth schema when it exists', async () => {
+    await db.query('create schema neon_auth');
+    await db.query('create table neon_auth."user" (id text primary key, email text)');
+    await db.query(`insert into neon_auth."user" values ('usr_alice', 'a'), ('usr_bob', 'b')`);
+
+    await p.deleteAccount(alice);
+
+    expect(await db.query('select id from neon_auth."user"')).toEqual([{ id: 'usr_bob' }]);
+    await db.query('drop schema neon_auth cascade');
+  });
+
+  it('succeeds for an account that has no data at all', async () => {
+    await expect(p.deleteAccount(alice)).resolves.toBeUndefined();
+  });
+});

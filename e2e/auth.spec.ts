@@ -338,3 +338,42 @@ test('still leaves when signing out fails on the server', async ({ page, api }) 
 
   await expect(page).toHaveURL(/\/sign-in$/);
 });
+
+test.describe('deleting your account', () => {
+  test('keeps the account when the confirmation is dismissed', async ({ page, api }) => {
+    await page.goto('/');
+    const menu = await openMenu(page);
+    page.once('dialog', (d) => {
+      expect(d.message()).toBe('Permanently delete your account and all your data? This cannot be undone.');
+      void d.dismiss();
+    });
+    await menu.getByRole('button', { name: 'Delete account' }).click();
+
+    await expect(menu).toBeVisible();
+    expect(api.callsTo('DELETE /api/me')).toHaveLength(0);
+    expect(api.signedIn).toBe(true);
+  });
+
+  test('deletes the account and leaves for the sign-in page once confirmed', async ({ page, api }) => {
+    await page.goto('/');
+    const menu = await openMenu(page);
+    page.once('dialog', (d) => void d.accept());
+    await menu.getByRole('button', { name: 'Delete account' }).click();
+
+    await expect(page).toHaveURL(/\/sign-in$/);
+    expect(api.callsTo('DELETE /api/me')).toHaveLength(1);
+    expect(api.signedIn).toBe(false);
+  });
+
+  test('stays signed in and says so when the server cannot delete it', async ({ page, api }) => {
+    api.failNext('DELETE', /\/api\/me$/, { status: 500, body: { error: 'Could not delete the account.' } });
+    await page.goto('/');
+    const menu = await openMenu(page);
+    page.once('dialog', (d) => void d.accept());
+    await menu.getByRole('button', { name: 'Delete account' }).click();
+
+    await expect(menu.getByText('Could not delete the account.')).toBeVisible();
+    expect(api.signedIn).toBe(true);
+    await expect(page).not.toHaveURL(/sign-in/);
+  });
+});

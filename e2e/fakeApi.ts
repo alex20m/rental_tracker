@@ -117,6 +117,10 @@ export class FakeApi {
     if (root === 'me' && method === 'GET') {
       return { status: 200, body: { ...ME, emailVerified: this.emailVerified } };
     }
+    if (root === 'me' && method === 'DELETE') {
+      this.signedIn = false;
+      return ok;
+    }
     if (root === 'profile') {
       if (method === 'GET') return { status: 200, body: this.profile };
       if (method === 'PUT') {
