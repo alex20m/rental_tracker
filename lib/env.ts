@@ -27,6 +27,9 @@ export type AppConfig = {
   /** Neon Auth's base URL and cookie secret — both required, or auth is off. */
   authBaseUrl: string | undefined;
   authCookieSecret: string | undefined;
+  /** Resend API key and the verified sender address — both required, or no mail is sent. */
+  resendApiKey: string | undefined;
+  mailFrom: string | undefined;
 };
 
 export function readConfig(env: EnvSource = process.env): AppConfig {
@@ -36,6 +39,8 @@ export function readConfig(env: EnvSource = process.env): AppConfig {
     appUrl: nonEmpty(env.APP_URL),
     authBaseUrl: nonEmpty(env.NEON_AUTH_BASE_URL),
     authCookieSecret: nonEmpty(env.NEON_AUTH_COOKIE_SECRET),
+    resendApiKey: nonEmpty(env.RESEND_API_KEY),
+    mailFrom: nonEmpty(env.MAIL_FROM),
   };
 }
 
