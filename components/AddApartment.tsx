@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { api } from '@/lib/client/api';
+import { useI18n } from '@/components/I18nProvider';
 import { ErrorNote } from '@/components/ui';
 
 /** The whole of "add an apartment": a name. Everything else can be filled in later. */
@@ -12,6 +13,7 @@ export default function AddApartment({
   onCreated: (id: string) => Promise<void>;
   autoFocus?: boolean;
 }) {
+  const { t } = useI18n();
   const [name, setName] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
@@ -37,18 +39,18 @@ export default function AddApartment({
       }}
     >
       <label htmlFor="new-apartment" style={{ marginTop: 0 }}>
-        Apartment name
+        {t('add.name')}
       </label>
       <input
         id="new-apartment"
         autoFocus={autoFocus}
         value={name}
-        placeholder="e.g. Kauppakatu 12 B 7"
+        placeholder={t('add.placeholder')}
         onChange={(e) => setName(e.target.value)}
       />
       <ErrorNote message={error} />
       <button className="btn primary block" style={{ marginTop: 12 }} disabled={busy || !name.trim()}>
-        {busy ? 'Adding…' : 'Add apartment'}
+        {busy ? t('add.busy') : t('add.submit')}
       </button>
     </form>
   );

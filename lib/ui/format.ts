@@ -1,32 +1,72 @@
-import { MONTHS } from '@/lib/domain/tax';
+import type { Lang } from '@/lib/i18n';
 
-/** "2026-03-02" → "2 Mar". Empty for anything that is not a full ISO date. */
-export function shortDate(iso: string): string {
+const SHORT: Record<Lang, string[]> = {
+  en: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+  sv: ['jan', 'feb', 'mar', 'apr', 'maj', 'jun', 'jul', 'aug', 'sep', 'okt', 'nov', 'dec'],
+  fi: ['tammi', 'helmi', 'maalis', 'huhti', 'touko', 'kesä', 'heinä', 'elo', 'syys', 'loka', 'marras', 'joulu'],
+};
+
+const LONG: Record<Lang, string[]> = {
+  en: [
+    'January',
+    'February',
+    'March',
+    'April',
+    'May',
+    'June',
+    'July',
+    'August',
+    'September',
+    'October',
+    'November',
+    'December',
+  ],
+  sv: [
+    'januari',
+    'februari',
+    'mars',
+    'april',
+    'maj',
+    'juni',
+    'juli',
+    'augusti',
+    'september',
+    'oktober',
+    'november',
+    'december',
+  ],
+  fi: [
+    'tammikuu',
+    'helmikuu',
+    'maaliskuu',
+    'huhtikuu',
+    'toukokuu',
+    'kesäkuu',
+    'heinäkuu',
+    'elokuu',
+    'syyskuu',
+    'lokakuu',
+    'marraskuu',
+    'joulukuu',
+  ],
+};
+
+/** The twelve month abbreviations, January first. */
+export const monthsShort = (lang: Lang = 'en'): readonly string[] => SHORT[lang];
+
+/** "2026-03-02" → "2 Mar" (Finnish: "2. maalis"). Empty for anything that is not a full ISO date. */
+export function shortDate(iso: string, lang: Lang = 'en'): string {
   const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso);
   if (!m) return '';
-  const month = MONTHS[Number(m[2]) - 1];
-  return month ? `${Number(m[3])} ${month}` : '';
+  const month = SHORT[lang][Number(m[2]) - 1];
+  if (!month) return '';
+  return lang === 'fi' ? `${Number(m[3])}. ${month}` : `${Number(m[3])} ${month}`;
 }
 
-const MONTH_NAMES = [
-  'January',
-  'February',
-  'March',
-  'April',
-  'May',
-  'June',
-  'July',
-  'August',
-  'September',
-  'October',
-  'November',
-  'December',
-];
-
 /** "2026-03" → "March 2026". Anything else comes back untouched. */
-export function monthTitle(month: string): string {
+export function monthTitle(month: string, lang: Lang = 'en'): string {
   const m = /^(\d{4})-(\d{2})$/.exec(month);
-  const name = m ? MONTH_NAMES[Number(m[2]) - 1] : undefined;
+  const name = m ? LONG[lang][Number(m[2]) - 1] : undefined;
   return m && name ? `${name} ${m[1]}` : month;
 }
 

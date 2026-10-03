@@ -22,6 +22,12 @@ declaration package (PDF + CSV + receipts, zipped) for their own share.
 - **Per-owner tax.** Rent and costs are logged for the whole apartment. The Tax
   tab, the PDF and the CSV show the apartment total next to your share, and the
   share is what you declare.
+- **English, Swedish and Finnish.** Pick the language under **Menu** (or on the
+  sign-in page). It defaults to the browser's language, is remembered on that
+  device, and covers the whole interface. Server error messages, the PDF and the
+  CSV stay as they are — the PDF follows the Finnish form. Strings live in
+  `lib/i18n/` — English is the source, and the typecheck fails until a new
+  string is translated into the other two.
 - **Moving from the first version.** That version kept everything in one
   browser. Export a backup there, then use **Menu → Import backup** here:
   it becomes a new apartment with its rent log, costs and receipt photos.
@@ -111,6 +117,7 @@ app/                     Next.js App Router: pages and API routes
   api/apartments/…       the portfolio API — every route resolves the session first
   api/auth/[...path]/    Neon Auth's endpoints, proxied
 components/              the client UI (one client app + the sign-in page)
+lib/i18n/                the English, Swedish and Finnish strings
 lib/domain/              pure logic: types, tax, shares, request schemas, backup import
 lib/portfolio.ts         every query; access is decided by apartment_owners in SQL
 lib/auth.ts              the auth seam — Neon Auth once configured, anonymous before

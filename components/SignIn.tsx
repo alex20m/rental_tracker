@@ -4,6 +4,8 @@ import { useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { isAuthError } from '@neondatabase/auth/next';
 import { authClient } from '@/lib/client/authClient';
+import { useI18n } from '@/components/I18nProvider';
+import LanguagePicker from '@/components/LanguagePicker';
 import { ErrorNote, Icon } from '@/components/ui';
 
 type Mode = 'sign-in' | 'sign-up' | 'verify';
@@ -25,6 +27,7 @@ const isUnverified = (e: unknown) => isAuthError(e) && e.code === 'email_not_con
  */
 export default function SignIn() {
   const router = useRouter();
+  const { t } = useI18n();
   const params = useSearchParams();
   const verifyEmail = params.get('verify');
 
@@ -35,7 +38,7 @@ export default function SignIn() {
   const [code, setCode] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
-  const [info, setInfo] = useState(verifyEmail ? 'Press “Send a new code”, then enter the code from the email.' : '');
+  const [info, setInfo] = useState(verifyEmail ? t('auth.pressSend') : '');
 
   const auth = authClient();
 
@@ -52,7 +55,7 @@ export default function SignIn() {
 
   const sendCode = async () => {
     await auth.emailOtp.sendVerificationOtp({ email: email.trim(), type: 'email-verification' });
-    setInfo(`We sent a code to ${email.trim()}.`);
+    setInfo(t('auth.codeSent', { email: email.trim() }));
   };
 
   const enter = () => {
@@ -78,7 +81,7 @@ export default function SignIn() {
       if (data?.token) return enter();
       // Verification required before the first sign-in; the code is sent on sign-up.
       setMode('verify');
-      setInfo(`We sent a code to ${email.trim()}. Enter it to finish creating your account.`);
+      setInfo(t('auth.codeSentSignUp', { email: email.trim() }));
     });
 
   const verify = () =>
@@ -87,10 +90,11 @@ export default function SignIn() {
       const session = await auth.getSession();
       if (session.data?.user) return enter();
       setMode('sign-in');
-      setInfo('Email verified. Sign in to continue.');
+      setInfo(t('auth.verified'));
     });
 
-  const title = mode === 'sign-in' ? 'Welcome back' : mode === 'sign-up' ? 'Create your account' : 'Check your email';
+  const title =
+    mode === 'sign-in' ? t('auth.welcomeBack') : mode === 'sign-up' ? t('auth.createTitle') : t('auth.checkEmail');
 
   return (
     <div className="app auth">
@@ -99,7 +103,7 @@ export default function SignIn() {
         <div>
           <h1>{title}</h1>
           <p className="lead" style={{ marginTop: 8 }}>
-            Rent, costs and tax declarations for your rental apartments.
+            {t('auth.lead')}
           </p>
         </div>
         <form
@@ -116,11 +120,11 @@ export default function SignIn() {
 
           {mode === 'sign-up' && (
             <>
-              <label htmlFor="name">Name</label>
+              <label htmlFor="name">{t('auth.name')}</label>
               <input id="name" autoComplete="name" value={name} onChange={(e) => setName(e.target.value)} />
             </>
           )}
-          <label htmlFor="email">Email</label>
+          <label htmlFor="email">{t('auth.email')}</label>
           <input
             id="email"
             type="email"
@@ -132,7 +136,7 @@ export default function SignIn() {
           />
           {mode !== 'verify' ? (
             <>
-              <label htmlFor="password">Password</label>
+              <label htmlFor="password">{t('auth.password')}</label>
               <input
                 id="password"
                 type="password"
@@ -145,7 +149,7 @@ export default function SignIn() {
             </>
           ) : (
             <>
-              <label htmlFor="code">Code from the email</label>
+              <label htmlFor="code">{t('auth.code')}</label>
               <input
                 id="code"
                 inputMode="numeric"
@@ -159,36 +163,43 @@ export default function SignIn() {
 
           <ErrorNote message={error} />
           <button className="btn primary block" style={{ marginTop: 18 }} disabled={busy}>
-            {busy ? 'Please wait…' : mode === 'sign-in' ? 'Sign in' : mode === 'sign-up' ? 'Create account' : 'Verify'}
+            {busy
+              ? t('auth.wait')
+              : mode === 'sign-in'
+                ? t('auth.signIn')
+                : mode === 'sign-up'
+                  ? t('auth.create')
+                  : t('auth.verify')}
           </button>
 
           <div style={{ display: 'flex', gap: 18, marginTop: 16 }}>
             {mode === 'sign-in' && (
               <button type="button" className="link" onClick={() => setMode('sign-up')}>
-                New here? Create an account
+                {t('auth.toSignUp')}
               </button>
             )}
             {mode === 'sign-up' && (
               <button type="button" className="link" onClick={() => setMode('sign-in')}>
-                Have an account? Sign in
+                {t('auth.toSignIn')}
               </button>
             )}
             {mode === 'verify' && (
               <>
                 <button type="button" className="link" disabled={busy || !email.trim()} onClick={() => step(sendCode)}>
-                  Send a new code
+                  {t('auth.sendCode')}
                 </button>
                 <button
                   type="button"
                   className="link"
                   onClick={() => (verifyEmail ? router.replace('/') : setMode('sign-in'))}
                 >
-                  Back
+                  {t('common.back')}
                 </button>
               </>
             )}
           </div>
         </form>
+        <LanguagePicker />
       </div>
     </div>
   );

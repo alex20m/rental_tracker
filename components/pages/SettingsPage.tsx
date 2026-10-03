@@ -7,6 +7,7 @@ import { computeDepreciation, eur, pct } from '@/lib/domain/tax';
 import { isWholeApartment, shareTotal } from '@/lib/domain/shares';
 import { Avatar, ErrorNote, Heading, Icon, Info, Label, Sheet, Switch } from '@/components/ui';
 import type { Account } from '@/components/RentalApp';
+import { useI18n } from '@/components/I18nProvider';
 
 type Props = {
   apt: ApartmentView;
@@ -18,13 +19,14 @@ type Props = {
 };
 
 export default function SettingsPage({ apt, account, onBack, onChanged, onGone }: Props) {
+  const { t } = useI18n();
   return (
     <>
       <div className="pagehead">
-        <button className="iconbtn" aria-label="Back" onClick={onBack}>
+        <button className="iconbtn" aria-label={t('common.back')} onClick={onBack}>
           {Icon.left}
         </button>
-        <h1>Apartment settings</h1>
+        <h1>{t('settings.title')}</h1>
       </div>
       <Owners key={`owners-${apt.id}`} apt={apt} account={account} onChanged={onChanged} onGone={onGone} />
       <PropertyForm key={`settings-${apt.id}`} apt={apt} onChanged={onChanged} />
@@ -55,6 +57,7 @@ function useAction(onDone: () => Promise<void>) {
  * only; the rest of each owner's portfolio stays private to them.
  */
 function Owners({ apt, account, onChanged, onGone }: Omit<Props, 'onBack'>) {
+  const { t } = useI18n();
   // The viewer reaches an apartment only as one of its owners.
   const me = apt.owners.find((o) => o.userId === account.userId)!;
   const [editing, setEditing] = useState(false);
@@ -99,21 +102,18 @@ function Owners({ apt, account, onChanged, onGone }: Omit<Props, 'onBack'>) {
     <section>
       <Heading
         info={
-          <Info about="owners and shares">
-            Sharing gives another owner access to this apartment only — your other apartments stay private. Shares must
-            add up to exactly 100 %. An owner with 0 % can be removed or can leave.
-          </Info>
+          <Info about={t('settings.ownersAbout')}>{t('settings.ownersInfo')}</Info>
         }
         action={
           !editing &&
           rows.length > 1 && (
             <button className="link" onClick={startEditing}>
-              Edit shares
+              {t('settings.editShares')}
             </button>
           )
         }
       >
-        Owners
+        {t('settings.owners')}
       </Heading>
       <ul className="list">
         {rows.map((r) => (
@@ -124,22 +124,22 @@ function Owners({ apt, account, onChanged, onGone }: Omit<Props, 'onBack'>) {
                 {r.label}
                 {r.owner && r.owner === me && (
                   <span className="chip" style={{ marginLeft: 6 }}>
-                    you
+                    {t('settings.you')}
                   </span>
                 )}
                 {r.invite && (
                   <>
                     <span className="chip warn" style={{ marginLeft: 6 }}>
-                      invited
+                      {t('settings.invited')}
                     </span>
-                    <Info about="invites">They get access when they sign in with this email address.</Info>
+                    <Info about={t('settings.invitesAbout')}>{t('settings.invitesInfo')}</Info>
                   </>
                 )}
               </div>
             </div>
             {editing ? (
               <input
-                aria-label={`Share for ${r.label}`}
+                aria-label={t('settings.shareFor', { who: r.label })}
                 className="pct-input"
                 type="number"
                 inputMode="decimal"
@@ -158,7 +158,7 @@ function Owners({ apt, account, onChanged, onGone }: Omit<Props, 'onBack'>) {
                 disabled={busy}
                 onClick={() => run(() => api.revokeInvite(apt.id, r.invite!.id))}
               >
-                Withdraw
+                {t('settings.withdraw')}
               </button>
             )}
             {!editing && r.owner && r.owner !== me && r.owner.sharePct === 0 && (
@@ -167,7 +167,7 @@ function Owners({ apt, account, onChanged, onGone }: Omit<Props, 'onBack'>) {
                 disabled={busy}
                 onClick={() => run(() => api.removeOwner(apt.id, r.owner!.userId))}
               >
-                Remove
+                {t('common.remove')}
               </button>
             )}
           </li>
@@ -177,15 +177,15 @@ function Owners({ apt, account, onChanged, onGone }: Omit<Props, 'onBack'>) {
       {editing ? (
         <>
           <p className={'msg ' + (isWholeApartment(draftValues) ? '' : 'neg')} style={{ marginTop: 10 }}>
-            Total {pct(total)}
-            {isWholeApartment(draftValues) ? '' : ' — must be exactly 100 %'}
+            {t('settings.total', { pct: pct(total) })}
+            {isWholeApartment(draftValues) ? '' : t('settings.mustBe100')}
           </p>
           <div className="sheet-foot">
             <button className="btn" onClick={() => setEditing(false)} disabled={busy}>
-              Cancel
+              {t('common.cancel')}
             </button>
             <button className="btn primary" onClick={saveShares} disabled={busy || !isWholeApartment(draftValues)}>
-              Save shares
+              {t('settings.saveShares')}
             </button>
           </div>
         </>
@@ -196,7 +196,7 @@ function Owners({ apt, account, onChanged, onGone }: Omit<Props, 'onBack'>) {
           onClick={() => setInviting(true)}
         >
           {Icon.plus}
-          <div className="main">Invite a co-owner</div>
+          <div className="main">{t('settings.invite')}</div>
         </button>
       )}
 
@@ -207,7 +207,7 @@ function Owners({ apt, account, onChanged, onGone }: Omit<Props, 'onBack'>) {
             disabled={busy || me.sharePct !== 0}
             style={me.sharePct !== 0 ? { opacity: 0.5 } : undefined}
             onClick={() => {
-              if (confirm(`Leave ${apt.settings.name}? You will lose access to it.`)) {
+              if (confirm(t('settings.leaveConfirm', { name: apt.settings.name }))) {
                 void run(async () => {
                   await api.removeOwner(apt.id, me.userId);
                   await onGone();
@@ -215,10 +215,10 @@ function Owners({ apt, account, onChanged, onGone }: Omit<Props, 'onBack'>) {
               }
             }}
           >
-            Leave this apartment
+            {t('settings.leave')}
           </button>
           {me.sharePct !== 0 && (
-            <Info about="leaving">Give your share to the other owners first (set it to 0 %), then you can leave.</Info>
+            <Info about={t('settings.leavingAbout')}>{t('settings.leavingInfo')}</Info>
           )}
         </div>
       )}
@@ -242,6 +242,7 @@ function InviteSheet({
   onClose: () => void;
   onChanged: () => Promise<void>;
 }) {
+  const { t } = useI18n();
   const [email, setEmail] = useState('');
   const [share, setShare] = useState('');
   const { busy, error, run } = useAction(onChanged);
@@ -253,7 +254,7 @@ function InviteSheet({
     });
 
   return (
-    <Sheet title="Invite a co-owner" onClose={onClose}>
+    <Sheet title={t('settings.invite')} onClose={onClose}>
       <form
         onSubmit={(e) => {
           e.preventDefault();
@@ -261,7 +262,7 @@ function InviteSheet({
         }}
       >
         <label htmlFor="invite-email" style={{ marginTop: 6 }}>
-          Their email
+          {t('settings.theirEmail')}
         </label>
         <input
           id="invite-email"
@@ -274,13 +275,10 @@ function InviteSheet({
         <Label
           htmlFor="invite-share"
           info={
-            <Info about="their share">
-              Their share is taken from yours ({pct(me)} now). You can rebalance everyone afterwards with “Edit shares”.
-              Only this apartment is shared.
-            </Info>
+            <Info about={t('settings.theirShareAbout')}>{t('settings.theirShareInfo', { pct: pct(me) })}</Info>
           }
         >
-          Their share (%)
+          {t('settings.theirShare')}
         </Label>
         <input
           id="invite-share"
@@ -289,14 +287,14 @@ function InviteSheet({
           step="0.01"
           min="0.01"
           max={me}
-          placeholder="e.g. 50"
+          placeholder={t('settings.sharePlaceholder')}
           value={share}
           onChange={(e) => setShare(e.target.value)}
         />
         <ErrorNote message={error} />
         <div className="sheet-foot">
           <button className="btn primary" disabled={busy || !email.trim() || !(Number(share) > 0)}>
-            {busy ? 'Sharing…' : 'Share apartment'}
+            {busy ? t('settings.sharing') : t('settings.shareApartment')}
           </button>
         </div>
       </form>
@@ -305,6 +303,7 @@ function InviteSheet({
 }
 
 function PropertyForm({ apt, onChanged }: { apt: ApartmentView; onChanged: () => Promise<void> }) {
+  const { t } = useI18n();
   const [s, setS] = useState<ApartmentSettings>(apt.settings);
   const { busy, error, run } = useAction(onChanged);
   const dirty = JSON.stringify(s) !== JSON.stringify(apt.settings);
@@ -320,31 +319,33 @@ function PropertyForm({ apt, onChanged }: { apt: ApartmentView; onChanged: () =>
   return (
     <>
       <section>
-        <Heading>Details</Heading>
+        <Heading>{t('settings.details')}</Heading>
         <label htmlFor="s-name" style={{ marginTop: 6 }}>
-          Name
+          {t('settings.name')}
         </label>
         <input id="s-name" value={s.name} onChange={text('name')} />
-        <label htmlFor="s-address">Address</label>
+        <label htmlFor="s-address">{t('settings.address')}</label>
         <input id="s-address" value={s.address} onChange={text('address')} />
         <Label
           htmlFor="s-company"
-          info={<Info about="the housing company">Asunto-osakeyhtiö — the company that owns the building.</Info>}
+          info={<Info about={t('settings.companyAbout')}>{t('settings.companyInfo')}</Info>}
         >
-          Housing company
+          {t('settings.company')}
         </Label>
         <input id="s-company" value={s.housingCompany} onChange={text('housingCompany')} />
         <div className="cols">
           <div>
-            <label htmlFor="s-date">Purchase date</label>
+            <label htmlFor="s-date">{t('settings.purchaseDate')}</label>
             <input id="s-date" type="date" value={s.purchaseDate} onChange={text('purchaseDate')} />
           </div>
           <div>
             <Label
               htmlFor="s-price"
-              info={<Info about="the purchase price">The price of the whole apartment, not just your share.</Info>}
+              info={
+                <Info about={t('settings.purchasePriceAbout')}>{t('settings.purchasePriceInfo')}</Info>
+              }
             >
-              Purchase price (€)
+              {t('settings.purchasePrice')}
             </Label>
             <input
               id="s-price"
@@ -357,9 +358,9 @@ function PropertyForm({ apt, onChanged }: { apt: ApartmentView; onChanged: () =>
         </div>
         <Label
           htmlFor="s-rent"
-          info={<Info about="the usual rent">Pre-fills the amount when you log a month in the rent log.</Info>}
+          info={<Info about={t('settings.monthlyRentAbout')}>{t('settings.monthlyRentInfo')}</Info>}
         >
-          Usual monthly rent (€)
+          {t('settings.monthlyRent')}
         </Label>
         <input
           id="s-rent"
@@ -373,16 +374,13 @@ function PropertyForm({ apt, onChanged }: { apt: ApartmentView; onChanged: () =>
       <section>
         <Heading
           info={
-            <Info about="depreciation">
-              Poisto — a yearly deduction for the building’s wear, calculated on its remaining cost. 2.5 % a year is the
-              usual rate for apartments; check vero.fi for your case.
-            </Info>
+            <Info about={t('settings.depreciationAbout')}>{t('settings.depreciationInfo')}</Info>
           }
         >
-          Depreciation
+          {t('settings.depreciation')}
         </Heading>
         <Switch checked={s.useDepreciation} onChange={(v) => set('useDepreciation', v)}>
-          Deduct depreciation in the declaration
+          {t('settings.useDepreciation')}
         </Switch>
         {s.useDepreciation && (
           <>
@@ -391,12 +389,10 @@ function PropertyForm({ apt, onChanged }: { apt: ApartmentView; onChanged: () =>
                 <Label
                   htmlFor="s-share"
                   info={
-                    <Info about="the depreciable share">
-                      The part of the purchase price that is the building, not the land — only the building depreciates.
-                    </Info>
+                    <Info about={t('settings.buildingShareAbout')}>{t('settings.buildingShareInfo')}</Info>
                   }
                 >
-                  Building share (%)
+                  {t('settings.buildingShare')}
                 </Label>
                 <input
                   id="s-share"
@@ -407,7 +403,7 @@ function PropertyForm({ apt, onChanged }: { apt: ApartmentView; onChanged: () =>
                 />
               </div>
               <div>
-                <label htmlFor="s-rate">Rate (% / year)</label>
+                <label htmlFor="s-rate">{t('settings.rate')}</label>
                 <input
                   id="s-rate"
                   type="number"
@@ -421,12 +417,10 @@ function PropertyForm({ apt, onChanged }: { apt: ApartmentView; onChanged: () =>
             <Label
               htmlFor="s-prior"
               info={
-                <Info about="earlier depreciation">
-                  Total already deducted in earlier years, for the whole apartment.
-                </Info>
+                <Info about={t('settings.priorAbout')}>{t('settings.priorInfo')}</Info>
               }
             >
-              Depreciated in earlier years (€)
+              {t('settings.prior')}
             </Label>
             <input
               id="s-prior"
@@ -437,10 +431,8 @@ function PropertyForm({ apt, onChanged }: { apt: ApartmentView; onChanged: () =>
             />
             <div className="kv" style={{ marginTop: 8, borderBottom: 0 }}>
               <span>
-                This year
-                <Info about="this year’s depreciation">
-                  For the whole apartment; it is split between the owners by their shares.
-                </Info>
+                {t('settings.thisYear')}
+                <Info about={t('settings.thisYearAbout')}>{t('settings.thisYearInfo')}</Info>
               </span>
               <b className="num">{eur(computeDepreciation({ settings: s }))}</b>
             </div>
@@ -454,10 +446,10 @@ function PropertyForm({ apt, onChanged }: { apt: ApartmentView; onChanged: () =>
         <div className="savebar">
           <div>
             <button className="btn" onClick={() => setS(apt.settings)} disabled={busy}>
-              Discard
+              {t('settings.discard')}
             </button>
             <button className="btn primary" onClick={save} disabled={busy || !s.name.trim()}>
-              {busy ? 'Saving…' : 'Save changes'}
+              {busy ? t('common.saving') : t('settings.saveChanges')}
             </button>
           </div>
         </div>
@@ -467,6 +459,7 @@ function PropertyForm({ apt, onChanged }: { apt: ApartmentView; onChanged: () =>
 }
 
 function DangerZone({ apt, account, onGone }: { apt: ApartmentView; account: Account; onGone: () => Promise<void> }) {
+  const { t } = useI18n();
   const { busy, error, run } = useAction(onGone);
   const alone = apt.owners.length === 1 && apt.owners[0]!.userId === account.userId;
   if (!alone) return null;
@@ -476,16 +469,14 @@ function DangerZone({ apt, account, onGone }: { apt: ApartmentView; account: Acc
         className="link danger"
         disabled={busy}
         onClick={() => {
-          if (confirm(`Delete ${apt.settings.name} and everything in it? This cannot be undone.`)) {
+          if (confirm(t('settings.deleteConfirm', { name: apt.settings.name }))) {
             void run(() => api.deleteApartment(apt.id));
           }
         }}
       >
-        Delete this apartment
+        {t('settings.delete')}
       </button>
-      <Info about="deleting">
-        Deletes the apartment with its rent log, costs and receipt photos. Your other apartments aren’t affected.
-      </Info>
+      <Info about={t('settings.deleteAbout')}>{t('settings.deleteInfo')}</Info>
       <ErrorNote message={error} />
     </section>
   );

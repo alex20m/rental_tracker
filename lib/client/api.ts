@@ -70,7 +70,7 @@ export const api = {
   putReceipt: (id: string, costId: string, dataUrl: string) => call('PUT', `${apt(id)}/costs/${costId}/receipt`, { dataUrl }),
   deleteReceipt: (id: string, costId: string) => call('DELETE', `${apt(id)}/costs/${costId}/receipt`),
 
-  invite: (id: string, email: string, sharePct: number) => call<{ id: string }>('POST', `${apt(id)}/invites`, { email, sharePct }),
+  invite: (id: string, email: string, sharePct: number) => call<{ id: string; emailSent: boolean }>('POST', `${apt(id)}/invites`, { email, sharePct }),
   revokeInvite: (id: string, inviteId: string) => call('DELETE', `${apt(id)}/invites/${inviteId}`),
   setShares: (
     id: string,

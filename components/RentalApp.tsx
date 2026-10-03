@@ -1,10 +1,12 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { api, ApiError } from '@/lib/client/api';
 import { pct } from '@/lib/domain/tax';
 import type { ApartmentView, PortfolioItem } from '@/lib/domain/types';
 import { Avatar, ErrorNote, Icon, Sheet, YearStepper } from '@/components/ui';
+import { useI18n } from '@/components/I18nProvider';
 import AddApartment from '@/components/AddApartment';
 import MenuSheet from '@/components/MenuSheet';
 import Portfolio from '@/components/pages/Portfolio';
@@ -21,12 +23,12 @@ export type Go = (to: Destination) => void;
 /** Whose figures to show for an apartment owned by several people. */
 export type Scope = 'mine' | 'whole';
 
-const SECTIONS: { id: 'home' | 'rent' | 'costs' | 'tax'; label: string; icon: React.ReactNode }[] = [
-  { id: 'home', label: 'Home', icon: Icon.home },
-  { id: 'rent', label: 'Rent', icon: Icon.rent },
-  { id: 'costs', label: 'Costs', icon: Icon.cost },
-  { id: 'tax', label: 'Tax', icon: Icon.tax },
-];
+const SECTIONS = [
+  { id: 'home', icon: Icon.home },
+  { id: 'rent', icon: Icon.rent },
+  { id: 'costs', icon: Icon.cost },
+  { id: 'tax', icon: Icon.tax },
+] as const;
 
 const SELECTED_KEY = 'rental-tracker:selected-apartment';
 
@@ -68,6 +70,8 @@ export type Account = { userId: string; email: string; emailVerified: boolean; t
 type SheetName = 'switch' | 'menu' | null;
 
 export default function RentalApp() {
+  const router = useRouter();
+  const { t } = useI18n();
   const thisYear = new Date().getFullYear();
 
   const [account, setAccount] = useState<Account | null>(null);
@@ -81,8 +85,13 @@ export default function RentalApp() {
   const [adding, setAdding] = useState(false);
   const [error, setError] = useState('');
 
-  // A 401 has already sent the browser to /sign-in (lib/client/api.ts).
-  const fail = useCallback((e: unknown) => setError((e as Error).message), []);
+  const fail = useCallback(
+    (e: unknown) => {
+      if (e instanceof ApiError && e.status === 401) router.replace('/sign-in');
+      else setError(e instanceof Error ? e.message : String(e));
+    },
+    [router],
+  );
 
   const loadApartment = useCallback(
     async (id: string) => {
@@ -166,13 +175,13 @@ export default function RentalApp() {
     return (
       <div className="app">
         <ErrorNote message={error} />
-        {!error && <div className="spinner" role="status" aria-label="Loading" />}
+        {!error && <div className="spinner" role="status" aria-label={t('common.loading')} />}
       </div>
     );
   }
 
   const menuButton = (
-    <button className="menubtn" aria-label="Menu" onClick={() => setSheet('menu')}>
+    <button className="menubtn" aria-label={t('nav.menu')} onClick={() => setSheet('menu')}>
       <Avatar text={account.taxpayerName || account.email} />
     </button>
   );
@@ -200,16 +209,16 @@ export default function RentalApp() {
       <>
         <div className="app">
           <header className="topbar">
-            <div className="grow brand">Rental Tracker</div>
+            <div className="grow brand">{t('app.name')}</div>
             {menuButton}
           </header>
           <ErrorNote message={error} />
           <div className="welcome">
             <div className="logo">{Icon.building}</div>
             <div>
-              <h1>Add your first apartment</h1>
+              <h1>{t('welcome.title')}</h1>
               <p className="lead" style={{ marginTop: 8 }}>
-                Just a name to start — you can fill in the rest later.
+                {t('welcome.lead')}
               </p>
             </div>
             <AddApartment
@@ -220,7 +229,7 @@ export default function RentalApp() {
               }}
             />
             <button className="link" style={{ alignSelf: 'flex-start' }} onClick={() => setSheet('menu')}>
-              Or import a backup from the old version
+              {t('welcome.import')}
             </button>
           </div>
         </div>
@@ -231,7 +240,7 @@ export default function RentalApp() {
 
   const inPortfolio = tab === 'portfolio';
   const pillName = inPortfolio
-    ? 'All apartments'
+    ? t('nav.allApartments')
     : (apt?.settings.name ?? items.find((i) => i.id === selectedId)?.name ?? '…');
 
   return (
@@ -254,9 +263,9 @@ export default function RentalApp() {
           {inPortfolio && <Portfolio items={items} details={details} year={year} account={account} onOpen={open} />}
           {!inPortfolio && !apt && (
             <div className="empty">
-              Couldn’t load this apartment.
+              {t('nav.loadFailed')}
               <button className="btn" onClick={() => selectedId && void loadApartment(selectedId)}>
-                Try again
+                {t('nav.tryAgain')}
               </button>
             </div>
           )}
@@ -283,15 +292,15 @@ export default function RentalApp() {
           )}
         </main>
 
-        {inPortfolio && <div className="side-brand">Rental Tracker</div>}
+        {inPortfolio && <div className="side-brand">{t('app.name')}</div>}
         {!inPortfolio && (
-          <nav className="nav" aria-label="Sections">
-            <div className="nav-brand">Rental Tracker</div>
+          <nav className="nav" aria-label={t('nav.sections')}>
+            <div className="nav-brand">{t('app.name')}</div>
             <div className="nav-inner">
               {SECTIONS.map((s) => (
                 <button key={s.id} aria-current={tab === s.id ? 'page' : undefined} onClick={() => setTab(s.id)}>
                   {s.icon}
-                  <span>{s.label}</span>
+                  <span>{t(`nav.${s.id}`)}</span>
                 </button>
               ))}
             </div>
@@ -300,7 +309,7 @@ export default function RentalApp() {
 
         {sheet === 'switch' && (
           <Sheet
-            title="Apartments"
+            title={t('nav.apartments')}
             onClose={() => {
               setSheet(null);
               setAdding(false);
@@ -318,8 +327,8 @@ export default function RentalApp() {
                   >
                     {Icon.stack}
                     <div className="main">
-                      <div className="t">All apartments</div>
-                      <div className="s">Your share, added together</div>
+                      <div className="t">{t('nav.allApartments')}</div>
+                      <div className="s">{t('nav.allApartmentsHint')}</div>
                     </div>
                     {inPortfolio && Icon.check}
                   </button>
@@ -332,8 +341,9 @@ export default function RentalApp() {
                     <div className="main">
                       <div className="t">{i.name}</div>
                       <div className="s">
-                        {[i.mySharePct !== 100 && `${pct(i.mySharePct)} yours`, i.address].filter(Boolean).join(' · ') ||
-                          'Yours'}
+                        {[i.mySharePct !== 100 && t('nav.shareYours', { pct: pct(i.mySharePct) }), i.address]
+                          .filter(Boolean)
+                          .join(' · ') || t('common.yours')}
                       </div>
                     </div>
                     {!inPortfolio && i.id === selectedId && Icon.check}
@@ -358,7 +368,7 @@ export default function RentalApp() {
                 onClick={() => setAdding(true)}
               >
                 {Icon.plus}
-                <div className="main">New apartment</div>
+                <div className="main">{t('nav.newApartment')}</div>
               </button>
             )}
           </Sheet>

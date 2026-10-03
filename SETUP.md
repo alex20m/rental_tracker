@@ -10,10 +10,10 @@ Roughly 30 minutes end to end, plus DNS time if you add a domain.
 
 **Knowingly incomplete:**
 
-- **No email is sent when an apartment is shared.** The inviter tells the other
-  owner; the apartment appears when that person signs in with the invited
-  email. Neon Auth's own emails (verification codes) are the only mail the app
-  causes.
+- **The share email is best effort.** Sharing an apartment emails the invitee
+  through Resend (see [Email](#email-resend)). If Resend is not configured or
+  refuses, the invite still stands and the apartment appears when that person
+  signs in with the invited email — the inviter just has to tell them.
 - **Sharing depends on verified emails.** An invite is only handed to an
   account whose email Neon Auth has verified — otherwise anyone could sign up
   with someone else's address and claim it. Step 5 turns verification on; skip
@@ -22,6 +22,21 @@ Roughly 30 minutes end to end, plus DNS time if you add a domain.
   the change that introduced it; the sign-up → code → sign-in path was written
   against `@neondatabase/auth@0.5.0-beta`'s client API. Walk through it once on
   the first deployment (step 7).
+
+## Email (Resend)
+
+The invite email needs a Resend account, a **verified sending domain** (Resend
+only delivers to arbitrary recipients from a verified domain), and an API key —
+minting the key is the one step that needs a browser. Then:
+
+```bash
+npx vercel env add RESEND_API_KEY production,preview,development --value "re_..." --sensitive --yes
+npx vercel env add MAIL_FROM production,preview,development --value "Rental Tracker <rentals@your-domain>" --yes
+curl -s https://<your-app-url>/api/health   # "emailConfigured": true
+```
+
+Variables need a redeploy to take effect. Check delivery by sharing an
+apartment with an address you can read.
 
 ## Prerequisites
 
@@ -210,6 +225,8 @@ to Neon Auth's trusted domains (step 5) and update `APP_URL`.
 | `NEON_AUTH_BASE_URL` | Neon Auth endpoint for this branch | Read from `neon-auth status`, set by you |
 | `NEON_AUTH_COOKIE_SECRET` | Signs the session cookie, ≥ 32 chars | You generate it |
 | `APP_URL` | Where the app is served | You |
+| `RESEND_API_KEY` | Sends the share email | You (Resend) |
+| `MAIL_FROM` | Sender of the share email, e.g. `Rental Tracker <rentals@your-domain>` | You |
 
 Provider-managed variables rotate on their own; never copy one into a second
 place.
