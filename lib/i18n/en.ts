@@ -48,7 +48,6 @@ export const en = {
   // — first run —
   'welcome.title': 'Add your first apartment',
   'welcome.lead': 'Just a name to start — you can fill in the rest later.',
-  'welcome.import': 'Or import a backup from the old version',
   'add.name': 'Apartment name',
   'add.placeholder': 'e.g. Kauppakatu 12 B 7',
   'add.submit': 'Add apartment',
@@ -63,14 +62,6 @@ export const en = {
   'menu.nameInfo': 'This is the name printed on the declaration. Don’t enter a personal identity number — it isn’t needed.',
   'menu.saveName': 'Save name',
   'menu.saved': 'Saved.',
-  'menu.import': 'Import backup',
-  'menu.importAbout': 'importing a backup',
-  'menu.importInfo':
-    'The first version of this app kept everything in one browser. Export a backup there (Settings → Export backup) and import the .json file here to bring that apartment, its rent log, costs and receipt photos over.',
-  'menu.importing': 'Importing…',
-  'menu.imported': 'Imported “{name}” as a new apartment.',
-  'menu.importedPartial': 'Imported “{name}” as a new apartment, but {failed} receipt photo(s) could not be uploaded.',
-  'menu.importFailed': 'Import failed: {message}',
   'menu.signOut': 'Sign out',
 
   // — notices —

@@ -43,7 +43,6 @@ export type ShareAssignment = {
   owners: { userId: string; sharePct: number }[];
   invites: { id: string; sharePct: number }[];
 };
-export type ImportedCost = CostInput & { id: string };
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -472,60 +471,6 @@ export function portfolio(db: Queryable) {
       );
     },
 
-    /**
-     * A whole apartment from a backup of the browser-only first version, in
-     * one statement so a failed import leaves nothing half-created. Receipt
-     * photos are uploaded afterwards, one request each, because together they
-     * can exceed a request body limit; the costs keep the ids the client
-     * generated so it knows where each photo goes.
-     */
-    async importLedger(
-      actor: Actor,
-      data: { settings: ApartmentSettings; rents: RentEntry[]; costs: ImportedCost[] },
-    ): Promise<string> {
-      const keys = Object.keys(SETTINGS_FIELDS) as (keyof ApartmentSettings)[];
-      const placeholders = keys.map((_, i) => `$${i + 5}`);
-      const rows = await db.query<{ id: string }>(
-        `with a as (
-           insert into apartments (created_by, ${keys.map((k) => SETTINGS_FIELDS[k]).join(', ')})
-           values ($1, ${placeholders.join(', ')})
-           returning id
-         ),
-         o as (
-           insert into apartment_owners (apartment_id, user_id, email, share_pct)
-           select id, $1, lower($2), 100 from a
-         ),
-         r as (
-           insert into rents (apartment_id, month, status, amount, received_date, note)
-           select a.id, x.month, x.status, x.amount, nullif(x.received_date, '')::date, x.note
-             from a, jsonb_to_recordset($3::jsonb)
-                  as x(month text, status text, amount numeric, received_date text, note text)
-         ),
-         c as (
-           insert into costs (id, apartment_id, date, category, description, amount)
-           select x.id, a.id, x.date, x.category, x.description, x.amount
-             from a, jsonb_to_recordset($4::jsonb)
-                  as x(id uuid, date date, category text, description text, amount numeric)
-         )
-         select id from a`,
-        [
-          actor.userId,
-          actor.email,
-          JSON.stringify(
-            data.rents.map((r) => ({
-              month: r.month,
-              status: r.status,
-              amount: r.status === 'paid' ? r.amount : 0,
-              received_date: r.status === 'paid' ? r.receivedDate : '',
-              note: r.note,
-            })),
-          ),
-          JSON.stringify(data.costs),
-          ...keys.map((k) => toDbValue(k, data.settings[k])),
-        ],
-      );
-      return rows[0]!.id;
-    },
   };
 }
 

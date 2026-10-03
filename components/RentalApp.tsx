@@ -189,14 +189,12 @@ export default function RentalApp() {
       }}
       onClose={() => setSheet(null)}
       onAccountChanged={setAccount}
-      onImported={loadPortfolio}
     />
   );
 
   // Nothing to show yet: one field, one button. The menu sheet is a sibling of
-  // the layout, at the same place in both branches, so it stays mounted (and
-  // keeps its "Imported …" message) when an import turns this screen into the
-  // full app underneath it.
+  // the layout, at the same place in both branches, so it stays mounted when
+  // the first apartment turns this screen into the full app underneath it.
   if (items.length === 0) {
     return (
       <>
@@ -221,9 +219,6 @@ export default function RentalApp() {
                 open(id);
               }}
             />
-            <button className="link" style={{ alignSelf: 'flex-start' }} onClick={() => setSheet('menu')}>
-              {t('welcome.import')}
-            </button>
           </div>
         </div>
         {menuSheet}
