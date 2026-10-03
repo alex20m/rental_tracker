@@ -5,7 +5,7 @@ import JSZip from 'jszip';
 import { CATEGORIES } from '@/lib/domain/types';
 import type { ApartmentView } from '@/lib/domain/types';
 import { computeTax, MONTHS, ownerShare } from '@/lib/domain/tax';
-import type { OwnerShare, TaxResult } from '@/lib/domain/tax';
+import type { DepreciationKind, OwnerShare, TaxResult } from '@/lib/domain/tax';
 import { fetchReceipt } from '@/lib/client/api';
 
 /**
@@ -19,6 +19,12 @@ export const pdfSafe = (s: string) => s.replace(/\u2212/g, '-').replace(/[\u00a0
 // The built-in fonts can't render the € glyph reliably either, so amounts use "EUR".
 const money = (n: number) =>
   pdfSafe(new Intl.NumberFormat('fi-FI', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(n) + ' EUR');
+const DEPRECIATION_LABELS: Record<DepreciationKind, string> = {
+  building: 'Building depreciation (Rakennuksen poisto)',
+  improvements: "Basic improvements, this year's part (Perusparannusten poistot)",
+  furniture: "Furniture & appliances, this year's part (Irtaimiston poistot)",
+};
+
 const pctText = (n: number) => pdfSafe(new Intl.NumberFormat('fi-FI', { maximumFractionDigits: 2 }).format(n) + ' %');
 
 /**
@@ -94,7 +100,8 @@ export function buildPdf(apt: ApartmentView, t: TaxResult, share: OwnerShare, ta
 
   h1(`Rental income & expenses ${t.year}`);
   doc.setFont('helvetica', 'normal').setFontSize(10).setTextColor(100, 116, 139);
-  put('Vuokratulot ja -menot (summary for tax form 9 / OmaVero)', L, y);
+  const form = s.propertyType === 'property' ? '7K' : '7H';
+  put(`Vuokratulot ja -menot (summary for tax form ${form} / OmaVero)`, L, y);
   y += 6;
 
   h2('Taxpayer & property');
@@ -130,20 +137,38 @@ export function buildPdf(apt: ApartmentView, t: TaxResult, share: OwnerShare, ta
 
   h2('Expenses (Vähennyskelpoiset menot)', true);
   const mineFor = (category: string) => share.lines.find((l) => l.category === category)!.amount;
-  for (const l of t.lines.filter((l) => l.deductible)) amount(`${l.label} (${l.fi})`, l.amount, mineFor(l.category));
-  amount('Total deductible expenses', t.deductibleCosts, share.deductibleCosts, true);
-  if (t.depreciation) {
-    amount('Depreciation (Poisto)', t.depreciation, share.depreciation);
-    small(
-      `${s.depreciationRate}% reducing balance on ${money((s.purchasePrice * s.buildingSharePct) / 100)} ` +
-        `depreciable cost, less ${money(s.depreciationPrior)} already depreciated.`,
-    );
+  const isInterest = (category: keyof typeof CATEGORIES) => CATEGORIES[category].treatment === 'interest';
+  const onForm = t.lines.filter((l) => l.deductible && !isInterest(l.category));
+  for (const l of onForm) amount(`${l.label} (${l.fi})`, l.amount, mineFor(l.category));
+  const sum = (ls: { amount: number }[]) => Math.round(ls.reduce((a, l) => a + l.amount, 0) * 100) / 100;
+  const mineOnForm = share.lines.filter((l) => l.deductible && !isInterest(l.category));
+  amount('Total expenses on the form', sum(onForm), sum(mineOnForm), true);
+  for (const d of t.depreciationLines) {
+    amount(DEPRECIATION_LABELS[d.kind], d.amount, share.depreciationLines.find((m) => m.kind === d.kind)!.amount);
+    if (d.kind === 'building') {
+      small(
+        `${s.depreciationRate}% reducing balance on ${money((s.purchasePrice * s.buildingSharePct) / 100)} ` +
+          `depreciable cost, less ${money(s.depreciationPrior)} already depreciated.`,
+      );
+    }
+  }
+  if (t.depreciationLines.some((d) => d.kind === 'improvements')) {
+    small('Each basic improvement is deducted in equal parts over up to ten years, starting the year it was paid.');
+  }
+  if (t.depreciationLines.some((d) => d.kind === 'furniture')) {
+    small('Furniture and appliances over 1 200 EUR: 25% of the remaining value a year. Keep a list of the items.');
+  }
+  const interest = t.lines.filter((l) => isInterest(l.category));
+  if (interest.length) {
+    h2('Declared separately (not on the rental form)', true);
+    for (const l of interest) amount(`${l.label} (${l.fi})`, l.amount, mineFor(l.category));
+    small('Interest on a loan for the rental property is declared with the interest deductions in OmaVero.');
   }
   const nd = t.lines.filter((l) => !l.deductible);
   if (nd.length) {
     y += 2;
     for (const l of nd) amount(`Not deductible: ${l.label} (${l.fi})`, l.amount, mineFor(l.category));
-    small('Financing charges are not an expense; they increase the acquisition cost of the shares.');
+    small('A financing charge the housing company funds is not an expense; it increases the acquisition cost of the shares.');
   }
 
   h2('Result', true);

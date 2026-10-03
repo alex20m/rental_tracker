@@ -5,7 +5,15 @@ import { defaultSettings, type ApartmentView } from '@/lib/domain/types';
 
 const apt: ApartmentView = {
   id: '11111111-1111-4111-8111-111111111111',
-  settings: { ...defaultSettings, name: 'Kauppakatu 12', purchasePrice: 100000, useDepreciation: true },
+  // A property of one's own, so its building is depreciated.
+  settings: {
+    ...defaultSettings,
+    name: 'Kauppakatu 12',
+    propertyType: 'property',
+    purchasePrice: 100000,
+    useDepreciation: true,
+    depreciationRate: 2.5,
+  },
   owners: [
     { userId: 'usr_a', email: 'a@example.test', sharePct: 25 },
     { userId: 'usr_b', email: 'b@example.test', sharePct: 75 },
@@ -56,6 +64,46 @@ describe("the declaration's PDF", () => {
     expect(pdf).toContain('(- Deductible expenses) Tj');
     expect(pdf).toContain('(- Depreciation) Tj');
     expect(pdf).not.toMatch(/\(\S*\u0000/);
+  });
+
+  it('names form 7K for a property and 7H for a housing-company flat, which has no building depreciation', async () => {
+    const property = await textOf(buildPdf(apt, t, ownerShare(t, 25), 'Alice Aalto'));
+    expect(property).toContain('summary for tax form 7K / OmaVero');
+    expect(property).toContain('(Building depreciation \\(Rakennuksen poisto\\)) Tj');
+
+    const flat = { ...apt, settings: { ...apt.settings, propertyType: 'share' as const } };
+    const tf = computeTax(flat, year, today);
+    const pdf = await textOf(buildPdf(flat, tf, ownerShare(tf, 25), 'Alice Aalto'));
+    expect(pdf).toContain('summary for tax form 7H / OmaVero');
+    expect(pdf).not.toContain('Building depreciation');
+    // 800 − 120, with nothing depreciated.
+    expect(pdf).toContain('(680,00 EUR) Tj');
+  });
+
+  it('lists loan interest apart from the form, spread costs as this year’s part, and a funded financing charge as not deductible', async () => {
+    const flat: ApartmentView = {
+      ...apt,
+      settings: { ...apt.settings, propertyType: 'share' },
+      costs: [
+        { id: 'i', date: '2025-03-01', category: 'loan_interest', description: '', amount: 400, hasReceipt: true },
+        { id: 'p', date: '2025-04-01', category: 'improvement', description: '', amount: 3000, hasReceipt: true },
+        { id: 'f', date: '2025-05-01', category: 'furniture', description: '', amount: 2000, hasReceipt: true },
+        { id: 'r', date: '2025-06-01', category: 'financing_charge', description: '', amount: 90, hasReceipt: true },
+        { id: 'm', date: '2025-06-01', category: 'maintenance_charge', description: '', amount: 200, hasReceipt: true },
+      ],
+    };
+    const tf = computeTax(flat, year, today);
+    const pdf = await textOf(buildPdf(flat, tf, ownerShare(tf, 100), 'Alice Aalto'));
+
+    expect(pdf).toContain('(Declared separately \\(not on the rental form\\)) Tj');
+    expect(pdf).toContain('(Total expenses on the form) Tj');
+    // Only the maintenance charge is on the form; interest is declared apart.
+    expect(pdf).toMatch(/\(Total expenses on the form\) Tj[\s\S]*?\(200,00 EUR\) Tj/);
+    expect(pdf).toMatch(/Basic improvements, this year's part[\s\S]*?\(300,00 EUR\) Tj/);
+    expect(pdf).toMatch(/Furniture & appliances, this year's part[\s\S]*?\(500,00 EUR\) Tj/);
+    expect(pdf).toContain('(Not deductible: Financing charge \\(Rahoitusvastike\\)) Tj');
+    // 800 − 200 − 400 interest − 300 − 500 = −600.
+    expect(pdf).toContain('(-600,00 EUR) Tj');
   });
 
   it('shows a single column for a sole owner', async () => {

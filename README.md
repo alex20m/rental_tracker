@@ -43,14 +43,16 @@ sections:
 - **Rent** – tap a month to log it: paid (amount and received date are
   pre-filled), vacant, or unpaid.
 - **Costs** – the **+** button adds a cost: amount, a category chip, optional
-  description, date and receipt photo (camera or gallery).
+  description, date and receipt photo (camera or gallery). A basic improvement
+  also asks how many years to spread it over.
 - **Tax** – the figures by Finnish form category for your share (or the whole
   apartment), a checklist of anything to fix before filing — each item takes
   you to where it is fixed — and **Download declaration (.zip)**.
 
 The **menu** shows who you are signed in as, **Apartment
-settings** (owners & shares, inviting co-owners, property details,
-depreciation (poisto), delete) and sign out. The name printed on the
+settings** (owners & shares, inviting co-owners, property details — flat or
+property, how the financing charge is booked — building depreciation (poisto)
+for a property, delete) and sign out. The name printed on the
 declaration is the one given when the account was created (it is required
 there); there is nothing to fill in separately.
 
@@ -60,11 +62,26 @@ text: tap one to read it, tap anywhere else (or press Escape) to dismiss it.
 ## Tax logic (`lib/domain/tax.ts`)
 
 - Rent counts in the year it was **received** (cash basis).
-- Deductible: maintenance charge (hoitovastike), repairs, loan interest,
-  insurance, letting agent fee, owner-paid utilities, other.
-- **Not** deductible: financing charge (rahoitusvastike) — shown separately.
-- Depreciation: optional, reducing balance (default 2.5 %) on the depreciable
-  share of the whole apartment's purchase price, less depreciation already taken.
+The rules follow vero.fi's guidance on deductions from rental income. Each
+apartment is either a **housing-company flat** (osakehuoneisto, form 7H — the
+default) or a **property of one's own** (kiinteistö, form 7K).
+
+- Deducted in the year paid: maintenance and water charges, annual repairs
+  (vuosikorjaukset), insurance, letting agent fees and ads, travel, owner-paid
+  utilities, property tax, other.
+- **Financing charge** (rahoitusvastike): deductible only if the housing company
+  books it as income (a per-apartment setting, off by default). A funded charge
+  is not deductible — it adds to the acquisition cost.
+- **Basic improvement** (perusparannus): deducted in equal parts over 10 years
+  from the year paid, or over fewer (1–10, chosen per cost) if it lasts less.
+- **Furniture & appliances**: up to 1 200 €, or lasting under 3 years, deducted
+  at once; dearer items at 25 % of the remaining value a year.
+- **Loan interest** lowers the net income but is declared with the interest
+  deductions in OmaVero, not on the rental form; the PDF lists it separately.
+- **Building depreciation**: only for a property of one's own — reducing
+  balance (default 4 %, the maximum for a residential building) on the
+  building's part of the purchase price, less depreciation already taken. The
+  price of a housing-company flat is never depreciated.
 - Each owner's figures are the apartment's figures × their ownership %, rounded
   to the cent line by line.
 - Estimated tax: 30 % up to 30 000 €, 34 % above (capital income only), on your
@@ -74,8 +91,10 @@ text: tap one to read it, tap anywhere else (or press Escape) to dismiss it.
 
 - This does **not** file anything with Vero; there is no public submission API.
   Copy the figures into OmaVero or attach the PDF.
-- The rules are a simplified model. Verify categories, depreciation and rates on
-  vero.fi (or with an accountant) before filing.
+- The rules are a simplified model. Not modelled: below-market rent (for
+  example to a relative, where deductions cannot exceed the rent), partly
+  private use, and a rental from abroad. Verify categories, depreciation and
+  rates on vero.fi (or with an accountant) before filing.
 - No personal identity number is stored or needed.
 
 ## Running it
