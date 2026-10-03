@@ -8,7 +8,6 @@ import { buildChecklist } from '@/lib/domain/checklist';
 import { buildPackage, buildPdf } from '@/lib/client/declaration';
 import { download } from '@/lib/client/api';
 import { useI18n } from '@/components/I18nProvider';
-import type { MessageKey } from '@/lib/i18n';
 import type { Go, Scope } from '@/components/RentalApp';
 import ScopeToggle from '@/components/ScopeToggle';
 import { ErrorNote, Heading, Icon, Info, Money } from '@/components/ui';
@@ -110,7 +109,6 @@ export default function Tax({ apt, year, taxpayerName, scope, onScope, go }: Pro
         {f.lines.length === 0 && f.depreciation === 0 && <div className="kv dim">{t('tax.noCosts', { year })}</div>}
         {f.lines.map((l) => {
           const label = t(`cat.${l.category}.label`);
-          const hint = CATEGORIES[l.category].hint ? t(`cat.${l.category}.hint` as MessageKey) : '';
           return (
             <div className={'kv' + (l.deductible ? '' : ' faded')} key={l.category}>
               <span>
@@ -120,24 +118,28 @@ export default function Tax({ apt, year, taxpayerName, scope, onScope, go }: Pro
                     {t('common.notDeductible')}
                   </span>
                 )}
+                {CATEGORIES[l.category].treatment === 'interest' && (
+                  <span className="chip" style={{ marginLeft: 6 }}>
+                    {t('tax.separately')}
+                  </span>
+                )}
                 <Info about={label}>
-                  {t('costs.categoryInfo', { fi: l.fi })}
-                  {hint ? ` ${hint}` : ''}
+                  {t('costs.categoryInfo', { fi: l.fi })} {t(`cat.${l.category}.hint`)}
                 </Info>
               </span>
               <span className="num">{eur(l.amount)}</span>
             </div>
           );
         })}
-        {f.depreciation > 0 && (
-          <div className="kv">
+        {f.depreciationLines.map((d) => (
+          <div className="kv" key={d.kind}>
             <span>
-              {t('tax.depreciation')}
-              <Info about={t('settings.depreciationAbout')}>{t('tax.depreciationInfo')}</Info>
+              {t(`tax.depr.${d.kind}`)}
+              <Info about={t(`tax.depr.${d.kind}`)}>{t(`tax.depr.${d.kind}Info`)}</Info>
             </span>
-            <span className="num">{eur(f.depreciation)}</span>
+            <span className="num">{eur(d.amount)}</span>
           </div>
-        )}
+        ))}
         <div className="kv sum">
           <span>{t('tax.deductibleTotal')}</span>
           <span className="num">{eur(f.deductibleCosts + f.depreciation)}</span>

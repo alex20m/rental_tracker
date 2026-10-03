@@ -285,6 +285,35 @@ describe('the ledger through the API', () => {
     expect(await db.query('select date from costs')).toHaveLength(2);
   });
 
+  it('refuses to spread a cost over more than the ten years the law allows', async () => {
+    const id = await createApartment(alice);
+    signIn(alice);
+
+    const tooLong = await costs.POST(
+      req('POST', { date: '2025-02-01', category: 'improvement', description: '', amount: 10, spreadYears: 11 }),
+      ctx({ id }),
+    );
+    const fraction = await costs.POST(
+      req('POST', { date: '2025-02-01', category: 'improvement', description: '', amount: 10, spreadYears: 2.5 }),
+      ctx({ id }),
+    );
+    const ok = await costs.POST(
+      req('POST', { date: '2025-02-01', category: 'improvement', description: '', amount: 10, spreadYears: 10 }),
+      ctx({ id }),
+    );
+
+    expect([tooLong.status, fraction.status, ok.status]).toEqual([400, 400, 201]);
+  });
+
+  it('refuses a property type it does not know', async () => {
+    const id = await createApartment(alice);
+    signIn(alice);
+
+    const res = await apartment.PATCH(req('PATCH', { propertyType: 'castle' }), ctx({ id }));
+
+    expect(res.status).toBe(400);
+  });
+
   it('serves a receipt back as an image only to owners', async () => {
     const id = await createApartment(alice);
     signIn(alice);
