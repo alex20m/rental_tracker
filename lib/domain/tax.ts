@@ -82,8 +82,12 @@ export function computeTax(ledger: Ledger, year: number, today: Date = new Date(
   const thisYear = today.getFullYear();
   const lastMonth = year < thisYear ? 12 : year === thisYear ? today.getMonth() + 1 : 0;
   const logged = new Set(monthRows.map((r) => r.month));
+  // Months before the first log ever made (the apartment may have been bought
+  // mid-year) are not missing, and with no log at all there is nothing to warn about.
+  const firstLog = ledger.rents.map((r) => r.month).sort()[0];
+  const firstMonth = !firstLog || firstLog > `${y}-12` ? 13 : firstLog < `${y}-01` ? 1 : Number(firstLog.slice(5, 7));
   let unloggedMonths = 0;
-  for (let m = 1; m <= lastMonth; m++) {
+  for (let m = firstMonth; m <= lastMonth; m++) {
     if (!logged.has(`${y}-${String(m).padStart(2, '0')}`)) unloggedMonths++;
   }
 

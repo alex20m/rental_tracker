@@ -76,6 +76,36 @@ describe('one apartment for one year', () => {
   it('counts no unlogged months for a future year', () => {
     expect(computeTax(ledger, 2027, afterYearEnd).unloggedMonths).toBe(0);
   });
+
+  describe('before the first log', () => {
+    const bought = (months: string[]): Ledger => ({
+      ...ledger,
+      rents: months.map((month) => ({ month, status: 'paid', amount: 700, receivedDate: `${month}-03`, note: '' })),
+    });
+    const oct2026 = new Date('2026-10-03T12:00:00Z');
+
+    it('warns about nothing when no month has been logged at all', () => {
+      expect(computeTax(bought([]), 2026, oct2026).unloggedMonths).toBe(0);
+    });
+
+    it('does not warn about months before the first log in the same year', () => {
+      // First log October, today is October → nothing missing; not 9 (Jan–Sep).
+      expect(computeTax(bought(['2026-10']), 2026, oct2026).unloggedMonths).toBe(0);
+    });
+
+    it('warns only about gaps after the first log', () => {
+      // First log July: August and September are missing, July and October are logged.
+      expect(computeTax(bought(['2026-07', '2026-10']), 2026, oct2026).unloggedMonths).toBe(2);
+    });
+
+    it('does not warn about a year before the first log', () => {
+      expect(computeTax(bought(['2026-10']), 2025, oct2026).unloggedMonths).toBe(0);
+    });
+
+    it('counts a full year once the first log is in an earlier year', () => {
+      expect(computeTax(bought(['2025-11']), 2026, new Date('2026-03-10T12:00:00Z')).unloggedMonths).toBe(3);
+    });
+  });
 });
 
 describe("an owner's share of an apartment", () => {
