@@ -13,6 +13,7 @@ import * as shares from '@/app/api/apartments/[id]/shares/route';
 import * as owners from '@/app/api/apartments/[id]/owners/[userId]/route';
 import * as profile from '@/app/api/profile/route';
 import * as importRoute from '@/app/api/import/route';
+import { setMailerForTesting } from '@/lib/mail';
 import { testDb, type TestDb } from './support/testDb';
 
 const alice: Session = { userId: 'usr_alice', email: 'alice@example.test', emailVerified: true };
@@ -116,6 +117,50 @@ describe('an apartment someone else owns', () => {
 
     expect(theirs.status).toBe(404);
     expect(await theirs.json()).toEqual(await missing.json());
+  });
+});
+
+describe('the invite email', () => {
+  it('is sent to the invitee with the apartment name, and the response says so', async () => {
+    const sentMail: unknown[] = [];
+    setMailerForTesting(async (mail) => { sentMail.push(mail); return 'sent'; });
+    try {
+      const id = await createApartment(alice, 'Harbour Flat');
+      const res = await invites.POST(req('POST', { email: 'BOB@example.test', sharePct: 25 }), ctx({ id }));
+      expect(res.status).toBe(201);
+      expect(((await res.json()) as { emailSent: boolean }).emailSent).toBe(true);
+      expect(sentMail).toEqual([
+        { to: 'bob@example.test', inviterEmail: 'alice@example.test', apartmentName: 'Harbour Flat', sharePct: 25 },
+      ]);
+    } finally {
+      setMailerForTesting(undefined);
+    }
+  });
+
+  it('still creates the invite when sending fails, and says it was not emailed', async () => {
+    setMailerForTesting(async () => 'failed');
+    try {
+      const id = await createApartment(alice);
+      const res = await invites.POST(req('POST', { email: 'bob@example.test', sharePct: 25 }), ctx({ id }));
+      expect(res.status).toBe(201);
+      expect(((await res.json()) as { emailSent: boolean }).emailSent).toBe(false);
+      expect(await portfolioOf(bob)).toMatchObject({ apartments: [{ mySharePct: 25 }] });
+    } finally {
+      setMailerForTesting(undefined);
+    }
+  });
+
+  it('is not sent when the invite is refused', async () => {
+    const sentMail: unknown[] = [];
+    setMailerForTesting(async (mail) => { sentMail.push(mail); return 'sent'; });
+    try {
+      const id = await createApartment(alice);
+      const res = await invites.POST(req('POST', { email: 'alice@example.test', sharePct: 25 }), ctx({ id }));
+      expect(res.status).toBe(409);
+      expect(sentMail).toEqual([]);
+    } finally {
+      setMailerForTesting(undefined);
+    }
   });
 });
 

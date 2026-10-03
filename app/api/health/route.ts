@@ -24,5 +24,7 @@ export async function GET(): Promise<Response> {
     // reporting it as configured would hide a half-finished setup.
     authConfigured:
       config.authBaseUrl !== undefined && config.authCookieSecret !== undefined,
+    // Same rule: a key without a sender (or the reverse) sends nothing.
+    emailConfigured: config.resendApiKey !== undefined && config.mailFrom !== undefined,
   });
 }

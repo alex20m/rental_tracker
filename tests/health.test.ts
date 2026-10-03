@@ -25,6 +25,15 @@ describe('the health endpoint', () => {
     expect(body.databaseConfigured).toBe(true);
   });
 
+  it('reports email as configured only when both the key and the sender are set', async () => {
+    process.env.RESEND_API_KEY = 're_key';
+    delete process.env.MAIL_FROM;
+    expect((await (await GET()).json()).emailConfigured).toBe(false);
+
+    process.env.MAIL_FROM = 'Rentals <rentals@example.test>';
+    expect((await (await GET()).json()).emailConfigured).toBe(true);
+  });
+
   it('never puts a configuration value in the response', async () => {
     // The endpoint is unauthenticated by design, so it may say *whether*
     // something is set and never *what* it is.
