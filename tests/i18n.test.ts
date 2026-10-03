@@ -97,7 +97,7 @@ describe('the checklist in another language', () => {
   const apt: ApartmentView = {
     id: 'a1',
     settings: { ...defaultSettings, name: 'Flat' },
-    rents: [],
+    rents: [{ month: '2025-01', status: 'paid', amount: 700, receivedDate: '2025-01-03', note: '' }],
     costs: [],
     owners: [{ userId: 'u1', email: 'me@example.test', sharePct: 100 }],
     invites: [],
@@ -109,7 +109,7 @@ describe('the checklist in another language', () => {
     const args = { apt, tax };
     const swedish = buildChecklist(args, translator('sv'));
     expect(swedish.map((i) => i.id)).toEqual(buildChecklist(args).map((i) => i.id));
-    expect(swedish.find((i) => i.id === 'logged')!.text).toBe('12 månader är inte loggade ännu');
+    expect(swedish.find((i) => i.id === 'logged')!.text).toBe('11 månader är inte loggade ännu');
     expect(swedish.find((i) => i.id === 'price')!.text).toBe('Ange inköpspriset (för avskrivning och avkastning)');
   });
 });
