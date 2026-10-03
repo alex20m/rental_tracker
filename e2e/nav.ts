@@ -24,3 +24,12 @@ export async function openSettings(page: Page) {
   await menu.getByRole('button', { name: /Apartment settings/ }).click();
   await page.getByRole('heading', { name: 'Apartment settings' }).waitFor();
 }
+
+/** The six one-time-code boxes. */
+export const codeBoxes = (page: Page) => page.getByRole('group', { name: 'Code from the email' }).locator('input');
+
+/** Types a one-time code into the boxes from the first one, as a person typing it digit by digit would. */
+export async function fillCode(page: Page, code: string) {
+  await codeBoxes(page).first().focus();
+  for (const digit of code) await page.keyboard.press(digit);
+}

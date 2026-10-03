@@ -1,5 +1,5 @@
 import { expect, test } from './fixtures';
-import { openMenu } from './nav';
+import { codeBoxes, fillCode, openMenu } from './nav';
 
 test.describe('signing in', () => {
   test.beforeEach(({ api }) => {
@@ -44,12 +44,10 @@ test.describe('signing in', () => {
     await expect(page.getByText('We sent a code to me@example.test.')).toBeVisible();
     expect(api.sentCodes).toEqual(['me@example.test']);
 
-    await page.getByLabel('Code from the email').fill('000000');
-    await page.getByRole('button', { name: 'Verify' }).click();
+    await fillCode(page, '000000');
     await expect(page.locator('.alert[role=alert]')).toHaveText('Invalid OTP');
 
-    await page.getByLabel('Code from the email').fill('123456');
-    await page.getByRole('button', { name: 'Verify' }).click();
+    await fillCode(page, '123456');
     // Verified, but this fake keeps no session yet: back to sign in, told why.
     await expect(page.getByText('Email verified. Sign in to continue.')).toBeVisible();
     await page.getByLabel('Password').fill('correct horse');
@@ -68,8 +66,7 @@ test.describe('signing in', () => {
 
     await expect(page.getByText('Enter it to finish creating your account.')).toBeVisible();
     api.signedIn = true; // the verification signs the new account in
-    await page.getByLabel('Code from the email').fill('123456');
-    await page.getByRole('button', { name: 'Verify' }).click();
+    await fillCode(page, '123456');
     await expect(page.getByRole('heading', { name: 'Add your first apartment' })).toBeVisible();
     expect(api.callsTo('POST /api/auth/sign-up/email')[0]!.body).toMatchObject({ name: 'Me Myself', email: 'me@example.test' });
   });
@@ -142,6 +139,159 @@ test.describe('signing in', () => {
   });
 });
 
+test.describe('the one-time code boxes', () => {
+  test.beforeEach(({ api }) => {
+    api.signedIn = false;
+    api.accounts.set('me@example.test', { password: 'correct horse', verified: false, userId: 'usr_me' });
+  });
+
+  const reachVerify = async (page: import('@playwright/test').Page) => {
+    await page.goto('/sign-in');
+    await page.getByLabel('Email', { exact: true }).fill('me@example.test');
+    await page.getByLabel('Password').fill('correct horse');
+    await page.getByRole('button', { name: 'Sign in' }).click();
+    await expect(page.getByRole('heading', { name: 'Check your email' })).toBeVisible();
+  };
+  const verifyCalls = (api: import('./fakeApi').FakeApi) => api.callsTo('POST /api/auth/email-otp/verify-email');
+  const values = (boxes: ReturnType<typeof codeBoxes>) => boxes.evaluateAll((els) => els.map((el) => (el as HTMLInputElement).value));
+
+  test('sends nothing until a sixth digit arrives, then submits on its own', async ({ page, api }) => {
+    await reachVerify(page);
+
+    await codeBoxes(page).first().focus();
+    for (const digit of '12345') await page.keyboard.press(digit);
+    expect(verifyCalls(api)).toEqual([]);
+
+    await page.keyboard.press('6'); // focus already advanced to the sixth box
+    await expect.poll(() => verifyCalls(api).length).toBe(1);
+    expect(verifyCalls(api)[0]!.body).toMatchObject({ otp: '123456' });
+  });
+
+  test('clears itself and refocuses the first box after a wrong code, ready to retype', async ({ page }) => {
+    await reachVerify(page);
+    await fillCode(page, '000000');
+    await expect(page.locator('.alert[role=alert]')).toHaveText('Invalid OTP');
+
+    const boxes = codeBoxes(page);
+    await expect.poll(() => values(boxes)).toEqual(['', '', '', '', '', '']);
+    await expect(boxes.first()).toBeFocused();
+  });
+
+  test('backspacing an empty box clears and steps back to the previous one', async ({ page }) => {
+    await reachVerify(page);
+    const boxes = codeBoxes(page);
+    await codeBoxes(page).first().focus();
+    await page.keyboard.press('1');
+    await page.keyboard.press('2'); // focus now on the empty third box
+    await expect.poll(() => values(boxes)).toEqual(['1', '2', '', '', '', '']);
+
+    await page.keyboard.press('Backspace'); // empty: clears the second box, steps back
+    await expect.poll(() => values(boxes)).toEqual(['1', '', '', '', '', '']);
+    await expect(boxes.nth(1)).toBeFocused();
+
+    await page.keyboard.press('Backspace'); // empty again: clears the first, steps back
+    await expect.poll(() => values(boxes)).toEqual(['', '', '', '', '', '']);
+    await expect(boxes.first()).toBeFocused();
+
+    await page.keyboard.press('Backspace'); // nothing before the first box
+    await expect.poll(() => values(boxes)).toEqual(['', '', '', '', '', '']);
+    await expect(boxes.first()).toBeFocused();
+  });
+
+  test('deleting a filled box with backspace just clears that box', async ({ page }) => {
+    await reachVerify(page);
+    const boxes = codeBoxes(page);
+    await boxes.first().focus();
+    await page.keyboard.press('5');
+    await expect.poll(() => values(boxes)).toEqual(['5', '', '', '', '', '']);
+
+    await boxes.first().focus();
+    await page.keyboard.press('Backspace');
+    await expect.poll(() => values(boxes)).toEqual(['', '', '', '', '', '']);
+  });
+
+  test('pasting the code into any box spreads it across the rest and submits', async ({ page, api }) => {
+    await reachVerify(page);
+    const boxes = codeBoxes(page);
+    await boxes.first().focus();
+    await page.keyboard.press('1');
+    await page.keyboard.press('2'); // boxes 0-1 filled, focus on box 2
+
+    await boxes.nth(2).evaluate((el: HTMLInputElement) => {
+      const data = new DataTransfer();
+      data.setData('text/plain', '3456');
+      el.dispatchEvent(new ClipboardEvent('paste', { clipboardData: data, bubbles: true, cancelable: true }));
+    });
+
+    await expect.poll(() => values(boxes)).toEqual(['1', '2', '3', '4', '5', '6']);
+    await expect.poll(() => verifyCalls(api).length).toBe(1);
+  });
+
+  test('ignores a paste with no digits in it', async ({ page }) => {
+    await reachVerify(page);
+    const boxes = codeBoxes(page);
+    await boxes.first().evaluate((el: HTMLInputElement) => {
+      const data = new DataTransfer();
+      data.setData('text/plain', 'abc');
+      el.dispatchEvent(new ClipboardEvent('paste', { clipboardData: data, bubbles: true, cancelable: true }));
+    });
+
+    await expect.poll(() => values(boxes)).toEqual(['', '', '', '', '', '']);
+  });
+
+  test('pasting more digits than there are boxes left fills only what is left, from where typing stopped', async ({
+    page,
+    api,
+  }) => {
+    await reachVerify(page);
+    const boxes = codeBoxes(page);
+    await boxes.first().focus();
+    for (const digit of '1234') await page.keyboard.press(digit); // 2 boxes (4-5) remain
+
+    await boxes.nth(4).evaluate((el: HTMLInputElement) => {
+      const data = new DataTransfer();
+      data.setData('text/plain', '56789');
+      el.dispatchEvent(new ClipboardEvent('paste', { clipboardData: data, bubbles: true, cancelable: true }));
+    });
+
+    await expect.poll(() => values(boxes)).toEqual(['1', '2', '3', '4', '5', '6']);
+    await expect.poll(() => verifyCalls(api).length).toBe(1);
+  });
+
+  test('pasting into a box past the first empty one lands at the first empty one instead, never leaving a gap', async ({
+    page,
+  }) => {
+    await reachVerify(page);
+    const boxes = codeBoxes(page);
+    // Nothing has been typed yet, so every box is "past the first empty one"
+    // except the first itself — simulating a paste dispatched straight at a
+    // later box, bypassing the focus a real click would have redirected.
+    await boxes.nth(3).evaluate((el: HTMLInputElement) => {
+      const data = new DataTransfer();
+      data.setData('text/plain', '12');
+      el.dispatchEvent(new ClipboardEvent('paste', { clipboardData: data, bubbles: true, cancelable: true }));
+    });
+
+    await expect.poll(() => values(boxes)).toEqual(['1', '2', '', '', '', '']);
+  });
+
+  test('an OS autofill dropping the whole code into the first box fills all six and submits', async ({ page, api }) => {
+    await reachVerify(page);
+    const boxes = codeBoxes(page);
+    await boxes.first().evaluate((el: HTMLInputElement) => {
+      // Bypass the setter React itself patches, exactly as a real browser
+      // autofill does, so React's value tracker still sees this as a change
+      // and fires onChange — setting el.value directly would not.
+      const nativeSetter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype, 'value')!.set!;
+      nativeSetter.call(el, '123456');
+      el.dispatchEvent(new Event('input', { bubbles: true }));
+    });
+
+    await expect.poll(() => values(boxes)).toEqual(['1', '2', '3', '4', '5', '6']);
+    await expect.poll(() => verifyCalls(api).length).toBe(1);
+  });
+});
+
 test.describe('verifying from inside the app', () => {
   test('verifies the signed-in account from the notice on Home', async ({ page, api }) => {
     api.emailVerified = false;
@@ -154,8 +304,7 @@ test.describe('verifying from inside the app', () => {
     await expect(page.getByLabel('Email', { exact: true })).toHaveValue('me@example.test');
     await expect(page.getByLabel('Email', { exact: true })).not.toBeEditable();
     await page.getByRole('button', { name: 'Send a new code' }).click();
-    await page.getByLabel('Code from the email').fill('123456');
-    await page.getByRole('button', { name: 'Verify' }).click();
+    await fillCode(page, '123456');
 
     await expect(page.locator('button.pill')).toHaveText('Flat');
     await expect(page.getByText('to receive apartments other owners share with you.')).toHaveCount(0);

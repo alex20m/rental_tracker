@@ -229,6 +229,107 @@ export function Switch({
   );
 }
 
+const OTP_LENGTH = 6;
+const onlyDigits = (s: string) => s.replace(/\D/g, '');
+
+/**
+ * Six single-digit boxes for a one-time code. Typing a digit advances to the
+ * next box; backspace on an already-empty box clears and returns to the
+ * previous one. Pasting, or an OS autofill that drops the whole code into one
+ * box, spreads the digits across the rest from wherever it landed.
+ * `onComplete` fires the moment all six are filled, so the caller can submit
+ * without waiting for an explicit click.
+ */
+export function OtpInput({
+  value,
+  onChange,
+  onComplete,
+  label,
+  digitLabel,
+  disabled,
+}: {
+  value: string;
+  onChange: (value: string) => void;
+  onComplete: (value: string) => void;
+  label: string;
+  digitLabel: (n: number) => string;
+  disabled?: boolean;
+}) {
+  const inputs = useRef<(HTMLInputElement | null)[]>([]);
+  const digits = Array.from({ length: OTP_LENGTH }, (_, i) => value[i] ?? '');
+  const nextEmpty = digits.indexOf('');
+  // Where new input lands if it targets a box past the first empty one — the
+  // value is one string with no slots to hold a gap, so writing ahead of it
+  // would otherwise silently fold the typed or pasted digits back to the
+  // front instead of where they were dropped.
+  const firstOpen = nextEmpty === -1 ? OTP_LENGTH - 1 : nextEmpty;
+
+  // Landing on an empty code — on mount, or reset by the caller after a wrong
+  // one — starts the person on the first box rather than wherever focus was.
+  useEffect(() => {
+    if (value === '') inputs.current[0]?.focus();
+  }, [value]);
+
+  const apply = (chars: string[], focusIndex: number) => {
+    const joined = chars.join('');
+    onChange(joined);
+    inputs.current[focusIndex]?.focus();
+    if (joined.length === OTP_LENGTH) onComplete(joined);
+  };
+
+  const spread = (i: number, raw: string) => {
+    const chars = digits.slice();
+    let at = Math.min(i, firstOpen);
+    for (const ch of raw) {
+      if (at >= OTP_LENGTH) break;
+      chars[at] = ch;
+      at += 1;
+    }
+    apply(chars, Math.min(at, OTP_LENGTH - 1));
+  };
+
+  return (
+    <div className="otp" role="group" aria-label={label}>
+      {digits.map((digit, i) => (
+        <input
+          key={i}
+          ref={(el) => {
+            inputs.current[i] = el;
+          }}
+          type="text"
+          inputMode="numeric"
+          pattern="[0-9]*"
+          maxLength={i === 0 ? OTP_LENGTH : 1}
+          autoComplete={i === 0 ? 'one-time-code' : 'off'}
+          aria-label={digitLabel(i + 1)}
+          value={digit}
+          disabled={disabled}
+          onChange={(e) => {
+            const raw = onlyDigits(e.target.value);
+            if (raw.length > 1) return spread(i, raw);
+            const at = Math.min(i, firstOpen);
+            const chars = digits.slice();
+            chars[at] = raw;
+            apply(chars, raw ? Math.min(at + 1, OTP_LENGTH - 1) : at);
+          }}
+          onKeyDown={(e) => {
+            if (e.key !== 'Backspace' || digits[i] || i === 0) return;
+            e.preventDefault();
+            const chars = digits.slice();
+            chars[i - 1] = '';
+            apply(chars, i - 1);
+          }}
+          onPaste={(e) => {
+            e.preventDefault();
+            const raw = onlyDigits(e.clipboardData.getData('text'));
+            if (raw) spread(i, raw);
+          }}
+        />
+      ))}
+    </div>
+  );
+}
+
 export function ErrorNote({ message }: { message: string }) {
   if (!message) return null;
   return (
