@@ -3,6 +3,7 @@
 import { useEffect, useId, useLayoutEffect, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
 import { createPortal } from 'react-dom';
+import { useI18n } from '@/components/I18nProvider';
 import { moneyParts } from '@/lib/ui/format';
 import { placePopover, type Placement } from '@/lib/ui/popover';
 import { stepYear } from '@/lib/ui/years';
@@ -11,6 +12,7 @@ import { stepYear } from '@/lib/ui/years';
 
 /** A bottom sheet (a centred card on wide screens). Escape, the backdrop and × all close it. */
 export function Sheet({ title, children, onClose }: { title: string; children: ReactNode; onClose: () => void }) {
+  const { t } = useI18n();
   const titleId = useId();
   const panel = useRef<HTMLDivElement>(null);
   const close = useRef(onClose);
@@ -48,7 +50,7 @@ export function Sheet({ title, children, onClose }: { title: string; children: R
       >
         <div className="sheet-head">
           <h3 id={titleId}>{title}</h3>
-          <button className="iconbtn" aria-label="Close" onClick={onClose}>
+          <button className="iconbtn" aria-label={t('common.close')} onClick={onClose}>
             {Icon.close}
           </button>
         </div>
@@ -67,6 +69,7 @@ export function Sheet({ title, children, onClose }: { title: string; children: R
  * not a sheet it happens to sit in.
  */
 export function Info({ about, children }: { about?: string; children: ReactNode }) {
+  const { t } = useI18n();
   const [open, setOpen] = useState(false);
   const [pos, setPos] = useState<Placement | null>(null);
   const button = useRef<HTMLButtonElement>(null);
@@ -120,7 +123,7 @@ export function Info({ about, children }: { about?: string; children: ReactNode 
         ref={button}
         type="button"
         className="info"
-        aria-label={about ? `About ${about}` : 'More info'}
+        aria-label={about ? t('common.aboutInfo', { about }) : t('common.moreInfo')}
         aria-expanded={open}
         aria-controls={open ? id : undefined}
         onClick={() => {
@@ -159,17 +162,18 @@ export function YearStepper({
   years: number[];
   onChange: (y: number) => void;
 }) {
+  const { t } = useI18n();
   const prev = stepYear(years, year, -1);
   const next = stepYear(years, year, 1);
   return (
     <div className="stepper">
-      <button className="iconbtn" aria-label="Previous year" disabled={prev === year} onClick={() => onChange(prev)}>
+      <button className="iconbtn" aria-label={t('common.previousYear')} disabled={prev === year} onClick={() => onChange(prev)}>
         {Icon.left}
       </button>
-      <span aria-label="Tax year" aria-live="polite">
+      <span aria-label={t('common.taxYear')} aria-live="polite">
         {year}
       </span>
-      <button className="iconbtn" aria-label="Next year" disabled={next === year} onClick={() => onChange(next)}>
+      <button className="iconbtn" aria-label={t('common.nextYear')} disabled={next === year} onClick={() => onChange(next)}>
         {Icon.right}
       </button>
     </div>

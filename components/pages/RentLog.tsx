@@ -3,8 +3,9 @@
 import { useState } from 'react';
 import type { ApartmentView, RentEntry, RentStatus } from '@/lib/domain/types';
 import { api } from '@/lib/client/api';
-import { computeTax, eur, MONTHS } from '@/lib/domain/tax';
-import { monthTitle } from '@/lib/ui/format';
+import { computeTax, eur } from '@/lib/domain/tax';
+import { monthsShort, monthTitle } from '@/lib/ui/format';
+import { useI18n } from '@/components/I18nProvider';
 import { ErrorNote, Heading, Info, Money, Segmented, Sheet } from '@/components/ui';
 
 const todayIso = () => {
@@ -15,31 +16,32 @@ const todayIso = () => {
 type Props = { apt: ApartmentView; year: number; onChanged: () => Promise<void> };
 
 export default function RentLog({ apt, year, onChanged }: Props) {
+  const { t, lang } = useI18n();
   const [editing, setEditing] = useState<{ month: string; entry?: RentEntry } | null>(null);
   const now = new Date();
   const nowKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
-  const t = computeTax(apt, year);
+  const tax = computeTax(apt, year);
   const coOwned = apt.owners.length > 1 || apt.invites.length > 0;
 
   return (
     <>
       <section className="hero">
         <div className="label">
-          Rent received · {year}
-          <Info about="rent timing">
-            Rent is taxed in the year you receive it, so the received date decides which year it counts in.
-            {coOwned && ' Log the rent for the whole apartment — each owner’s share is worked out for you.'}
+          {t('rent.received', { year })}
+          <Info about={t('rent.timingAbout')}>
+            {t('rent.timingInfo')}
+            {coOwned && t('rent.coOwned')}
           </Info>
         </div>
         <div className="big">
-          <Money value={t.rentIncome} />
+          <Money value={tax.rentIncome} />
         </div>
       </section>
 
       <section>
-        <Heading>Months</Heading>
+        <Heading>{t('rent.months')}</Heading>
         <div className="months">
-          {MONTHS.map((name, i) => {
+          {monthsShort(lang).map((name, i) => {
             const month = `${year}-${String(i + 1).padStart(2, '0')}`;
             const entry = apt.rents.find((r) => r.month === month);
             const future = month > nowKey;
@@ -48,10 +50,10 @@ export default function RentLog({ apt, year, onChanged }: Props) {
               <button key={month} className={'month ' + cls} onClick={() => setEditing({ month, entry })}>
                 <span className="m">{name}</span>
                 <span className="a">
-                  {!entry && (future ? '—' : 'Add')}
+                  {!entry && (future ? '—' : t('rent.add'))}
                   {entry?.status === 'paid' && eur(entry.amount)}
-                  {entry?.status === 'vacant' && 'Vacant'}
-                  {entry?.status === 'unpaid' && 'Unpaid'}
+                  {entry?.status === 'vacant' && t('rent.vacant')}
+                  {entry?.status === 'unpaid' && t('rent.unpaid')}
                 </span>
               </button>
             );
@@ -85,6 +87,7 @@ function RentForm({
   onClose: () => void;
   onChanged: () => Promise<void>;
 }) {
+  const { t, lang } = useI18n();
   const [status, setStatus] = useState<RentStatus>(entry?.status ?? 'paid');
   const [amount, setAmount] = useState(String(entry?.amount || apt.settings.monthlyRent || ''));
   const [date, setDate] = useState(entry?.receivedDate || todayIso());
@@ -118,21 +121,21 @@ function RentForm({
   const remove = () => run(() => api.deleteRent(apt.id, month));
 
   return (
-    <Sheet title={monthTitle(month)} onClose={onClose}>
+    <Sheet title={monthTitle(month, lang)} onClose={onClose}>
       <Segmented<RentStatus>
-        label="Status"
+        label={t('rent.status')}
         value={status}
         onChange={setStatus}
         options={[
-          { value: 'paid', label: 'Paid' },
-          { value: 'vacant', label: 'Vacant' },
-          { value: 'unpaid', label: 'Unpaid' },
+          { value: 'paid', label: t('rent.paid') },
+          { value: 'vacant', label: t('rent.vacant') },
+          { value: 'unpaid', label: t('rent.unpaid') },
         ]}
       />
       {status === 'paid' && (
         <div className="cols">
           <div>
-            <label htmlFor="rent-amount">Amount received (€)</label>
+            <label htmlFor="rent-amount">{t('rent.amount')}</label>
             <input
               id="rent-amount"
               type="number"
@@ -143,37 +146,37 @@ function RentForm({
             />
           </div>
           <div>
-            <label htmlFor="rent-date">Received on</label>
+            <label htmlFor="rent-date">{t('rent.receivedOn')}</label>
             <input id="rent-date" type="date" value={date} onChange={(e) => setDate(e.target.value)} />
           </div>
         </div>
       )}
       {status === 'unpaid' && (
         <p className="msg" style={{ marginTop: 12 }}>
-          Unpaid rent isn’t counted as income until you receive it.
+          {t('rent.unpaidNote')}
         </p>
       )}
       {showNote ? (
         <>
-          <label htmlFor="rent-note">Note</label>
+          <label htmlFor="rent-note">{t('rent.note')}</label>
           <input
             id="rent-note"
             autoFocus
             value={note}
-            placeholder={status === 'vacant' ? 'e.g. between tenants' : ''}
+            placeholder={status === 'vacant' ? t('rent.notePlaceholder') : ''}
             onChange={(e) => setNote(e.target.value)}
           />
         </>
       ) : (
         <button className="link" style={{ marginTop: 14 }} onClick={() => setShowNote(true)}>
-          + Add a note
+          {t('rent.addNote')}
         </button>
       )}
       <ErrorNote message={error} />
       <div className="sheet-foot">
         {entry && (
           <button className="btn danger" onClick={remove} disabled={busy}>
-            Delete
+            {t('common.delete')}
           </button>
         )}
         <button
@@ -181,7 +184,7 @@ function RentForm({
           onClick={save}
           disabled={busy || (status === 'paid' && !(Number(amount) > 0 && date))}
         >
-          {busy ? 'Saving…' : 'Save'}
+          {busy ? t('common.saving') : t('common.save')}
         </button>
       </div>
     </Sheet>

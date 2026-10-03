@@ -7,6 +7,8 @@ import { computeTax, eur, ownerShare } from '@/lib/domain/tax';
 import { buildChecklist } from '@/lib/domain/checklist';
 import { buildPackage, buildPdf } from '@/lib/client/declaration';
 import { download } from '@/lib/client/api';
+import { useI18n } from '@/components/I18nProvider';
+import type { MessageKey } from '@/lib/i18n';
 import type { Go, Scope } from '@/components/RentalApp';
 import ScopeToggle from '@/components/ScopeToggle';
 import { ErrorNote, Heading, Icon, Info, Money } from '@/components/ui';
@@ -21,14 +23,16 @@ type Props = {
 };
 
 export default function Tax({ apt, year, taxpayerName, scope, onScope, go }: Props) {
-  const t = computeTax(apt, year);
-  const mine = ownerShare(t, apt.mySharePct);
+  const i18n = useI18n();
+  const { t } = i18n;
+  const tax = computeTax(apt, year);
+  const mine = ownerShare(tax, apt.mySharePct);
   const shared = apt.mySharePct !== 100;
-  const f = shared && scope === 'whole' ? t : mine;
+  const f = shared && scope === 'whole' ? tax : mine;
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
 
-  const checklist = buildChecklist({ apt, tax: t, taxpayerName });
+  const checklist = buildChecklist({ apt, tax, taxpayerName }, i18n);
 
   const makePackage = async () => {
     setBusy(true);
@@ -36,7 +40,7 @@ export default function Tax({ apt, year, taxpayerName, scope, onScope, go }: Pro
     try {
       download(await buildPackage(apt, year, taxpayerName), `rental-tax-${year}.zip`);
     } catch (e) {
-      setError('Could not build the package: ' + (e as Error).message);
+      setError(t('tax.packageFailed', { message: (e as Error).message }));
     }
     setBusy(false);
   };
@@ -46,31 +50,25 @@ export default function Tax({ apt, year, taxpayerName, scope, onScope, go }: Pro
       <section className="hero">
         {shared && <ScopeToggle sharePct={apt.mySharePct} scope={scope} onScope={onScope} />}
         <div className="label" style={{ marginTop: shared ? 10 : 0 }}>
-          {f.netIncome >= 0 ? 'Taxable rental income' : 'Rental loss'} · {year}
+          {f.netIncome >= 0 ? t('tax.taxable') : t('home.rentalLoss')} · {year}
           {shared && (
-            <Info about="co-ownership">
-              Each owner declares their own share. “Your share” is what goes in your declaration; “Whole apartment” is
-              for reference.
-            </Info>
+            <Info about={t('tax.coOwnedAbout')}>{t('tax.coOwnedInfo')}</Info>
           )}
         </div>
         <div className={'big ' + (f.netIncome < 0 ? 'neg' : '')}>
           <Money value={f.netIncome} />
         </div>
         <div className="label" style={{ marginTop: 4 }}>
-          Estimated tax{' '}
+          {t('tax.estimated')}{' '}
           <b className="num" style={{ margin: '0 2px', color: 'var(--text)' }}>
             {eur(f.estimatedTax)}
           </b>
-          <Info about="the tax estimate">
-            Capital income tax: 30 % up to €30 000, 34 % above. An estimate only — other capital income and deductions
-            aren’t included. The all-apartments view estimates it on everything you own together.
-          </Info>
+          <Info about={t('home.estTaxAbout')}>{t('tax.estimateInfo')}</Info>
         </div>
       </section>
 
       <section>
-        <Heading>Before you file</Heading>
+        <Heading>{t('tax.beforeFiling')}</Heading>
         <div className="card todo">
           {checklist.map((i) =>
             i.ok ? (
@@ -90,13 +88,17 @@ export default function Tax({ apt, year, taxpayerName, scope, onScope, go }: Pro
       </section>
 
       <section className="section">
-        <Heading>Income</Heading>
+        <Heading>{t('tax.income')}</Heading>
         <div className="kv">
           <span>
-            Rent received
-            <Info about="rent months">
-              {t.paidMonths} paid, {t.vacantMonths} vacant and {t.unpaidMonths} unpaid months logged for {year}. Rent
-              counts in the year it was received. On the Finnish form: Vuokratulot.
+            {t('tax.rentReceived')}
+            <Info about={t('tax.rentMonthsAbout')}>
+              {t('tax.rentMonthsInfo', {
+                paid: tax.paidMonths,
+                vacant: tax.vacantMonths,
+                unpaid: tax.unpaidMonths,
+                year,
+              })}
             </Info>
           </span>
           <span className="num">{eur(f.rentIncome)}</span>
@@ -104,21 +106,23 @@ export default function Tax({ apt, year, taxpayerName, scope, onScope, go }: Pro
       </section>
 
       <section className="section">
-        <Heading>Expenses</Heading>
-        {f.lines.length === 0 && f.depreciation === 0 && <div className="kv dim">No costs logged for {year}.</div>}
+        <Heading>{t('tax.expenses')}</Heading>
+        {f.lines.length === 0 && f.depreciation === 0 && <div className="kv dim">{t('tax.noCosts', { year })}</div>}
         {f.lines.map((l) => {
-          const hint = CATEGORIES[l.category].hint;
+          const label = t(`cat.${l.category}.label`);
+          const hint = CATEGORIES[l.category].hint ? t(`cat.${l.category}.hint` as MessageKey) : '';
           return (
             <div className={'kv' + (l.deductible ? '' : ' faded')} key={l.category}>
               <span>
-                {l.label}
+                {label}
                 {!l.deductible && (
                   <span className="chip warn" style={{ marginLeft: 6 }}>
-                    not deductible
+                    {t('common.notDeductible')}
                   </span>
                 )}
-                <Info about={l.label}>
-                  On the Finnish form: {l.fi}.{hint ? ` ${hint}` : ''}
+                <Info about={label}>
+                  {t('costs.categoryInfo', { fi: l.fi })}
+                  {hint ? ` ${hint}` : ''}
                 </Info>
               </span>
               <span className="num">{eur(l.amount)}</span>
@@ -128,16 +132,14 @@ export default function Tax({ apt, year, taxpayerName, scope, onScope, go }: Pro
         {f.depreciation > 0 && (
           <div className="kv">
             <span>
-              Depreciation
-              <Info about="depreciation">
-                Poisto — a yearly deduction on the building’s remaining cost, set in the apartment settings.
-              </Info>
+              {t('tax.depreciation')}
+              <Info about={t('settings.depreciationAbout')}>{t('tax.depreciationInfo')}</Info>
             </span>
             <span className="num">{eur(f.depreciation)}</span>
           </div>
         )}
         <div className="kv sum">
-          <span>Deductible total</span>
+          <span>{t('tax.deductibleTotal')}</span>
           <span className="num">{eur(f.deductibleCosts + f.depreciation)}</span>
         </div>
       </section>
@@ -145,26 +147,22 @@ export default function Tax({ apt, year, taxpayerName, scope, onScope, go }: Pro
       <section>
         <Heading
           info={
-            <Info about="the declaration package">
-              The zip holds a PDF laid out like the Finnish rental income form (lomake 9 / OmaVero fields) with your
-              share of every amount, a CSV ledger and all receipt photos. You file it yourself in OmaVero — this app has
-              no connection to Vero.
-            </Info>
+            <Info about={t('tax.packageAbout')}>{t('tax.packageInfo')}</Info>
           }
         >
-          Declaration
+          {t('tax.declaration')}
         </Heading>
         <ErrorNote message={error} />
         <button className="btn primary block" onClick={makePackage} disabled={busy}>
           {Icon.download}
-          {busy ? 'Building…' : `Download ${year} declaration (.zip)`}
+          {busy ? t('tax.building') : t('tax.download', { year })}
         </button>
         <button
           className="btn quiet block"
           style={{ marginTop: 8 }}
-          onClick={() => download(buildPdf(apt, t, mine, taxpayerName), `vuokratulot-ja-menot-${year}.pdf`)}
+          onClick={() => download(buildPdf(apt, tax, mine, taxpayerName), `vuokratulot-ja-menot-${year}.pdf`)}
         >
-          PDF summary only
+          {t('tax.pdfOnly')}
         </button>
       </section>
     </>

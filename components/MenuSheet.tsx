@@ -6,6 +6,8 @@ import { api } from '@/lib/client/api';
 import { authClient } from '@/lib/client/authClient';
 import { fromV1Backup } from '@/lib/domain/v1Backup';
 import type { Account } from '@/components/RentalApp';
+import { useI18n } from '@/components/I18nProvider';
+import LanguagePicker from '@/components/LanguagePicker';
 import { Avatar, ErrorNote, Icon, Info, Label, Sheet } from '@/components/ui';
 
 type Props = {
@@ -28,6 +30,7 @@ export default function MenuSheet({
   onImported,
 }: Props) {
   const router = useRouter();
+  const { t } = useI18n();
   const fileRef = useRef<HTMLInputElement>(null);
   const [name, setName] = useState(account.taxpayerName);
   const [msg, setMsg] = useState('');
@@ -39,7 +42,7 @@ export default function MenuSheet({
     try {
       await api.setProfile(name.trim());
       onAccountChanged({ ...account, taxpayerName: name.trim() });
-      setMsg('Saved.');
+      setMsg(t('menu.saved'));
     } catch (e) {
       setError((e as Error).message);
     }
@@ -48,7 +51,7 @@ export default function MenuSheet({
   const importBackup = async (file: File) => {
     setBusy(true);
     setError('');
-    setMsg('Importing…');
+    setMsg(t('menu.importing'));
     try {
       const converted = fromV1Backup(JSON.parse(await file.text()));
       const { id } = await api.importLedger(converted.payload);
@@ -62,13 +65,11 @@ export default function MenuSheet({
         setName(converted.taxpayerName);
       }
       await onImported();
-      setMsg(
-        `Imported “${converted.payload.settings.name}” as a new apartment` +
-          (failed ? `, but ${failed} receipt photo(s) could not be uploaded.` : '.'),
-      );
+      const name = converted.payload.settings.name;
+      setMsg(failed ? t('menu.importedPartial', { name, failed }) : t('menu.imported', { name }));
     } catch (e) {
       setMsg('');
-      setError('Import failed: ' + (e as Error).message);
+      setError(t('menu.importFailed', { message: (e as Error).message }));
     }
     setBusy(false);
   };
@@ -81,11 +82,11 @@ export default function MenuSheet({
   };
 
   return (
-    <Sheet title="Menu" onClose={onClose}>
+    <Sheet title={t('menu.title')} onClose={onClose}>
       <div className="row" style={{ borderBottom: 0, paddingTop: 4 }}>
         <Avatar text={account.taxpayerName || account.email} />
         <div className="main">
-          <div className="t">{account.taxpayerName || 'Signed in'}</div>
+          <div className="t">{account.taxpayerName || t('menu.signedIn')}</div>
           <div className="s">{account.email}</div>
         </div>
       </div>
@@ -94,7 +95,7 @@ export default function MenuSheet({
         <button className="row-btn" onClick={onSettings}>
           {Icon.gear}
           <div className="main">
-            <div className="t">Apartment settings</div>
+            <div className="t">{t('menu.apartmentSettings')}</div>
             <div className="s">{apartmentName}</div>
           </div>
           {Icon.right}
@@ -104,12 +105,10 @@ export default function MenuSheet({
       <Label
         htmlFor="taxpayer"
         info={
-          <Info about="your name">
-            This is the name printed on the declaration. Don’t enter a personal identity number — it isn’t needed.
-          </Info>
+          <Info about={t('menu.nameAbout')}>{t('menu.nameInfo')}</Info>
         }
       >
-        Your name on declarations
+        {t('menu.nameLabel')}
       </Label>
       <div className="cols" style={{ alignItems: 'center' }}>
         <input id="taxpayer" autoComplete="name" value={name} onChange={(e) => setName(e.target.value)} />
@@ -119,7 +118,7 @@ export default function MenuSheet({
           onClick={saveName}
           disabled={name.trim() === account.taxpayerName}
         >
-          Save name
+          {t('menu.saveName')}
         </button>
       </div>
 
@@ -132,13 +131,10 @@ export default function MenuSheet({
         >
           {Icon.upload}
           <div className="main">
-            <div className="t">Import backup</div>
+            <div className="t">{t('menu.import')}</div>
           </div>
         </button>
-        <Info about="importing a backup">
-          The first version of this app kept everything in one browser. Export a backup there (Settings → Export backup)
-          and import the .json file here to bring that apartment, its rent log, costs and receipt photos over.
-        </Info>
+        <Info about={t('menu.importAbout')}>{t('menu.importInfo')}</Info>
       </div>
       <input
         ref={fileRef}
@@ -158,10 +154,14 @@ export default function MenuSheet({
       )}
       <ErrorNote message={error} />
 
+      <div style={{ marginTop: 14 }}>
+        <LanguagePicker />
+      </div>
+
       <button className="row-btn" style={{ borderBottom: 0, color: 'var(--bad)' }} onClick={signOut}>
         {Icon.signout}
         <div className="main">
-          <div className="t">Sign out</div>
+          <div className="t">{t('menu.signOut')}</div>
         </div>
       </button>
     </Sheet>
