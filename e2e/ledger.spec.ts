@@ -221,6 +221,77 @@ test.describe('costs and receipts', () => {
     await expect(alert(page)).toHaveText('Amount must be more than zero');
   });
 
+  test('spreads a basic improvement over the years chosen, and counts only this year’s part', async ({ page, api }) => {
+    const apt = api.addApartment({ name: 'Flat' });
+    await page.goto('/');
+    await section(page, 'Costs');
+    await page.getByRole('button', { name: 'Add cost' }).click();
+    const sheet = page.getByRole('dialog', { name: 'Add cost' });
+    await sheet.getByLabel('Amount (€)').fill('3000');
+    await expect(sheet.getByLabel('Spread over (years)')).toHaveCount(0);
+    await sheet.getByRole('radio', { name: 'Basic improvement' }).click();
+    await expect(sheet.getByLabel('Spread over (years)')).toHaveValue('10');
+    await sheet.getByRole('button', { name: 'About spreading' }).click();
+    await expect(page.getByRole('note')).toContainText('equal parts over 10 years');
+    await page.keyboard.press('Escape');
+    // Eleven years is more than the law allows, so it cannot be saved.
+    await sheet.getByLabel('Spread over (years)').fill('11');
+    await expect(sheet.getByRole('button', { name: 'Save' })).toBeDisabled();
+    await sheet.getByLabel('Spread over (years)').fill('4');
+    await sheet.getByLabel('Description').fill('New kitchen');
+    await sheet.getByLabel('Date').fill(`${m(5)}-02`);
+    await sheet.getByRole('button', { name: 'Save' }).click();
+
+    await expect(page.locator('.list li')).toContainText('over 4 years');
+    // 3 000 € over four years: 750 € this year.
+    await expect(page.locator('.hero .big')).toHaveText('750,00 €');
+    expect(apt.costs[0]).toMatchObject({ category: 'improvement', amount: 3000, spreadYears: 4 });
+  });
+
+  test('depreciates dear furniture at 25 % a year unless it lasts under three years', async ({ page, api }) => {
+    const apt = api.addApartment({ name: 'Flat' });
+    await page.goto('/');
+    await section(page, 'Costs');
+    await page.getByRole('button', { name: 'Add cost' }).click();
+    const sheet = page.getByRole('dialog', { name: 'Add cost' });
+    await sheet.getByRole('radio', { name: 'Furniture & appliances' }).click();
+    const shortLived = sheet.getByRole('switch', { name: 'Lasts under 3 years — deduct at once' });
+    // Up to 1 200 € it is deducted at once anyway.
+    await sheet.getByLabel('Amount (€)').fill('1200');
+    await expect(shortLived).toHaveCount(0);
+    await sheet.getByLabel('Amount (€)').fill('2000');
+    await sheet.getByLabel('Description').fill('Sofa');
+    await sheet.getByLabel('Date').fill(`${m(3)}-02`);
+    await sheet.getByRole('button', { name: 'Save' }).click();
+
+    await expect(page.locator('.list li')).toContainText('25 % a year');
+    await expect(page.locator('.hero .big')).toHaveText('500,00 €');
+    expect(apt.costs[0]).toMatchObject({ category: 'furniture', amount: 2000, spreadYears: 10 });
+
+    await page.locator('.list li').click();
+    const edit = page.getByRole('dialog', { name: 'Edit cost' });
+    await edit.getByRole('switch', { name: 'Lasts under 3 years — deduct at once' }).click();
+    await edit.getByRole('button', { name: 'Save' }).click();
+    await expect(page.locator('.list li')).not.toContainText('25 % a year');
+    await expect(page.locator('.hero .big')).toHaveText('2 000,00 €');
+    expect(apt.costs[0]).toMatchObject({ spreadYears: 1 });
+
+    await page.locator('.list li').click();
+    await page.getByRole('dialog', { name: 'Edit cost' }).getByRole('switch', { name: 'Lasts under 3 years — deduct at once' }).click();
+    await page.getByRole('dialog', { name: 'Edit cost' }).getByRole('button', { name: 'Save' }).click();
+    await expect(page.locator('.hero .big')).toHaveText('500,00 €');
+  });
+
+  test('counts the financing charge once the housing company books it as income', async ({ page, api }) => {
+    api.addApartment({ name: 'Flat', financingChargeDeductible: true }, ledger());
+    await page.goto('/');
+    await section(page, 'Costs');
+
+    // 120 repair + 96 insurance + 80 financing charge.
+    await expect(page.locator('.hero .big')).toHaveText('296,00 €');
+    await expect(page.locator('li').filter({ hasText: 'Rahoitusvastike' })).not.toContainText('not deductible');
+  });
+
   test('names the category on the Finnish form', async ({ page, api }) => {
     api.addApartment({ name: 'Flat' });
     await page.goto('/');
@@ -228,6 +299,6 @@ test.describe('costs and receipts', () => {
     await page.getByRole('button', { name: 'Add cost' }).click();
     await page.getByRole('button', { name: 'About this category' }).click();
 
-    await expect(page.getByRole('note')).toHaveText('On the Finnish form: Hoitovastike.');
+    await expect(page.getByRole('note')).toHaveText('On the Finnish form: Hoitovastike. Deducted in the year it is paid.');
   });
 });

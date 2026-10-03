@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import type { ApartmentSettings, ApartmentView } from '@/lib/domain/types';
+import { PROPERTY_TYPES } from '@/lib/domain/types';
 import { api } from '@/lib/client/api';
 import { computeDepreciation, eur, pct } from '@/lib/domain/tax';
 import { isWholeApartment, shareTotal } from '@/lib/domain/shares';
@@ -333,6 +334,36 @@ function PropertyForm({ apt, onChanged }: { apt: ApartmentView; onChanged: () =>
           {t('settings.company')}
         </Label>
         <input id="s-company" value={s.housingCompany} onChange={text('housingCompany')} />
+        <Label
+          id="s-type"
+          info={<Info about={t('settings.propertyTypeAbout')}>{t('settings.propertyTypeInfo')}</Info>}
+        >
+          {t('settings.propertyType')}
+        </Label>
+        <div className="chips" role="radiogroup" aria-labelledby="s-type">
+          {PROPERTY_TYPES.map((k) => (
+            <button
+              key={k}
+              type="button"
+              role="radio"
+              aria-checked={s.propertyType === k}
+              className="choice"
+              onClick={() => set('propertyType', k)}
+            >
+              {t(`settings.type.${k}`)}
+            </button>
+          ))}
+        </div>
+        {s.propertyType === 'share' && (
+          <>
+            <Label info={<Info about={t('settings.financingAbout')}>{t('settings.financingInfo')}</Info>}>
+              {t('cat.financing_charge.label')}
+            </Label>
+            <Switch checked={s.financingChargeDeductible} onChange={(v) => set('financingChargeDeductible', v)}>
+              {t('settings.financingDeductible')}
+            </Switch>
+          </>
+        )}
         <div className="cols">
           <div>
             <label htmlFor="s-date">{t('settings.purchaseDate')}</label>
@@ -379,10 +410,14 @@ function PropertyForm({ apt, onChanged }: { apt: ApartmentView; onChanged: () =>
         >
           {t('settings.depreciation')}
         </Heading>
-        <Switch checked={s.useDepreciation} onChange={(v) => set('useDepreciation', v)}>
-          {t('settings.useDepreciation')}
-        </Switch>
-        {s.useDepreciation && (
+        {s.propertyType === 'share' ? (
+          <p className="msg">{t('settings.noBuildingDepreciation')}</p>
+        ) : (
+          <Switch checked={s.useDepreciation} onChange={(v) => set('useDepreciation', v)}>
+            {t('settings.useDepreciation')}
+          </Switch>
+        )}
+        {s.propertyType === 'property' && s.useDepreciation && (
           <>
             <div className="cols">
               <div>

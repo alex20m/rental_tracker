@@ -74,7 +74,7 @@ export const sv: Record<MessageKey, string> = {
   'home.deductions': 'Avdrag',
   'home.deductionsAbout': 'avdrag',
   'home.deductionsInfo':
-    'Avdragsgilla kostnader plus avskrivning. Finansieringsvederlag är inte avdragsgilla och lämnas utanför.',
+    'Avdragsgilla kostnader plus avskrivning. Kostnader som inte är avdragsgilla lämnas utanför.',
   'home.estTax': 'Beräknad skatt',
   'home.estTaxAbout': 'skatteberäkningen',
   'home.estTaxInfo':
@@ -139,7 +139,7 @@ export const sv: Record<MessageKey, string> = {
   'costs.about': 'kostnader',
   'costs.entries.one': '{n} post i år.',
   'costs.entries.other': '{n} poster i år.',
-  'costs.financingInfo': ' Finansieringsvederlag listas men räknas inte med – de är inte avdragsgilla.',
+  'costs.financingInfo': ' Grundförbättringar och dyrare möbler räknas med årets andel; finansieringsvederlag räknas bara om bostadsbolaget bokför det som intäkt.',
   'costs.coOwned': ' Logga kostnader för hela lägenheten – varje ägares andel räknas ut åt dig.',
   'costs.none': 'Inga kostnader loggade för {year}. Tryck på + för att lägga till den första.',
   'costs.add': 'Lägg till kostnad',
@@ -154,6 +154,12 @@ export const sv: Record<MessageKey, string> = {
   'costs.categoryInfo': 'På den finska blanketten: {fi}.',
   'costs.notDeductibleAbout': 'ej avdragsgill',
   'costs.description': 'Beskrivning',
+  'costs.years': 'Fördelas över (år)',
+  'costs.yearsAbout': 'fördelningen',
+  'costs.yearsInfo': 'En grundförbättring dras av i lika stora delar under 10 år från betalningsåret – eller under färre år om den håller kortare tid.',
+  'costs.shortLived': 'Håller under 3 år – dra av direkt',
+  'costs.overYears': 'under {n} år',
+  'costs.furnitureRate': '25 % per år',
   'costs.descriptionPlaceholder': 'Valfritt – t.ex. byte av köksblandare',
   'costs.date': 'Datum',
   'costs.processing': 'Bearbetar…',
@@ -161,14 +167,37 @@ export const sv: Record<MessageKey, string> = {
   'costs.addPhoto': 'Lägg till bild',
 
   'cat.maintenance_charge.label': 'Skötselvederlag',
+  'cat.maintenance_charge.hint': 'Dras av det år det betalas.',
+  'cat.water_charge.label': 'Vattenavgift',
+  'cat.water_charge.hint': 'Vattenavgifter som betalas till bostadsbolaget, dras av det år de betalas.',
   'cat.financing_charge.label': 'Finansieringsvederlag',
-  'cat.financing_charge.hint': 'Inte avdragsgill som utgift – det läggs till anskaffningsutgiften.',
+  'cat.financing_charge.hint':
+    'Avdragsgillt bara om bostadsbolaget bokför det som intäkt – ange det i lägenhetens inställningar. Ett fonderat vederlag är inte avdragsgillt: det läggs till anskaffningsutgiften.',
   'cat.repairs.label': 'Reparationer och underhåll',
+  'cat.repairs.hint':
+    'Årsreparationer som håller bostaden i samma skick dras av det år de betalas. En reparation som höjer standarden är en grundförbättring.',
+  'cat.improvement.label': 'Grundförbättring',
+  'cat.improvement.hint':
+    'Arbete som höjer standarden, t.ex. nytt kök eller inglasad balkong. Dras av i lika stora delar under 10 år från betalningsåret, eller färre om den håller kortare tid.',
+  'cat.furniture.label': 'Möbler och hushållsmaskiner',
+  'cat.furniture.hint':
+    'Högst 1 200 €, eller som håller under 3 år: dras av direkt. Dyrare: 25 % av det återstående värdet varje år. Spara en förteckning över föremålen.',
   'cat.loan_interest.label': 'Låneräntor',
+  'cat.loan_interest.hint':
+    'Ränta på lån som tagits för hyresbostaden. Den minskar din kapitalinkomst, men deklareras bland ränteavdragen, inte på blanketten för hyresinkomster.',
   'cat.insurance.label': 'Försäkringar',
+  'cat.insurance.hint': 'Försäkring för den uthyrda bostaden eller fastigheten.',
   'cat.brokerage.label': 'Förmedlingsarvode',
+  'cat.brokerage.hint': 'Arvoden till hyresförmedlare och annonser när du söker hyresgäst.',
+  'cat.travel.label': 'Resor',
+  'cat.travel.hint':
+    'Resor för att visa bostaden, träffa en hyresgäst, sköta underhåll eller delta i bolagsstämman. Skatteförvaltningen fastställer kilometersatsen varje år (0,27 € för 2025).',
   'cat.utilities.label': 'Av ägaren betalda förbrukningsavgifter',
+  'cat.utilities.hint': 'El, uppvärmning eller internet som du betalar för den uthyrda bostaden.',
+  'cat.property_tax.label': 'Fastighetsskatt',
+  'cat.property_tax.hint': 'Fastighetsskatt för en fastighet du själv äger.',
   'cat.other.label': 'Övriga avdragsgilla',
+  'cat.other.hint': 'Annan kostnad för att förvärva hyresinkomsten som inte passar i någon kategori ovan.',
 
   // — tax —
   'tax.taxable': 'Skattepliktig hyresinkomst',
@@ -186,14 +215,18 @@ export const sv: Record<MessageKey, string> = {
     '{paid} betalda, {vacant} vakanta och {unpaid} obetalda månader loggade för {year}. Hyran räknas det år den mottogs. På den finska blanketten: Vuokratulot.',
   'tax.expenses': 'Utgifter',
   'tax.noCosts': 'Inga kostnader loggade för {year}.',
-  'tax.depreciation': 'Avskrivning',
-  'tax.depreciationInfo':
-    'Poisto – ett årligt avdrag på byggnadens återstående utgift, anges i lägenhetens inställningar.',
+  'tax.depr.building': 'Avskrivning på byggnaden',
+  'tax.depr.buildingInfo': 'Poisto – årets andel av byggnadens återstående utgift, anges i lägenhetens inställningar.',
+  'tax.depr.improvements': 'Grundförbättringar, årets andel',
+  'tax.depr.improvementsInfo': 'Varje grundförbättring dras av i lika stora delar under de år den fördelas över, från betalningsåret.',
+  'tax.depr.furniture': 'Möbler och hushållsmaskiner, årets andel',
+  'tax.depr.furnitureInfo': 'Föremål över 1 200 € dras av med 25 % av det återstående värdet varje år.',
+  'tax.separately': 'deklareras separat',
   'tax.deductibleTotal': 'Avdragsgilla totalt',
   'tax.declaration': 'Deklaration',
   'tax.packageAbout': 'deklarationspaketet',
   'tax.packageInfo':
-    'Zip-filen innehåller en PDF som är upplagd som den finska blanketten för hyresinkomst (lomake 9 / OmaVero-fält) med din andel av varje belopp, en CSV-liggare och alla kvittobilder. Du lämnar in den själv i OmaVero – appen har ingen koppling till Skatteförvaltningen.',
+    'Zip-filen innehåller en PDF som är upplagd som den finska blanketten för hyresinkomst (7H för en bostadsaktie, 7K för en fastighet) med din andel av varje belopp, en CSV-liggare och alla kvittobilder. Du lämnar in den själv i OmaVero – appen har ingen koppling till Skatteförvaltningen.',
   'tax.building': 'Skapar…',
   'tax.download': 'Ladda ner deklarationen {year} (.zip)',
   'tax.pdfOnly': 'Endast PDF-sammanfattning',
@@ -249,6 +282,16 @@ export const sv: Record<MessageKey, string> = {
   'settings.company': 'Bostadsbolag',
   'settings.companyAbout': 'bostadsbolaget',
   'settings.companyInfo': 'Asunto-osakeyhtiö – bolaget som äger byggnaden.',
+  'settings.propertyType': 'Typ av bostad',
+  'settings.propertyTypeAbout': 'typen av bostad',
+  'settings.propertyTypeInfo':
+    'En bostad i ett bostadsbolag (osakehuoneisto) deklareras på blankett 7H, en egen fastighet (kiinteistö) på blankett 7K. Bara en fastighets byggnad kan skrivas av.',
+  'settings.type.share': 'Bostadsaktie',
+  'settings.type.property': 'Egen fastighet',
+  'settings.financingDeductible': 'Bostadsbolaget bokför finansieringsvederlaget som intäkt',
+  'settings.financingAbout': 'finansieringsvederlaget',
+  'settings.financingInfo':
+    'Bara då är finansieringsvederlaget avdragsgillt. Om bolaget fonderar det läggs det i stället till anskaffningsutgiften. Disponenten kan berätta vilket som gäller.',
   'settings.purchaseDate': 'Inköpsdatum',
   'settings.purchasePrice': 'Inköpspris (€)',
   'settings.purchasePriceAbout': 'inköpspriset',
@@ -256,11 +299,13 @@ export const sv: Record<MessageKey, string> = {
   'settings.monthlyRent': 'Vanlig månadshyra (€)',
   'settings.monthlyRentAbout': 'den vanliga hyran',
   'settings.monthlyRentInfo': 'Fyller i beloppet när du loggar en månad i hyresloggen.',
-  'settings.depreciation': 'Avskrivning',
+  'settings.depreciation': 'Avskrivning på byggnaden',
   'settings.depreciationAbout': 'avskrivning',
   'settings.depreciationInfo':
-    'Poisto – ett årligt avdrag för byggnadens slitage, beräknat på dess återstående utgift. 2,5 % per år är den vanliga satsen för lägenheter; kontrollera vero.fi för ditt fall.',
-  'settings.useDepreciation': 'Dra av avskrivning i deklarationen',
+    'Poisto – ett årligt avdrag för byggnadens slitage, beräknat på dess återstående utgift. Högst 4 % per år för en bostadsbyggnad och 7 % för andra byggnader. Tomten skrivs aldrig av.',
+  'settings.noBuildingDepreciation':
+    'Priset på en bostadsaktie skrivs inte av – det dras av när du säljer. Grundförbättringar och dyrare möbler fördelas över åren utifrån kostnaderna du loggar.',
+  'settings.useDepreciation': 'Dra av avskrivning på byggnaden i deklarationen',
   'settings.buildingShare': 'Byggnadens andel (%)',
   'settings.buildingShareAbout': 'den avskrivningsgrundande andelen',
   'settings.buildingShareInfo':
