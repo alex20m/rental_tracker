@@ -9,7 +9,7 @@ test.describe('signing in', () => {
   test('sends a signed-out visitor to the sign-in page', async ({ page }) => {
     await page.goto('/');
     await expect(page).toHaveURL(/\/sign-in$/);
-    await expect(page.getByRole('heading', { name: 'Welcome back' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Sign in' })).toBeVisible();
   });
 
   test('signs in with a verified account and lands on the portfolio', async ({ page, api }) => {
@@ -115,7 +115,7 @@ test.describe('signing in', () => {
     await expect(page.locator('.alert[role=alert]')).toHaveText('User already exists');
 
     await page.getByRole('button', { name: 'Have an account? Sign in' }).click();
-    await expect(page.getByRole('heading', { name: 'Welcome back' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Sign in' })).toBeVisible();
   });
 
   test("shows the auth service's own explanation when it refuses", async ({ page, api }) => {
@@ -155,7 +155,7 @@ test.describe('signing in', () => {
     await expect(page.locator('.alert[role=alert]')).toHaveText('Too many codes, wait a minute');
 
     await page.getByRole('button', { name: 'Back' }).click();
-    await expect(page.getByRole('heading', { name: 'Welcome back' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Sign in' })).toBeVisible();
   });
 });
 
@@ -243,8 +243,10 @@ test.describe('the one-time code boxes', () => {
       el.dispatchEvent(new ClipboardEvent('paste', { clipboardData: data, bubbles: true, cancelable: true }));
     });
 
-    await expect.poll(() => values(boxes)).toEqual(['1', '2', '3', '4', '5', '6']);
+    // The sixth digit submits and the fake accepts it, which unmounts the boxes,
+    // so polling their values races that: assert the code that was sent instead.
     await expect.poll(() => verifyCalls(api).length).toBe(1);
+    expect(verifyCalls(api)[0]!.body).toMatchObject({ otp: '123456' });
   });
 
   test('ignores a paste with no digits in it', async ({ page }) => {
@@ -274,8 +276,9 @@ test.describe('the one-time code boxes', () => {
       el.dispatchEvent(new ClipboardEvent('paste', { clipboardData: data, bubbles: true, cancelable: true }));
     });
 
-    await expect.poll(() => values(boxes)).toEqual(['1', '2', '3', '4', '5', '6']);
+    // Same race as above: the completed code submits and the boxes go away.
     await expect.poll(() => verifyCalls(api).length).toBe(1);
+    expect(verifyCalls(api)[0]!.body).toMatchObject({ otp: '123456' });
   });
 
   test('pasting into a box past the first empty one lands at the first empty one instead, never leaving a gap', async ({
