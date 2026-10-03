@@ -28,9 +28,6 @@ declaration package (PDF + CSV + receipts, zipped) for their own share.
   CSV stay as they are — the PDF follows the Finnish form. Strings live in
   `lib/i18n/` — English is the source, and the typecheck fails until a new
   string is translated into the other two.
-- **Moving from the first version.** That version kept everything in one
-  browser. Export a backup there, then use **Menu → Import backup** here:
-  it becomes a new apartment with its rent log, costs and receipt photos.
 
 ## Using it
 
@@ -51,7 +48,7 @@ sections:
   apartment), a checklist of anything to fix before filing — each item takes
   you to where it is fixed — and **Download declaration (.zip)**.
 
-The **menu** holds your name on declarations, **Import backup**, **Apartment
+The **menu** holds your name on declarations, **Apartment
 settings** (owners & shares, inviting co-owners, property details,
 depreciation (poisto), delete) and sign out.
 
@@ -118,7 +115,7 @@ app/                     Next.js App Router: pages and API routes
   api/auth/[...path]/    Neon Auth's endpoints, proxied
 components/              the client UI (one client app + the sign-in page)
 lib/i18n/                the English, Swedish and Finnish strings
-lib/domain/              pure logic: types, tax, shares, request schemas, backup import
+lib/domain/              pure logic: types, tax, shares, request schemas
 lib/portfolio.ts         every query; access is decided by apartment_owners in SQL
 lib/auth.ts              the auth seam — Neon Auth once configured, anonymous before
 lib/client/              browser-only: API client, PDF/zip generation

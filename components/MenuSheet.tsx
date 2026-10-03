@@ -1,10 +1,9 @@
 'use client';
 
-import { useRef, useState } from 'react';
+import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { api } from '@/lib/client/api';
 import { authClient } from '@/lib/client/authClient';
-import { fromV1Backup } from '@/lib/domain/v1Backup';
 import type { Account } from '@/components/RentalApp';
 import { useI18n } from '@/components/I18nProvider';
 import LanguagePicker from '@/components/LanguagePicker';
@@ -17,7 +16,6 @@ type Props = {
   onSettings: () => void;
   onClose: () => void;
   onAccountChanged: (a: Account) => void;
-  onImported: () => Promise<void>;
 };
 
 /** Everything about you rather than about an apartment. */
@@ -27,15 +25,12 @@ export default function MenuSheet({
   onSettings,
   onClose,
   onAccountChanged,
-  onImported,
 }: Props) {
   const router = useRouter();
   const { t } = useI18n();
-  const fileRef = useRef<HTMLInputElement>(null);
   const [name, setName] = useState(account.taxpayerName);
   const [msg, setMsg] = useState('');
   const [error, setError] = useState('');
-  const [busy, setBusy] = useState(false);
 
   const saveName = async () => {
     setError('');
@@ -46,32 +41,6 @@ export default function MenuSheet({
     } catch (e) {
       setError((e as Error).message);
     }
-  };
-
-  const importBackup = async (file: File) => {
-    setBusy(true);
-    setError('');
-    setMsg(t('menu.importing'));
-    try {
-      const converted = fromV1Backup(JSON.parse(await file.text()));
-      const { id } = await api.importLedger(converted.payload);
-      let failed = 0;
-      for (const r of converted.receipts) {
-        await api.putReceipt(id, r.costId, r.dataUrl).catch(() => failed++);
-      }
-      if (converted.taxpayerName && !account.taxpayerName) {
-        await api.setProfile(converted.taxpayerName);
-        onAccountChanged({ ...account, taxpayerName: converted.taxpayerName });
-        setName(converted.taxpayerName);
-      }
-      await onImported();
-      const name = converted.payload.settings.name;
-      setMsg(failed ? t('menu.importedPartial', { name, failed }) : t('menu.imported', { name }));
-    } catch (e) {
-      setMsg('');
-      setError(t('menu.importFailed', { message: (e as Error).message }));
-    }
-    setBusy(false);
   };
 
   const signOut = async () => {
@@ -122,31 +91,6 @@ export default function MenuSheet({
         </button>
       </div>
 
-      <div className="row" style={{ marginTop: 10 }}>
-        <button
-          className="row-btn"
-          style={{ flex: 1, padding: 0, border: 0, width: 'auto' }}
-          onClick={() => fileRef.current?.click()}
-          disabled={busy}
-        >
-          {Icon.upload}
-          <div className="main">
-            <div className="t">{t('menu.import')}</div>
-          </div>
-        </button>
-        <Info about={t('menu.importAbout')}>{t('menu.importInfo')}</Info>
-      </div>
-      <input
-        ref={fileRef}
-        type="file"
-        accept="application/json"
-        hidden
-        onChange={(e) => {
-          const f = e.target.files?.[0];
-          e.target.value = '';
-          if (f) void importBackup(f);
-        }}
-      />
       {msg && (
         <p className="msg" style={{ marginTop: 8 }}>
           {msg}

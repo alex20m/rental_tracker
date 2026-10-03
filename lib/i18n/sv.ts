@@ -43,7 +43,6 @@ export const sv: Record<MessageKey, string> = {
   // — first run —
   'welcome.title': 'Lägg till din första lägenhet',
   'welcome.lead': 'Bara ett namn för att börja – du kan fylla i resten senare.',
-  'welcome.import': 'Eller importera en säkerhetskopia från den gamla versionen',
   'add.name': 'Lägenhetens namn',
   'add.placeholder': 't.ex. Kauppakatu 12 B 7',
   'add.submit': 'Lägg till lägenhet',
@@ -58,15 +57,6 @@ export const sv: Record<MessageKey, string> = {
   'menu.nameInfo': 'Det här är namnet som skrivs ut på deklarationen. Ange inget personnummer – det behövs inte.',
   'menu.saveName': 'Spara namn',
   'menu.saved': 'Sparat.',
-  'menu.import': 'Importera säkerhetskopia',
-  'menu.importAbout': 'import av säkerhetskopia',
-  'menu.importInfo':
-    'Den första versionen av appen sparade allt i en enda webbläsare. Exportera en säkerhetskopia där (Inställningar → Exportera säkerhetskopia) och importera .json-filen här för att flytta över lägenheten, hyreslogg, kostnader och kvittobilder.',
-  'menu.importing': 'Importerar…',
-  'menu.imported': '“{name}” importerades som en ny lägenhet.',
-  'menu.importedPartial':
-    '“{name}” importerades som en ny lägenhet, men {failed} kvittobild(er) kunde inte laddas upp.',
-  'menu.importFailed': 'Importen misslyckades: {message}',
   'menu.signOut': 'Logga ut',
 
   // — notices —

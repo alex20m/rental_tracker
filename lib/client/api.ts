@@ -1,9 +1,9 @@
 'use client';
 
 /**
- * The browser's side of the API. Everything the first version kept in
- * localStorage and IndexedDB now lives on the server, behind the signed-in
- * user, so it is shared between devices and between an apartment's owners.
+ * The browser's side of the API. Everything lives on the server, behind
+ * the signed-in user, so it is shared between devices and between an
+ * apartment's owners.
  */
 
 import type {
@@ -13,7 +13,6 @@ import type {
   PortfolioItem,
   RentStatus,
 } from '@/lib/domain/types';
-import type { ImportPayload } from '@/lib/domain/v1Backup';
 
 export class ApiError extends Error {
   constructor(
@@ -80,7 +79,6 @@ export const api = {
 
   profile: () => call<{ taxpayerName: string }>('GET', '/api/profile'),
   setProfile: (taxpayerName: string) => call('PUT', '/api/profile', { taxpayerName }),
-  importLedger: (payload: ImportPayload) => call<{ id: string }>('POST', '/api/import', payload),
 };
 
 /** A receipt photo as bytes, for the declaration zip. Undefined if there is none. */

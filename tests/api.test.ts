@@ -12,7 +12,6 @@ import * as invite from '@/app/api/apartments/[id]/invites/[inviteId]/route';
 import * as shares from '@/app/api/apartments/[id]/shares/route';
 import * as owners from '@/app/api/apartments/[id]/owners/[userId]/route';
 import * as profile from '@/app/api/profile/route';
-import * as importRoute from '@/app/api/import/route';
 import { setMailerForTesting } from '@/lib/mail';
 import { testDb, type TestDb } from './support/testDb';
 
@@ -96,7 +95,6 @@ describe('every route, signed out', () => {
       owners.DELETE(req('DELETE'), p),
       profile.GET(req('GET')),
       profile.PUT(req('PUT', { taxpayerName: 'x' })),
-      importRoute.POST(req('POST', { settings: {}, rents: [], costs: [] })),
     ]);
 
     expect(responses.map((r) => r.status)).toEqual(responses.map(() => 401));
