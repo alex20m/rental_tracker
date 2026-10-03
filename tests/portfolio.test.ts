@@ -524,12 +524,17 @@ describe('deleting an account', () => {
   it('does not need the retired user_profiles table, so that table can be dropped without breaking it', async () => {
     // Simulates the schema after the migration that drops it, which runs while
     // the previous deployment is still serving: this code must already cope.
-    await db.query('drop table user_profiles');
-    await p.create(alice, flat('Mine'));
+    // (Renamed rather than dropped, so reset() still finds it for the next test.)
+    await db.query('alter table user_profiles rename to user_profiles_gone');
+    try {
+      await p.create(alice, flat('Mine'));
 
-    await expect(p.deleteAccount(alice)).resolves.toBeUndefined();
+      await expect(p.deleteAccount(alice)).resolves.toBeUndefined();
 
-    expect(await db.query('select 1 from apartments')).toEqual([]);
+      expect(await db.query('select 1 from apartments')).toEqual([]);
+    } finally {
+      await db.query('alter table user_profiles_gone rename to user_profiles');
+    }
   });
 
   it('removes the sign-in identity from the auth schema when it exists', async () => {
