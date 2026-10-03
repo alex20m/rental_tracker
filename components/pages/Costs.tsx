@@ -5,7 +5,9 @@ import type { ApartmentView, CostCategory, CostEntry } from '@/lib/domain/types'
 import { CATEGORIES, COST_CATEGORIES } from '@/lib/domain/types';
 import { api, compressImage } from '@/lib/client/api';
 import { eur } from '@/lib/domain/tax';
+import type { MessageKey } from '@/lib/i18n';
 import { shortDate } from '@/lib/ui/format';
+import { useI18n } from '@/components/I18nProvider';
 import { ErrorNote, Icon, Info, Label, Money, Sheet } from '@/components/ui';
 
 const todayIso = () => {
@@ -16,17 +18,19 @@ const todayIso = () => {
 type Props = { apt: ApartmentView; year: number; onChanged: () => Promise<void> };
 
 function Thumb({ apt, cost }: { apt: ApartmentView; cost: CostEntry }) {
+  const { t } = useI18n();
   return cost.hasReceipt ? (
     // eslint-disable-next-line @next/next/no-img-element -- a private, per-user image; not for the image optimizer
-    <img className="thumb" src={api.receiptUrl(apt.id, cost.id)} alt="Receipt" loading="lazy" />
+    <img className="thumb" src={api.receiptUrl(apt.id, cost.id)} alt={t('costs.receipt')} loading="lazy" />
   ) : (
-    <span className="thumb missing" role="img" aria-label="No receipt photo" title="No receipt photo yet">
+    <span className="thumb missing" role="img" aria-label={t('costs.noReceipt')} title={t('costs.noReceiptYet')}>
       {Icon.camera}
     </span>
   );
 }
 
 export default function Costs({ apt, year, onChanged }: Props) {
+  const { t, tn, lang } = useI18n();
   const [editing, setEditing] = useState<CostEntry | 'new' | null>(null);
   const list = apt.costs.filter((c) => c.date.startsWith(String(year))).sort((a, b) => b.date.localeCompare(a.date));
   const total = list.filter((c) => CATEGORIES[c.category].deductible).reduce((a, c) => a + c.amount, 0);
@@ -36,11 +40,11 @@ export default function Costs({ apt, year, onChanged }: Props) {
     <>
       <section className="hero">
         <div className="label">
-          Deductible costs · {year}
-          <Info about="costs">
-            {list.length} {list.length === 1 ? 'entry' : 'entries'} this year. Financing charges are listed but not
-            counted — they aren’t deductible.
-            {coOwned && ' Log costs for the whole apartment — each owner’s share is worked out for you.'}
+          {t('costs.deductible', { year })}
+          <Info about={t('costs.about')}>
+            {tn('costs.entries', list.length)}
+            {t('costs.financingInfo')}
+            {coOwned && t('costs.coOwned')}
           </Info>
         </div>
         <div className="big">
@@ -50,7 +54,7 @@ export default function Costs({ apt, year, onChanged }: Props) {
 
       <section>
         {list.length === 0 ? (
-          <div className="empty">No costs logged for {year}. Tap + to add the first one.</div>
+          <div className="empty">{t('costs.none', { year })}</div>
         ) : (
           <ul className="list">
             {list.map((c) => (
@@ -58,11 +62,13 @@ export default function Costs({ apt, year, onChanged }: Props) {
                 <button className="row-btn" onClick={() => setEditing(c)}>
                   <Thumb apt={apt} cost={c} />
                   <div className="main">
-                    <div className="t">{c.description || CATEGORIES[c.category].label}</div>
+                    <div className="t">{c.description || t(`cat.${c.category}.label`)}</div>
                     <div className="s">
-                      {shortDate(c.date)}
-                      {c.description && ` · ${CATEGORIES[c.category].label}`}{' '}
-                      {!CATEGORIES[c.category].deductible && <span className="chip warn">not deductible</span>}
+                      {shortDate(c.date, lang)}
+                      {c.description && ` · ${t(`cat.${c.category}.label`)}`}{' '}
+                      {!CATEGORIES[c.category].deductible && (
+                        <span className="chip warn">{t('common.notDeductible')}</span>
+                      )}
                     </div>
                   </div>
                   <div className={'strong num ' + (CATEGORIES[c.category].deductible ? '' : 'dim')}>
@@ -75,7 +81,7 @@ export default function Costs({ apt, year, onChanged }: Props) {
         )}
       </section>
 
-      <button className="btn primary fab" aria-label="Add cost" onClick={() => setEditing('new')}>
+      <button className="btn primary fab" aria-label={t('costs.add')} onClick={() => setEditing('new')}>
         {Icon.plus}
       </button>
       {editing && (
@@ -101,6 +107,7 @@ function CostForm({
   onClose: () => void;
   onChanged: () => Promise<void>;
 }) {
+  const { t } = useI18n();
   const [date, setDate] = useState(cost?.date ?? todayIso());
   const [category, setCategory] = useState<CostCategory>(cost?.category ?? 'maintenance_charge');
   const [description, setDescription] = useState(cost?.description ?? '');
@@ -120,7 +127,7 @@ function CostForm({
       setNewImage(await compressImage(f));
       setRemoveImage(false);
     } catch {
-      setError('Could not read that image.');
+      setError(t('common.imageUnreadable'));
     }
     setBusy(false);
   };
@@ -153,9 +160,9 @@ function CostForm({
   const cat = CATEGORIES[category];
 
   return (
-    <Sheet title={cost ? 'Edit cost' : 'Add cost'} onClose={onClose}>
+    <Sheet title={cost ? t('costs.edit') : t('costs.add')} onClose={onClose}>
       <label htmlFor="cost-amount" style={{ marginTop: 6 }}>
-        Amount (€)
+        {t('costs.amount')}
       </label>
       <input
         id="cost-amount"
@@ -169,8 +176,11 @@ function CostForm({
         onChange={(e) => setAmount(e.target.value)}
       />
 
-      <Label id="cost-category" info={<Info about="this category">On the Finnish form: {cat.fi}.</Info>}>
-        Category
+      <Label
+        id="cost-category"
+        info={<Info about={t('costs.categoryAbout')}>{t('costs.categoryInfo', { fi: cat.fi })}</Info>}
+      >
+        {t('costs.category')}
       </Label>
       <div className="chips" role="radiogroup" aria-labelledby="cost-category">
         {COST_CATEGORIES.map((k) => (
@@ -182,32 +192,32 @@ function CostForm({
             className="choice"
             onClick={() => setCategory(k)}
           >
-            {CATEGORIES[k].label}
+            {t(`cat.${k}.label`)}
           </button>
         ))}
       </div>
       {!cat.deductible && (
         <div style={{ marginTop: 8 }}>
-          <span className="chip warn">Not deductible</span>
-          <Info about="not deductible">{cat.hint}</Info>
+          <span className="chip warn">{t('common.notDeductibleCap')}</span>
+          <Info about={t('costs.notDeductibleAbout')}>{t(`cat.${category}.hint` as MessageKey)}</Info>
         </div>
       )}
 
-      <label htmlFor="cost-description">Description</label>
+      <label htmlFor="cost-description">{t('costs.description')}</label>
       <input
         id="cost-description"
         value={description}
-        placeholder="Optional — e.g. Kitchen tap replacement"
+        placeholder={t('costs.descriptionPlaceholder')}
         onChange={(e) => setDescription(e.target.value)}
       />
 
       <div className="cols">
         <div>
-          <label htmlFor="cost-date">Date</label>
+          <label htmlFor="cost-date">{t('costs.date')}</label>
           <input id="cost-date" type="date" value={date} onChange={(e) => setDate(e.target.value)} />
         </div>
         <div>
-          <label htmlFor="cost-receipt">Receipt</label>
+          <label htmlFor="cost-receipt">{t('costs.receipt')}</label>
           <input
             ref={fileRef}
             type="file"
@@ -224,14 +234,14 @@ function CostForm({
             disabled={busy}
           >
             {Icon.camera}
-            {busy ? 'Processing…' : preview ? 'Replace photo' : 'Add photo'}
+            {busy ? t('costs.processing') : preview ? t('costs.replacePhoto') : t('costs.addPhoto')}
           </button>
         </div>
       </div>
       {preview && (
         <div className="receipt-box" style={{ marginTop: 12 }}>
           {/* eslint-disable-next-line @next/next/no-img-element -- a data URL or a private, per-user image */}
-          <img className="receipt-img" src={preview} alt="Receipt preview" />
+          <img className="receipt-img" src={preview} alt={t('costs.receiptPreview')} />
           <div className="receipt-tools">
             <button
               className="btn danger"
@@ -240,7 +250,7 @@ function CostForm({
                 setRemoveImage(true);
               }}
             >
-              Remove
+              {t('common.remove')}
             </button>
           </div>
         </div>
@@ -250,11 +260,11 @@ function CostForm({
       <div className="sheet-foot">
         {cost && (
           <button className="btn danger" onClick={remove} disabled={busy}>
-            Delete
+            {t('common.delete')}
           </button>
         )}
         <button className="btn primary" onClick={save} disabled={!(Number(amount) > 0 && date) || busy}>
-          Save
+          {t('common.save')}
         </button>
       </div>
     </Sheet>

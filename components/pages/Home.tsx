@@ -2,9 +2,10 @@
 
 import type { ApartmentView } from '@/lib/domain/types';
 import { CATEGORIES } from '@/lib/domain/types';
-import { computeTax, eur, MONTHS, ownerShare } from '@/lib/domain/tax';
+import { computeTax, eur, ownerShare } from '@/lib/domain/tax';
 import { buildChecklist } from '@/lib/domain/checklist';
-import { eurWhole, monthTitle, shortDate } from '@/lib/ui/format';
+import { eurWhole, monthsShort, monthTitle, shortDate } from '@/lib/ui/format';
+import { useI18n } from '@/components/I18nProvider';
 import type { Account, Go, Scope } from '@/components/RentalApp';
 import ScopeToggle from '@/components/ScopeToggle';
 import { VerifyNotice } from '@/components/Notices';
@@ -13,13 +14,15 @@ import { Heading, Icon, Info, Money } from '@/components/ui';
 type Props = { apt: ApartmentView; year: number; account: Account; scope: Scope; onScope: (s: Scope) => void; go: Go };
 
 export default function Home({ apt, year, account, scope, onScope, go }: Props) {
-  const t = computeTax(apt, year);
-  const mine = ownerShare(t, apt.mySharePct);
+  const i18n = useI18n();
+  const { t, lang } = i18n;
+  const tax = computeTax(apt, year);
+  const mine = ownerShare(tax, apt.mySharePct);
   const shared = apt.mySharePct !== 100;
-  const f = shared && scope === 'whole' ? t : mine;
+  const f = shared && scope === 'whole' ? tax : mine;
   const y = String(year);
 
-  const todo = buildChecklist({ apt, tax: t, taxpayerName: account.taxpayerName }).filter((i) => !i.ok);
+  const todo = buildChecklist({ apt, tax, taxpayerName: account.taxpayerName }, i18n).filter((i) => !i.ok);
   const hasData = apt.rents.some((r) => r.month.startsWith(y)) || apt.costs.some((c) => c.date.startsWith(y));
 
   const rentByMonth = Array(12).fill(0) as number[];
@@ -36,18 +39,20 @@ export default function Home({ apt, year, account, scope, onScope, go }: Props) 
   const now = new Date();
   const currentMonth = now.getFullYear() === year ? now.getMonth() : -1;
 
-  const loggedMonths = t.paidMonths + t.vacantMonths + t.unpaidMonths;
-  const occupancy = loggedMonths ? Math.round((t.paidMonths / loggedMonths) * 100) : null;
+  const loggedMonths = tax.paidMonths + tax.vacantMonths + tax.unpaidMonths;
+  const occupancy = loggedMonths ? Math.round((tax.paidMonths / loggedMonths) * 100) : null;
   const price = apt.settings.purchasePrice;
-  const grossYield = price > 0 ? (t.rentIncome / price) * 100 : null;
-  const netYield = price > 0 ? ((t.rentIncome - t.deductibleCosts) / price) * 100 : null;
+  const grossYield = price > 0 ? (tax.rentIncome / price) * 100 : null;
+  const netYield = price > 0 ? ((tax.rentIncome - tax.deductibleCosts) / price) * 100 : null;
 
   const recent = [
     ...apt.rents.map((r) => ({
       key: 'r' + r.month,
       to: 'rent' as const,
       date: r.receivedDate || r.month + '-01',
-      title: `${r.status === 'paid' ? 'Rent' : r.status === 'vacant' ? 'Vacant' : 'Unpaid'} ${monthTitle(r.month)}`,
+      title: t(r.status === 'paid' ? 'home.recentRent' : r.status === 'vacant' ? 'home.recentVacant' : 'home.recentUnpaid', {
+        month: monthTitle(r.month, lang),
+      }),
       amt: r.amount,
       // Vacant and unpaid months bring in nothing: show a dash, not "+0,00 €".
       sign: r.status === 'paid' ? 1 : 0,
@@ -56,7 +61,7 @@ export default function Home({ apt, year, account, scope, onScope, go }: Props) 
       key: 'c' + c.id,
       to: 'costs' as const,
       date: c.date,
-      title: c.description || CATEGORIES[c.category].label,
+      title: c.description || t(`cat.${c.category}.label`),
       amt: c.amount,
       sign: -1,
     })),
@@ -71,10 +76,8 @@ export default function Home({ apt, year, account, scope, onScope, go }: Props) 
       <section className="hero">
         {shared && <ScopeToggle sharePct={apt.mySharePct} scope={scope} onScope={onScope} />}
         <div className="label" style={{ marginTop: shared ? 10 : 0 }}>
-          {f.netIncome < 0 ? 'Rental loss' : 'Net rental income'} · {year}
-          <Info about="net income">
-            Rent received, minus deductible costs and depreciation — the amount you are taxed on.
-          </Info>
+          {f.netIncome < 0 ? t('home.rentalLoss') : t('home.netIncome')} · {year}
+          <Info about={t('home.netAbout')}>{t('home.netInfo')}</Info>
         </div>
         <div className={'big ' + (f.netIncome < 0 ? 'neg' : '')} data-testid="net-income">
           <Money value={f.netIncome} />
@@ -82,24 +85,21 @@ export default function Home({ apt, year, account, scope, onScope, go }: Props) 
         <div className="stats">
           <div className="stat">
             <div className="v">{eurWhole(f.rentIncome)}</div>
-            <div className="l">Rent</div>
+            <div className="l">{t('common.rent')}</div>
           </div>
           <div className="stat">
             <div className="v">{eurWhole(f.deductibleCosts + f.depreciation)}</div>
             <div className="l">
-              Deductions
-              <Info about="deductions">
-                Deductible costs plus depreciation. Financing charges aren’t deductible and are left out.
-              </Info>
+              {t('home.deductions')}
+              <Info about={t('home.deductionsAbout')}>{t('home.deductionsInfo')}</Info>
             </div>
           </div>
           <div className="stat">
             <div className="v">{eurWhole(f.estimatedTax)}</div>
             <div className="l">
-              Est. tax
-              <Info about="the tax estimate">
-                30 % up to €30 000 of capital income, 34 % above{shared && scope === 'mine' ? ', on your share' : ''}. A
-                rough estimate — other capital income isn’t included.
+              {t('home.estTax')}
+              <Info about={t('home.estTaxAbout')}>
+                {t('home.estTaxInfo', { onYourShare: shared && scope === 'mine' ? t('home.onYourShare') : '' })}
               </Info>
             </div>
           </div>
@@ -108,7 +108,7 @@ export default function Home({ apt, year, account, scope, onScope, go }: Props) 
 
       {todo.length > 0 ? (
         <section>
-          <Heading>To do</Heading>
+          <Heading>{t('home.todo')}</Heading>
           <div className="card todo">
             {todo.map((i) => (
               <button key={i.id} className="row-btn" onClick={() => go(i.to)}>
@@ -122,30 +122,34 @@ export default function Home({ apt, year, account, scope, onScope, go }: Props) 
       ) : (
         hasData && (
           <div className="allset">
-            {Icon.check} Ready for the {year} declaration
+            {Icon.check} {t('home.allSet', { year })}
           </div>
         )
       )}
 
       <section>
-        <Heading>Rent and costs by month</Heading>
+        <Heading>{t('home.byMonth')}</Heading>
         <div
           className="bars"
           role="img"
-          aria-label={`Rent received ${eur(rentByMonth.reduce((a, b) => a + b, 0))} and costs ${eur(costByMonth.reduce((a, b) => a + b, 0))} in ${year}, by month`}
+          aria-label={t('home.chartLabel', {
+            rent: eur(rentByMonth.reduce((a, b) => a + b, 0)),
+            costs: eur(costByMonth.reduce((a, b) => a + b, 0)),
+            year,
+          })}
         >
-          {MONTHS.map((m, i) => (
+          {monthsShort(lang).map((m, i) => (
             <div className={'col' + (i === currentMonth ? ' now' : '')} key={m}>
               <div className="pair">
                 <div
                   className="bar"
                   style={{ height: `${(rentByMonth[i]! / max) * 100}%` }}
-                  title={`${m} rent ${eur(rentByMonth[i]!)}`}
+                  title={t('home.barRent', { month: m, amount: eur(rentByMonth[i]!) })}
                 />
                 <div
                   className="bar cost"
                   style={{ height: `${(costByMonth[i]! / max) * 100}%` }}
-                  title={`${m} costs ${eur(costByMonth[i]!)}`}
+                  title={t('home.barCosts', { month: m, amount: eur(costByMonth[i]!) })}
                 />
               </div>
               <div className="lbl">{m[0]}</div>
@@ -155,11 +159,11 @@ export default function Home({ apt, year, account, scope, onScope, go }: Props) 
         <div className="legend">
           <span>
             <i />
-            Rent
+            {t('common.rent')}
           </span>
           <span>
             <i className="cost" />
-            Costs
+            {t('common.costs')}
           </span>
         </div>
       </section>
@@ -168,33 +172,37 @@ export default function Home({ apt, year, account, scope, onScope, go }: Props) 
         <div className="stat">
           <div className="v">{occupancy === null ? '—' : occupancy + ' %'}</div>
           <div className="l">
-            Occupancy
-            <Info about="occupancy">
-              The share of logged months you received rent: {t.paidMonths} paid, {t.vacantMonths} vacant
-              {t.unpaidMonths ? `, ${t.unpaidMonths} unpaid` : ''}.
+            {t('home.occupancy')}
+            <Info about={t('home.occupancyAbout')}>
+              {t('home.occupancyInfo', {
+                paid: tax.paidMonths,
+                vacant: tax.vacantMonths,
+                unpaid: tax.unpaidMonths ? t('home.occupancyUnpaid', { n: tax.unpaidMonths }) : '',
+              })}
             </Info>
           </div>
         </div>
         <div className="stat">
           <div className="v">{grossYield === null ? '—' : grossYield.toFixed(1) + ' %'}</div>
           <div className="l">
-            Yield
-            <Info about="yield">
-              Gross yield is the rent received divided by the purchase price
-              {netYield !== null ? `; after deductible costs it is ${netYield.toFixed(1)} %` : ''}.
-              {price <= 0 ? ' Add the purchase price in the apartment settings to see it.' : ''}
+            {t('home.yield')}
+            <Info about={t('home.yieldAbout')}>
+              {t('home.yieldInfo', {
+                net: netYield !== null ? t('home.yieldNet', { n: netYield.toFixed(1) }) : '',
+                addPrice: price <= 0 ? t('home.yieldAddPrice') : '',
+              })}
             </Info>
           </div>
         </div>
       </section>
 
       <section>
-        <Heading>Recent</Heading>
+        <Heading>{t('home.recent')}</Heading>
         {recent.length === 0 ? (
           <div className="empty">
-            Nothing logged yet.
+            {t('home.nothingYet')}
             <button className="btn primary" onClick={() => go('rent')}>
-              Log the first rent
+              {t('home.logFirstRent')}
             </button>
           </div>
         ) : (
@@ -204,7 +212,7 @@ export default function Home({ apt, year, account, scope, onScope, go }: Props) 
                 <button className="row-btn" onClick={() => go(r.to)}>
                   <div className="main">
                     <div className="t">{r.title}</div>
-                    <div className="s">{shortDate(r.date)}</div>
+                    <div className="s">{shortDate(r.date, lang)}</div>
                   </div>
                   {r.sign === 0 ? (
                     <div className="dim">—</div>
@@ -222,7 +230,7 @@ export default function Home({ apt, year, account, scope, onScope, go }: Props) 
       </section>
 
       <button className="btn quiet block" onClick={() => go('tax')}>
-        Prepare the {year} declaration
+        {t('home.prepare', { year })}
       </button>
     </>
   );
