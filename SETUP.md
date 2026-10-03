@@ -60,9 +60,12 @@ written against: `vercel@62.2.0`, `neonctl@7.0.6`.
 ```bash
 npm ci
 npm run lint && npm run typecheck && npm test && npm run build
+npx playwright install --with-deps chromium
+npm run test:e2e                              # fails below 100 % UI coverage
 ```
 
-All four pass before any service exists — the tests use an in-process Postgres.
+All of these pass before any service exists — the unit tests use an in-process
+Postgres and the end-to-end tests fake the API in the browser.
 
 ## 2. The hosting project
 

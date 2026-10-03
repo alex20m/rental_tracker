@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
+import { isAuthError } from '@neondatabase/auth/next';
 import { authClient } from '@/lib/client/authClient';
 import { useI18n } from '@/components/I18nProvider';
 import LanguagePicker from '@/components/LanguagePicker';
@@ -9,9 +10,14 @@ import { ErrorNote, Icon } from '@/components/ui';
 
 type Mode = 'sign-in' | 'sign-up' | 'verify';
 
-type AuthResult = { data?: unknown; error?: { message?: string; status?: number; code?: string } | null };
-
-const messageOf = (r: AuthResult, fallback: string) => r.error?.message || fallback;
+/**
+ * Neon's client does not hand back Better Auth's `{ data, error }` on failure:
+ * its fetch wrapper throws a normalised AuthError instead, with its own codes —
+ * Better Auth's EMAIL_NOT_VERIFIED arrives as `email_not_confirmed`. (Read from
+ * @neondatabase/auth@0.5.0-beta's adapter; a check on `result.error` never
+ * fires.) So every failure is handled as an exception, in `step`.
+ */
+const isUnverified = (e: unknown) => isAuthError(e) && e.code === 'email_not_confirmed';
 
 /**
  * Email + password accounts through Neon Auth. Email ownership is proved with a
@@ -42,14 +48,13 @@ export default function SignIn() {
     try {
       await fn();
     } catch (e) {
-      setError((e as Error).message || t('auth.errGeneric'));
+      setError((e as Error).message);
     }
     setBusy(false);
   };
 
   const sendCode = async () => {
-    const r = (await auth.emailOtp.sendVerificationOtp({ email: email.trim(), type: 'email-verification' })) as AuthResult;
-    if (r.error) throw new Error(messageOf(r, t('auth.errSend')));
+    await auth.emailOtp.sendVerificationOtp({ email: email.trim(), type: 'email-verification' });
     setInfo(t('auth.codeSent', { email: email.trim() }));
   };
 
@@ -60,23 +65,20 @@ export default function SignIn() {
 
   const signIn = () =>
     step(async () => {
-      const r = (await auth.signIn.email({ email: email.trim(), password })) as AuthResult;
-      if (r.error?.code === 'EMAIL_NOT_VERIFIED' || r.error?.status === 403) {
+      try {
+        await auth.signIn.email({ email: email.trim(), password });
+      } catch (e) {
+        if (!isUnverified(e)) throw e;
         setMode('verify');
-        await sendCode();
-        return;
+        return sendCode();
       }
-      if (r.error) throw new Error(messageOf(r, t('auth.errSignIn')));
       enter();
     });
 
   const signUp = () =>
     step(async () => {
-      const r = (await auth.signUp.email({ name: name.trim() || email.trim(), email: email.trim(), password })) as AuthResult & {
-        data?: { token?: string | null } | null;
-      };
-      if (r.error) throw new Error(messageOf(r, t('auth.errSignUp')));
-      if (r.data?.token) return enter();
+      const { data } = await auth.signUp.email({ name: name.trim() || email.trim(), email: email.trim(), password });
+      if (data?.token) return enter();
       // Verification required before the first sign-in; the code is sent on sign-up.
       setMode('verify');
       setInfo(t('auth.codeSentSignUp', { email: email.trim() }));
@@ -84,9 +86,8 @@ export default function SignIn() {
 
   const verify = () =>
     step(async () => {
-      const r = (await auth.emailOtp.verifyEmail({ email: email.trim(), otp: code.trim() })) as AuthResult;
-      if (r.error) throw new Error(messageOf(r, t('auth.errCode')));
-      const session = (await auth.getSession()) as AuthResult & { data?: { user?: unknown } | null };
+      await auth.emailOtp.verifyEmail({ email: email.trim(), otp: code.trim() });
+      const session = await auth.getSession();
       if (session.data?.user) return enter();
       setMode('sign-in');
       setInfo(t('auth.verified'));

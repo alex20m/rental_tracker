@@ -97,7 +97,7 @@ describe('the checks', () => {
     }
   });
 
-  it('lint, typecheck, test and build in both workflows', () => {
+  it('lint, typecheck, test, build and run the end-to-end suite in both workflows', () => {
     // A pull request and the merge of that same pull request are held to
     // identical checks.
     for (const [file, workflow] of Object.entries(workflows)) {
@@ -106,15 +106,30 @@ describe('the checks', () => {
       expect(commands, `${file} must typecheck`).toContain('npm run typecheck');
       expect(commands, `${file} must test`).toContain('npm test');
       expect(commands, `${file} must build`).toContain('npm run build');
+      // The Playwright suite, whose teardown fails the run below 100 % UI coverage.
+      expect(commands, `${file} must run the end-to-end suite`).toContain('npm run test:e2e');
+      expect(commands, `${file} must install the browser it runs in`).toMatch(/npx playwright install --with-deps chromium/);
     }
+  });
+
+  it('keeps the coverage gate on the end-to-end suite', () => {
+    // The 100 % rule lives in the suite's global teardown; a config that
+    // dropped it would leave a green suite that enforces nothing.
+    const config = read('playwright.config.ts');
+    const pkg = JSON.parse(read('package.json')) as { scripts: Record<string, string> };
+
+    expect(config).toMatch(/globalTeardown:\s*'\.\/e2e\/globalTeardown\.ts'/);
+    expect(read('e2e/globalTeardown.ts')).toContain('shortfalls(');
+    expect(config).toMatch(/retries:\s*0/);
+    expect(pkg.scripts['test:e2e']).toMatch(/E2E_COVERAGE=1 next build && playwright test$/);
   });
 
   it('report every failing check in one run instead of stopping at the first', () => {
     for (const [file, workflow] of Object.entries(workflows)) {
       const checks = (workflow.jobs.verify?.steps ?? []).filter((step) =>
-        /npm (?:test|run (?:lint|typecheck|build))/.test(step.run ?? ''),
+        /npm (?:test|run (?:lint|typecheck|build|test:e2e))/.test(step.run ?? ''),
       );
-      expect(checks.length, `${file} must run four checks`).toBeGreaterThanOrEqual(4);
+      expect(checks.length, `${file} must run five checks`).toBeGreaterThanOrEqual(5);
       for (const step of checks) {
         expect(step.if, `${file}: "${step.name}" must run after an earlier failure`).toBe(
           '${{ !cancelled() }}',

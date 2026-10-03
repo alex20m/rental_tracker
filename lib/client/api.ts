@@ -38,6 +38,11 @@ async function call<T>(method: string, path: string, body?: unknown): Promise<T>
     throw new ApiError('Could not reach the server. Check your connection and try again.', 0);
   }
   const data = (await res.json().catch(() => ({}))) as { error?: string };
+  // A session that ended while the app was open: every screen's answer is the
+  // same. A full navigation, not a router push, so nothing of the signed-out
+  // account's state survives in memory.
+  // eslint-disable-next-line @next/next/no-location-assign-relative-destination
+  if (res.status === 401) window.location.assign('/sign-in');
   if (!res.ok) throw new ApiError(data.error ?? `Request failed (${res.status})`, res.status);
   return data as T;
 }
@@ -85,31 +90,23 @@ export async function fetchReceipt(
 ): Promise<{ data: ArrayBuffer; extension: string } | undefined> {
   const res = await fetch(api.receiptUrl(id, costId), { credentials: 'same-origin', cache: 'no-store' });
   if (!res.ok) return undefined;
-  const type = res.headers.get('content-type') ?? '';
+  const type = res.headers.get('content-type')!;
   const extension = type.includes('png') ? 'png' : type.includes('webp') ? 'webp' : 'jpg';
   return { data: await res.arrayBuffer(), extension };
 }
 
-/** Shrink a photo to max 1400px JPEG so receipts stay small to upload and store. */
-export function compressImage(file: File, maxSize = 1400, quality = 0.72): Promise<string> {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onerror = () => reject(reader.error);
-    reader.onload = () => {
-      const img = new Image();
-      img.onerror = () => reject(new Error('Could not read image'));
-      img.onload = () => {
-        const scale = Math.min(1, maxSize / Math.max(img.width, img.height));
-        const c = document.createElement('canvas');
-        c.width = Math.round(img.width * scale);
-        c.height = Math.round(img.height * scale);
-        c.getContext('2d')!.drawImage(img, 0, 0, c.width, c.height);
-        resolve(c.toDataURL('image/jpeg', quality));
-      };
-      img.src = reader.result as string;
-    };
-    reader.readAsDataURL(file);
-  });
+/**
+ * Shrink a photo to max 1400px JPEG so receipts stay small to upload and store.
+ * Rejects when the file is not an image the browser can decode.
+ */
+export async function compressImage(file: File, maxSize = 1400, quality = 0.72): Promise<string> {
+  const img = await createImageBitmap(file);
+  const scale = Math.min(1, maxSize / Math.max(img.width, img.height));
+  const c = document.createElement('canvas');
+  c.width = Math.round(img.width * scale);
+  c.height = Math.round(img.height * scale);
+  c.getContext('2d')!.drawImage(img, 0, 0, c.width, c.height);
+  return c.toDataURL('image/jpeg', quality);
 }
 
 export function download(blob: Blob, filename: string) {

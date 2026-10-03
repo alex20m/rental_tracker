@@ -95,10 +95,20 @@ The full check set, exactly what CI runs:
 
 ```bash
 npm run lint && npm run typecheck && npm test && npm run build
+npx playwright install chromium   # once
+npm run test:e2e
 ```
 
-The tests run against a real Postgres in process (PGlite) with the real
-migrations applied, so they need no database or credentials.
+`npm test` runs against a real Postgres in process (PGlite) with the real
+migrations applied, so it needs no database or credentials.
+
+`npm run test:e2e` builds the app with source maps and drives it in Chromium
+with Playwright, the API answered by an in-memory fake (`e2e/fakeApi.ts`). It
+**fails unless every module that runs in the browser is 100 % covered** —
+statements, branches, functions and lines; the report is in
+`coverage-e2e/index.html`, and the failure names the lines and branches still
+missing. Where Chromium is pre-installed elsewhere, point
+`PLAYWRIGHT_CHROMIUM_EXECUTABLE` at it.
 
 ## The shape
 
@@ -114,5 +124,6 @@ lib/auth.ts              the auth seam — Neon Auth once configured, anonymous 
 lib/client/              browser-only: API client, PDF/zip generation
 db/migrations/           numbered .sql files, applied during the deploy's build
 tests/                   behaviour, against PGlite; plus the pipeline's own shape
+e2e/                     Playwright: the UI in a real browser, gated at 100 % coverage
 AGENTS.md, .claude/      the workflow rules and skills agents follow here
 ```

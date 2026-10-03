@@ -63,3 +63,13 @@ jobs:
       - name: Build
         if: ${{ !cancelled() }}
         run: npm run build
+
+      # The UI in a real browser. Its teardown fails the run unless every
+      # module that runs in the browser is 100 % covered (e2e/coverage.ts).
+      - name: Install the end-to-end browser
+        if: ${{ !cancelled() }}
+        run: npx playwright install --with-deps chromium
+
+      - name: End-to-end UI tests (100 % coverage)
+        if: ${{ !cancelled() }}
+        run: npm run test:e2e

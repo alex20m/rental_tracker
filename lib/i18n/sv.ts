@@ -11,7 +11,6 @@ export const sv: Record<MessageKey, string> = {
   'common.cancel': 'Avbryt',
   'common.remove': 'Ta bort',
   'common.loading': 'Laddar',
-  'common.moreInfo': 'Mer information',
   'common.aboutInfo': 'Om {about}',
   'common.rent': 'Hyra',
   'common.costs': 'Kostnader',

@@ -1,7 +1,6 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { useRouter } from 'next/navigation';
 import { api, ApiError } from '@/lib/client/api';
 import { pct } from '@/lib/domain/tax';
 import type { ApartmentView, PortfolioItem } from '@/lib/domain/types';
@@ -32,10 +31,9 @@ const SECTIONS = [
 
 const SELECTED_KEY = 'rental-tracker:selected-apartment';
 
-function rememberSelected(id: string | null) {
+function rememberSelected(id: string) {
   try {
-    if (id) localStorage.setItem(SELECTED_KEY, id);
-    else localStorage.removeItem(SELECTED_KEY);
+    localStorage.setItem(SELECTED_KEY, id);
   } catch {
     /* storage unavailable — only a convenience */
   }
@@ -71,7 +69,6 @@ export type Account = { userId: string; email: string; emailVerified: boolean; t
 type SheetName = 'switch' | 'menu' | null;
 
 export default function RentalApp() {
-  const router = useRouter();
   const { t } = useI18n();
   const thisYear = new Date().getFullYear();
 
@@ -86,13 +83,8 @@ export default function RentalApp() {
   const [adding, setAdding] = useState(false);
   const [error, setError] = useState('');
 
-  const fail = useCallback(
-    (e: unknown) => {
-      if (e instanceof ApiError && e.status === 401) router.replace('/sign-in');
-      else setError(e instanceof Error ? e.message : String(e));
-    },
-    [router],
-  );
+  // A 401 has already sent the browser to /sign-in (lib/client/api.ts).
+  const fail = useCallback((e: unknown) => setError((e as Error).message), []);
 
   const loadApartment = useCallback(
     async (id: string) => {
@@ -133,8 +125,11 @@ export default function RentalApp() {
     fetchSnapshot().then(apply, fail);
   }, [apply, fail]);
 
+  // Only ever written, never cleared: on load the selection is null until the
+  // portfolio arrives, and clearing it then would forget the choice before it
+  // is read. A stale id is harmless — `apply` falls back to the first apartment.
   useEffect(() => {
-    rememberSelected(selectedId);
+    if (selectedId) rememberSelected(selectedId);
   }, [selectedId]);
 
   /** After any change to the selected apartment: its details, and the portfolio row's summary. */
@@ -198,36 +193,41 @@ export default function RentalApp() {
     />
   );
 
-  // Nothing to show yet: one field, one button.
+  // Nothing to show yet: one field, one button. The menu sheet is a sibling of
+  // the layout, at the same place in both branches, so it stays mounted (and
+  // keeps its "Imported …" message) when an import turns this screen into the
+  // full app underneath it.
   if (items.length === 0) {
     return (
-      <div className="app">
-        <header className="topbar">
-          <div className="grow brand">{t('app.name')}</div>
-          {menuButton}
-        </header>
-        <ErrorNote message={error} />
-        <div className="welcome">
-          <div className="logo">{Icon.building}</div>
-          <div>
-            <h1>{t('welcome.title')}</h1>
-            <p className="lead" style={{ marginTop: 8 }}>
-              {t('welcome.lead')}
-            </p>
+      <>
+        <div className="app">
+          <header className="topbar">
+            <div className="grow brand">{t('app.name')}</div>
+            {menuButton}
+          </header>
+          <ErrorNote message={error} />
+          <div className="welcome">
+            <div className="logo">{Icon.building}</div>
+            <div>
+              <h1>{t('welcome.title')}</h1>
+              <p className="lead" style={{ marginTop: 8 }}>
+                {t('welcome.lead')}
+              </p>
+            </div>
+            <AddApartment
+              autoFocus
+              onCreated={async (id) => {
+                await loadPortfolio();
+                open(id);
+              }}
+            />
+            <button className="link" style={{ alignSelf: 'flex-start' }} onClick={() => setSheet('menu')}>
+              {t('welcome.import')}
+            </button>
           </div>
-          <AddApartment
-            autoFocus
-            onCreated={async (id) => {
-              await loadPortfolio();
-              open(id);
-            }}
-          />
-          <button className="link" style={{ alignSelf: 'flex-start' }} onClick={() => setSheet('menu')}>
-            {t('welcome.import')}
-          </button>
         </div>
         {menuSheet}
-      </div>
+      </>
     );
   }
 
@@ -237,136 +237,137 @@ export default function RentalApp() {
     : (apt?.settings.name ?? items.find((i) => i.id === selectedId)?.name ?? '…');
 
   return (
-    <div className="app shell">
-      <header className="topbar">
-        <div className="grow">
-          <button className="pill" aria-haspopup="dialog" onClick={() => setSheet('switch')}>
-            <span>{pillName}</span>
-            {Icon.down}
-          </button>
-        </div>
-        {tab !== 'settings' && <YearStepper year={year} years={years} onChange={setYear} />}
-        {menuButton}
-      </header>
-
-      <ErrorNote message={error} />
-
-      <main className={'page page-' + tab}>
-        {inPortfolio && <Portfolio items={items} details={details} year={year} account={account} onOpen={open} />}
-        {!inPortfolio && !apt && (
-          <div className="empty">
-            {t('nav.loadFailed')}
-            <button className="btn" onClick={() => selectedId && void loadApartment(selectedId)}>
-              {t('nav.tryAgain')}
+    <>
+      <div className="app shell">
+        <header className="topbar">
+          <div className="grow">
+            <button className="pill" aria-haspopup="dialog" onClick={() => setSheet('switch')}>
+              <span>{pillName}</span>
+              {Icon.down}
             </button>
           </div>
-        )}
-        {apt && tab === 'home' && (
-          <Home apt={apt} year={year} account={account} scope={scope} onScope={setScope} go={go} />
-        )}
-        {apt && tab === 'rent' && <RentLog apt={apt} year={year} onChanged={reloadSelected} />}
-        {apt && tab === 'costs' && <Costs apt={apt} year={year} onChanged={reloadSelected} />}
-        {apt && tab === 'tax' && (
-          <Tax apt={apt} year={year} taxpayerName={account.taxpayerName} scope={scope} onScope={setScope} go={go} />
-        )}
-        {apt && tab === 'settings' && (
-          <SettingsPage
-            apt={apt}
-            account={account}
-            onBack={() => setTab('home')}
-            onChanged={reloadSelected}
-            onGone={async () => {
-              setSelectedId(null);
-              setTab('home');
-              await loadPortfolio();
-            }}
-          />
-        )}
-      </main>
+          {tab !== 'settings' && <YearStepper year={year} years={years} onChange={setYear} />}
+          {menuButton}
+        </header>
 
-      {inPortfolio && <div className="side-brand">{t('app.name')}</div>}
-      {!inPortfolio && (
-        <nav className="nav" aria-label={t('nav.sections')}>
-          <div className="nav-brand">{t('app.name')}</div>
-          <div className="nav-inner">
-            {SECTIONS.map((s) => (
-              <button key={s.id} aria-current={tab === s.id ? 'page' : undefined} onClick={() => setTab(s.id)}>
-                {s.icon}
-                <span>{t(`nav.${s.id}`)}</span>
+        <ErrorNote message={error} />
+
+        <main className={'page page-' + tab}>
+          {inPortfolio && <Portfolio items={items} details={details} year={year} account={account} onOpen={open} />}
+          {!inPortfolio && !apt && (
+            <div className="empty">
+              {t('nav.loadFailed')}
+              <button className="btn" onClick={() => selectedId && void loadApartment(selectedId)}>
+                {t('nav.tryAgain')}
               </button>
-            ))}
-          </div>
-        </nav>
-      )}
-
-      {sheet === 'switch' && (
-        <Sheet
-          title={t('nav.apartments')}
-          onClose={() => {
-            setSheet(null);
-            setAdding(false);
-          }}
-        >
-          <ul className="list">
-            {items.length > 1 && (
-              <li>
-                <button
-                  className="row-btn"
-                  onClick={() => {
-                    setTab('portfolio');
-                    setSheet(null);
-                  }}
-                >
-                  {Icon.stack}
-                  <div className="main">
-                    <div className="t">{t('nav.allApartments')}</div>
-                    <div className="s">{t('nav.allApartmentsHint')}</div>
-                  </div>
-                  {inPortfolio && Icon.check}
-                </button>
-              </li>
-            )}
-            {items.map((i) => (
-              <li key={i.id}>
-                <button className="row-btn" onClick={() => open(i.id)}>
-                  {Icon.building}
-                  <div className="main">
-                    <div className="t">{i.name}</div>
-                    <div className="s">
-                      {[i.mySharePct !== 100 && t('nav.shareYours', { pct: pct(i.mySharePct) }), i.address]
-                        .filter(Boolean)
-                        .join(' · ') || t('common.yours')}
-                    </div>
-                  </div>
-                  {!inPortfolio && i.id === selectedId && Icon.check}
-                </button>
-              </li>
-            ))}
-          </ul>
-          {adding ? (
-            <div style={{ marginTop: 16 }}>
-              <AddApartment
-                autoFocus
-                onCreated={async (id) => {
-                  await loadPortfolio();
-                  open(id);
-                }}
-              />
             </div>
-          ) : (
-            <button
-              className="row-btn"
-              style={{ borderBottom: 0, color: 'var(--brand)', fontWeight: 600 }}
-              onClick={() => setAdding(true)}
-            >
-              {Icon.plus}
-              <div className="main">{t('nav.newApartment')}</div>
-            </button>
           )}
-        </Sheet>
-      )}
+          {apt && tab === 'home' && (
+            <Home apt={apt} year={year} account={account} scope={scope} onScope={setScope} go={go} />
+          )}
+          {apt && tab === 'rent' && <RentLog apt={apt} year={year} onChanged={reloadSelected} />}
+          {apt && tab === 'costs' && <Costs apt={apt} year={year} onChanged={reloadSelected} />}
+          {apt && tab === 'tax' && (
+            <Tax apt={apt} year={year} taxpayerName={account.taxpayerName} scope={scope} onScope={setScope} go={go} />
+          )}
+          {apt && tab === 'settings' && (
+            <SettingsPage
+              apt={apt}
+              account={account}
+              onBack={() => setTab('home')}
+              onChanged={reloadSelected}
+              onGone={async () => {
+                setSelectedId(null);
+                setTab('home');
+                await loadPortfolio();
+              }}
+            />
+          )}
+        </main>
 
+        {inPortfolio && <div className="side-brand">{t('app.name')}</div>}
+        {!inPortfolio && (
+          <nav className="nav" aria-label={t('nav.sections')}>
+            <div className="nav-brand">{t('app.name')}</div>
+            <div className="nav-inner">
+              {SECTIONS.map((s) => (
+                <button key={s.id} aria-current={tab === s.id ? 'page' : undefined} onClick={() => setTab(s.id)}>
+                  {s.icon}
+                  <span>{t(`nav.${s.id}`)}</span>
+                </button>
+              ))}
+            </div>
+          </nav>
+        )}
+
+        {sheet === 'switch' && (
+          <Sheet
+            title={t('nav.apartments')}
+            onClose={() => {
+              setSheet(null);
+              setAdding(false);
+            }}
+          >
+            <ul className="list">
+              {items.length > 1 && (
+                <li>
+                  <button
+                    className="row-btn"
+                    onClick={() => {
+                      setTab('portfolio');
+                      setSheet(null);
+                    }}
+                  >
+                    {Icon.stack}
+                    <div className="main">
+                      <div className="t">{t('nav.allApartments')}</div>
+                      <div className="s">{t('nav.allApartmentsHint')}</div>
+                    </div>
+                    {inPortfolio && Icon.check}
+                  </button>
+                </li>
+              )}
+              {items.map((i) => (
+                <li key={i.id}>
+                  <button className="row-btn" onClick={() => open(i.id)}>
+                    {Icon.building}
+                    <div className="main">
+                      <div className="t">{i.name}</div>
+                      <div className="s">
+                        {[i.mySharePct !== 100 && t('nav.shareYours', { pct: pct(i.mySharePct) }), i.address]
+                          .filter(Boolean)
+                          .join(' · ') || t('common.yours')}
+                      </div>
+                    </div>
+                    {!inPortfolio && i.id === selectedId && Icon.check}
+                  </button>
+                </li>
+              ))}
+            </ul>
+            {adding ? (
+              <div style={{ marginTop: 16 }}>
+                <AddApartment
+                  autoFocus
+                  onCreated={async (id) => {
+                    await loadPortfolio();
+                    open(id);
+                  }}
+                />
+              </div>
+            ) : (
+              <button
+                className="row-btn"
+                style={{ borderBottom: 0, color: 'var(--brand)', fontWeight: 600 }}
+                onClick={() => setAdding(true)}
+              >
+                {Icon.plus}
+                <div className="main">{t('nav.newApartment')}</div>
+              </button>
+            )}
+          </Sheet>
+        )}
+      </div>
       {menuSheet}
-    </div>
+    </>
   );
 }

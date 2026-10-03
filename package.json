@@ -2,7 +2,7 @@
   "name": "rental-tracker",
   "version": "2.0.0",
   "private": true,
-  "description": "Track rental apartments, their co-owners and ownership shares, and prepare each owner’s Finnish rental income tax declaration.",
+  "description": "Track rental apartments, their co-owners and ownership shares, and prepare each owner\u2019s Finnish rental income tax declaration.",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
@@ -11,6 +11,7 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
+    "test:e2e": "E2E_COVERAGE=1 next build && playwright test",
     "migrate": "tsx db/migrate.ts",
     "migrate:new": "node-pg-migrate create --migrations-dir db/migrations --migration-file-language sql"
   },
@@ -26,6 +27,7 @@
   },
   "devDependencies": {
     "@electric-sql/pglite": "^0.5.8",
+    "@playwright/test": "^1.63.0",
     "@testing-library/dom": "^10.4.2",
     "@testing-library/react": "^16.3.3",
     "@testing-library/user-event": "^14.6.7",
@@ -37,6 +39,7 @@
     "eslint": "^9.39.5",
     "eslint-config-next": "^16.3.8",
     "jsdom": "^29.1.1",
+    "monocart-coverage-reports": "^2.13.0",
     "node-pg-migrate": "^9.0.0",
     "pg": "^8.23.0",
     "tsx": "^4.19.2",

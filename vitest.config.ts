@@ -7,5 +7,6 @@ export default defineConfig({
     // the app does.
     alias: { '@': fileURLToPath(new URL('.', import.meta.url)) },
   },
-  test: { environment: 'node' },
+  // e2e/ is Playwright's (npm run test:e2e), not vitest's.
+  test: { environment: 'node', exclude: ['**/node_modules/**', 'e2e/**'] },
 });

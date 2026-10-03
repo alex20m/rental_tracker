@@ -16,7 +16,6 @@ export const en = {
   'common.cancel': 'Cancel',
   'common.remove': 'Remove',
   'common.loading': 'Loading',
-  'common.moreInfo': 'More info',
   'common.aboutInfo': 'About {about}',
   'common.rent': 'Rent',
   'common.costs': 'Costs',

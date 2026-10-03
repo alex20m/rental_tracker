@@ -11,7 +11,6 @@ export const fi: Record<MessageKey, string> = {
   'common.cancel': 'Peruuta',
   'common.remove': 'Poista',
   'common.loading': 'Ladataan',
-  'common.moreInfo': 'Lisätietoa',
   'common.aboutInfo': 'Tietoa: {about}',
   'common.rent': 'Vuokra',
   'common.costs': 'Kulut',
