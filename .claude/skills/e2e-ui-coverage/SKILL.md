@@ -123,6 +123,15 @@ test would catch.
 - **Labels match by substring.** `getByLabel('Email')` also matches "Code from
   the email"; `getByRole('heading', { name: 'Portfolio' })` also matches
   "Your share of the portfolio". Use `exact: true` by habit.
+- **"Remembered" must differ from the default.** A test that a choice survives
+  a reload proves nothing if the remembered value is also what the app shows
+  with no memory at all — the first item, the current year. Pick the second
+  item, then reload. A test shaped the first way passed for weeks over code
+  that erased the stored choice on every load.
+- **A `<label for>` names the control it points at.** A button with
+  `id="receipt"` and `<label for="receipt">Receipt</label>` is called
+  "Receipt" by the accessibility tree, whatever text it shows; find it by that
+  name and assert its text separately.
 - **The browser's own validation stops a submit.** A `max` on an input means
   the form never sends — assert `validity.rangeOverflow` and that no request
   was made, rather than waiting for a server error that never comes.

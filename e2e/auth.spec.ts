@@ -1,4 +1,5 @@
 import { expect, test } from './fixtures';
+import { openMenu } from './nav';
 
 test.describe('signing in', () => {
   test.beforeEach(({ api }) => {
@@ -8,7 +9,7 @@ test.describe('signing in', () => {
   test('sends a signed-out visitor to the sign-in page', async ({ page }) => {
     await page.goto('/');
     await expect(page).toHaveURL(/\/sign-in$/);
-    await expect(page.getByRole('heading', { name: 'Sign in' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Welcome back' })).toBeVisible();
   });
 
   test('signs in with a verified account and lands on the portfolio', async ({ page, api }) => {
@@ -18,7 +19,7 @@ test.describe('signing in', () => {
     await page.getByLabel('Password').fill('correct horse');
     await page.getByRole('button', { name: 'Sign in' }).click();
 
-    await expect(page.getByRole('heading', { name: 'Portfolio', exact: true })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Add your first apartment' })).toBeVisible();
   });
 
   test('says so when the password is wrong, and stays on the page', async ({ page, api }) => {
@@ -39,7 +40,7 @@ test.describe('signing in', () => {
     await page.getByLabel('Password').fill('correct horse');
     await page.getByRole('button', { name: 'Sign in' }).click();
 
-    await expect(page.getByRole('heading', { name: 'Verify your email' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Check your email' })).toBeVisible();
     await expect(page.getByText('We sent a code to me@example.test.')).toBeVisible();
     expect(api.sentCodes).toEqual(['me@example.test']);
 
@@ -53,13 +54,13 @@ test.describe('signing in', () => {
     await expect(page.getByText('Email verified. Sign in to continue.')).toBeVisible();
     await page.getByLabel('Password').fill('correct horse');
     await page.getByRole('button', { name: 'Sign in' }).click();
-    await expect(page.getByRole('heading', { name: 'Portfolio', exact: true })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Add your first apartment' })).toBeVisible();
   });
 
   test('creates an account, verifies it with the code and goes straight in when the code signs it in', async ({ page, api }) => {
     await page.goto('/sign-in');
     await page.getByRole('button', { name: 'New here? Create an account' }).click();
-    await expect(page.getByRole('heading', { name: 'Create an account' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Create your account' })).toBeVisible();
     await page.getByLabel('Name').fill('Me Myself');
     await page.getByLabel('Email', { exact: true }).fill('me@example.test');
     await page.getByLabel('Password').fill('correct horse');
@@ -69,7 +70,7 @@ test.describe('signing in', () => {
     api.signedIn = true; // the verification signs the new account in
     await page.getByLabel('Code from the email').fill('123456');
     await page.getByRole('button', { name: 'Verify' }).click();
-    await expect(page.getByRole('heading', { name: 'Portfolio', exact: true })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Add your first apartment' })).toBeVisible();
     expect(api.callsTo('POST /api/auth/sign-up/email')[0]!.body).toMatchObject({ name: 'Me Myself', email: 'me@example.test' });
   });
 
@@ -82,7 +83,7 @@ test.describe('signing in', () => {
     api.signedIn = true;
     await page.getByRole('button', { name: 'Create account' }).click();
 
-    await expect(page.getByRole('heading', { name: 'Portfolio', exact: true })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Add your first apartment' })).toBeVisible();
     // No name given: the email stands in for it.
     expect(api.callsTo('POST /api/auth/sign-up/email')[0]!.body).toMatchObject({ name: 'me@example.test' });
   });
@@ -97,7 +98,7 @@ test.describe('signing in', () => {
     await expect(page.locator('.alert[role=alert]')).toHaveText('User already exists');
 
     await page.getByRole('button', { name: 'Have an account? Sign in' }).click();
-    await expect(page.getByRole('heading', { name: 'Sign in' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Welcome back' })).toBeVisible();
   });
 
   test("shows the auth service's own explanation when it refuses", async ({ page, api }) => {
@@ -127,7 +128,7 @@ test.describe('signing in', () => {
     await page.getByLabel('Email', { exact: true }).fill('me@example.test');
     await page.getByLabel('Password').fill('correct horse');
     await page.getByRole('button', { name: 'Sign in' }).click();
-    await expect(page.getByRole('heading', { name: 'Verify your email' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Check your email' })).toBeVisible();
 
     await page.getByRole('button', { name: 'Send a new code' }).click();
     await expect.poll(() => api.sentCodes.length).toBe(2);
@@ -137,39 +138,41 @@ test.describe('signing in', () => {
     await expect(page.locator('.alert[role=alert]')).toHaveText('Too many codes, wait a minute');
 
     await page.getByRole('button', { name: 'Back' }).click();
-    await expect(page.getByRole('heading', { name: 'Sign in' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Welcome back' })).toBeVisible();
   });
 });
 
 test.describe('verifying from inside the app', () => {
-  test('verifies the signed-in account from the portfolio notice', async ({ page, api }) => {
+  test('verifies the signed-in account from the notice on Home', async ({ page, api }) => {
     api.emailVerified = false;
+    api.addApartment({ name: 'Flat' });
     await page.goto('/');
-    await expect(page.getByText("Your email address isn't verified yet")).toBeVisible();
-    await page.getByRole('link', { name: 'Verify it now →' }).click();
+    await expect(page.getByText('to receive apartments other owners share with you.')).toBeVisible();
+    await page.getByRole('link', { name: 'Verify your email' }).click();
 
-    await expect(page.getByRole('heading', { name: 'Verify your email' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Check your email' })).toBeVisible();
     await expect(page.getByLabel('Email', { exact: true })).toHaveValue('me@example.test');
     await expect(page.getByLabel('Email', { exact: true })).not.toBeEditable();
     await page.getByRole('button', { name: 'Send a new code' }).click();
     await page.getByLabel('Code from the email').fill('123456');
     await page.getByRole('button', { name: 'Verify' }).click();
 
-    await expect(page.getByRole('heading', { name: 'Portfolio', exact: true })).toBeVisible();
-    await expect(page.getByText("isn't verified yet")).toHaveCount(0);
+    await expect(page.locator('button.pill')).toHaveText('Flat');
+    await expect(page.getByText('to receive apartments other owners share with you.')).toHaveCount(0);
   });
 
   test('goes back to the app without verifying', async ({ page, api }) => {
     api.emailVerified = false;
     await page.goto('/sign-in?verify=me%40example.test');
     await page.getByRole('button', { name: 'Back' }).click();
-    await expect(page.getByRole('heading', { name: 'Portfolio', exact: true })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Add your first apartment' })).toBeVisible();
   });
 });
 
-test('signs out from the portfolio', async ({ page, api }) => {
+test('signs out from the menu', async ({ page, api }) => {
   await page.goto('/');
-  await page.getByRole('button', { name: 'Sign out' }).click();
+  const menu = await openMenu(page);
+  await menu.getByRole('button', { name: 'Sign out' }).click();
 
   await expect(page).toHaveURL(/\/sign-in$/);
   expect(api.signedIn).toBe(false);
@@ -178,7 +181,8 @@ test('signs out from the portfolio', async ({ page, api }) => {
 test('still leaves when signing out fails on the server', async ({ page, api }) => {
   api.failNext('POST', /sign-out$/, { abort: true });
   await page.goto('/');
-  await page.getByRole('button', { name: 'Sign out' }).click();
+  const menu = await openMenu(page);
+  await menu.getByRole('button', { name: 'Sign out' }).click();
 
   await expect(page).toHaveURL(/\/sign-in$/);
 });
