@@ -158,19 +158,31 @@ test.describe('owners and shares', () => {
 
     page.once('dialog', (d) => d.dismiss());
     await page.getByRole('button', { name: 'Leave this apartment' }).click();
-    await expect(page.getByRole('heading', { name: 'Apartment settings' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Settings', exact: true })).toBeVisible();
 
     page.once('dialog', (d) => d.accept());
     await page.getByRole('button', { name: 'Leave this apartment' }).click();
     await expect(page.locator('button.pill')).toHaveText('Other');
   });
 
-  test('goes back to Home from settings', async ({ page, api }) => {
+  test('leaves settings through the bottom navigation', async ({ page, api }) => {
     api.addApartment({ name: 'Flat' });
     await page.goto('/');
     await openSettings(page);
-    await page.getByRole('button', { name: 'Back' }).click();
+    await section(page, 'Home');
     await expect(page.getByTestId('net-income')).toBeVisible();
+  });
+
+  test('stays in settings when another apartment is picked, showing that apartment', async ({ page, api }) => {
+    api.addApartment({ name: 'First', address: 'Eka katu 1' });
+    api.addApartment({ name: 'Second', address: 'Toka katu 2' });
+    await page.goto('/');
+    await openSettings(page);
+    await expect(page.getByLabel('Address')).toHaveValue('Eka katu 1');
+
+    await openApartment(page, 'Second');
+    await expect(page.getByRole('heading', { name: 'Settings', exact: true })).toBeVisible();
+    await expect(page.getByLabel('Address')).toHaveValue('Toka katu 2');
   });
 });
 
@@ -220,7 +232,11 @@ test.describe('apartment details', () => {
 
     await expect(page.getByRole('radio', { name: 'Housing-company flat' })).toHaveAttribute('aria-checked', 'true');
     await expect(page.getByText('The price of a housing-company flat is not depreciated')).toBeVisible();
-    await page.getByRole('button', { name: 'About the financing charge' }).click();
+    // At phone height the button starts under the floating bottom nav. A person scrolls it clear before
+    // tapping; Playwright would instead scroll mid-click, and that scroll rightly closes the popover.
+    const about = page.getByRole('button', { name: 'About the financing charge' });
+    await about.evaluate((el) => el.scrollIntoView({ block: 'center' }));
+    await about.click();
     await expect(page.getByRole('note')).toContainText('The property manager (isännöitsijä) can tell you which.');
     await page.keyboard.press('Escape');
     await page.getByRole('switch', { name: 'The housing company books the financing charge as income' }).click();

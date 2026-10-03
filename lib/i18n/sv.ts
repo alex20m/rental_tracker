@@ -32,6 +32,10 @@ export const sv: Record<MessageKey, string> = {
   'nav.costs': 'Kostnader',
   'nav.tax': 'Skatt',
   'nav.menu': 'Meny',
+  'nav.ledger': 'Hyror & kostnader',
+  'nav.history': 'Historik',
+  'nav.settings': 'Inställningar',
+  'ledger.view': 'Hyra eller kostnader',
   'nav.allApartments': 'Alla lägenheter',
   'nav.allApartmentsHint': 'Din andel, sammanlagt',
   'nav.apartments': 'Lägenheter',
@@ -50,7 +54,6 @@ export const sv: Record<MessageKey, string> = {
 
   // — account menu —
   'menu.title': 'Meny',
-  'menu.apartmentSettings': 'Lägenhetens inställningar',
   'menu.signOut': 'Logga ut',
   'menu.deleteAccount': 'Ta bort konto',
   'menu.deleteAccountAbout': 'ditt konto',
@@ -247,8 +250,22 @@ export const sv: Record<MessageKey, string> = {
   'check.invites.todo.one': '{n} inbjuden ägare har inte anslutit ännu – kontrollera att andelarna är slutgiltiga',
   'check.invites.todo.other': '{n} inbjudna ägare har inte anslutit ännu – kontrollera att andelarna är slutgiltiga',
 
-  // — apartment settings —
-  'settings.title': 'Lägenhetens inställningar',
+  // — history —
+  'history.title': 'Historik',
+  'history.allYears': 'Nettoinkomst, alla år',
+  'history.allYearsAbout': 'alla år',
+  'history.allYearsInfo': 'Nettohyresinkomsten för varje år du har fört in, sammanlagt. År med förlust räknas som negativa.',
+  'history.years': 'Per år',
+  'history.summary': 'Hyra {rent} · Kostnader {costs}',
+  'history.netTitle': 'Nettoinkomst {year}',
+  'history.hint': 'Tryck på ett år för att öppna dess skattesammanställning.',
+  'history.onlyOne': 'Tidigare år visas här när du för in hyror eller kostnader för dem.',
+
+  // — settings —
+  'settings.title': 'Inställningar',
+  'settings.view': 'Inställningar för',
+  'settings.apartment': 'Lägenhet',
+  'settings.account': 'Konto',
   'settings.owners': 'Ägare',
   'settings.ownersAbout': 'ägare och andelar',
   'settings.ownersInfo':

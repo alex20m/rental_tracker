@@ -235,7 +235,7 @@ label { display: flex; align-items: center; min-height: 24px; font-size: 14px; c
 @keyframes spin { to { transform: rotate(360deg); } }
 
 /* ── Settings ── */
-.pagehead { display: flex; align-items: center; gap: 4px; margin-left: -8px; }
+.pagehead { display: flex; align-items: center; gap: 4px; }
 .pagehead h1 { font-size: 24px; letter-spacing: -0.02em; }
 .savebar { position: fixed; left: 0; right: 0; bottom: calc(86px + env(safe-area-inset-bottom)); z-index: 9; display: flex; justify-content: center; padding: 0 20px; pointer-events: none; }
 .savebar > div { pointer-events: auto; display: flex; gap: 10px; width: 100%; max-width: 520px; padding: 10px; background: var(--card); border: 1px solid var(--line); border-radius: 18px; box-shadow: var(--shadow); }
@@ -252,7 +252,7 @@ label { display: flex; align-items: center; min-height: 24px; font-size: 14px; c
 /* ── Responsive ──
    Phone first: one column with a floating bottom bar. Wider screens get a
    roomier column and centred dialogs; from 960px a sidebar and two-column pages. */
-.nav-brand, .side-brand { display: none; }
+.nav-brand { display: none; }
 .nav button span { white-space: nowrap; }
 .page { min-width: 0; }
 .btn, .month, .iconbtn, .choice { transition: background-color 0.12s, border-color 0.12s, opacity 0.12s; }
@@ -303,10 +303,9 @@ label { display: flex; align-items: center; min-height: 24px; font-size: 14px; c
   .shell > .topbar, .shell > .page, .shell > .alert { max-width: 1040px; margin-left: auto; margin-right: auto; }
   .shell > .topbar { padding: 24px 0 16px; }
 
-  .nav, .side-brand { display: flex; position: fixed; top: 0; bottom: 0; left: 0; width: 232px; background: var(--card); border-right: 1px solid var(--line); }
+  .nav { display: flex; position: fixed; top: 0; bottom: 0; left: 0; width: 232px; background: var(--card); border-right: 1px solid var(--line); }
   .nav { flex-direction: column; justify-content: flex-start; padding: 0 12px; overflow-y: auto; pointer-events: auto; }
-  .nav-brand, .side-brand { display: block; padding: 28px 12px 20px; font-size: 18px; font-weight: 700; letter-spacing: -0.02em; color: var(--brand); }
-  .side-brand { padding: 28px 24px 20px; }
+  .nav-brand { display: block; padding: 28px 12px 20px; font-size: 18px; font-weight: 700; letter-spacing: -0.02em; color: var(--brand); }
   .nav-inner { flex-direction: column; max-width: none; padding: 0; gap: 4px; background: none; border: 0; border-radius: 0; box-shadow: none; backdrop-filter: none; }
   .nav button { flex: none; flex-direction: row; justify-content: flex-start; gap: 12px; padding: 11px 12px; border-radius: 12px; font-size: 14.5px; }
   .nav button svg.i { width: 20px; height: 20px; }
@@ -314,7 +313,7 @@ label { display: flex; align-items: center; min-height: 24px; font-size: 14px; c
   /* Columns, not a grid: sections of unequal height pack without gaps. */
   .page-home, .page-portfolio, .page-tax, .page-settings { display: block; column-count: 2; column-gap: 56px; }
   .page-home > *, .page-portfolio > *, .page-tax > *, .page-settings > * { break-inside: avoid; margin-bottom: 28px; }
-  .page > .notice, .page > .allset, .page > .btn.block, .page > .empty, .page > .pagehead { column-span: all; }
+  .page > .notice, .page > .allset, .page > .btn.block, .page > .empty, .page > .pagehead, .page > .seg { column-span: all; }
   .months { grid-template-columns: repeat(6, 1fr); }
   .bars { height: 150px; gap: 10px; }
   .fab { right: 40px; bottom: 32px; }

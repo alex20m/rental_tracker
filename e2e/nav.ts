@@ -9,20 +9,37 @@ export async function openApartment(page: Page, name: string) {
   await page.getByRole('dialog', { name: 'Apartments' }).getByRole('button', { name: new RegExp(`^${name}`) }).click();
 }
 
-/** One of the bottom sections: Home, Rent, Costs, Tax. */
-export async function section(page: Page, name: 'Home' | 'Rent' | 'Costs' | 'Tax') {
-  await page.getByRole('navigation', { name: 'Sections' }).getByRole('button', { name, exact: true }).click();
+/**
+ * One of the places in the bottom navigation. Rent and Costs share the
+ * "Rent & costs" tab, so reaching one is the tab and then its switch.
+ */
+export async function section(page: Page, name: 'Home' | 'Rent' | 'Costs' | 'Tax' | 'History' | 'Settings') {
+  const nav = page.getByRole('navigation', { name: 'Sections' });
+  if (name === 'Rent' || name === 'Costs') {
+    await nav.getByRole('button', { name: 'Rent & costs', exact: true }).click();
+    await page.getByRole('radiogroup', { name: 'Rent or costs' }).getByRole('radio', { name, exact: true }).click();
+  } else {
+    await nav.getByRole('button', { name, exact: true }).click();
+  }
 }
 
+/** The account menu shown before there is a first apartment (afterwards the account lives in Settings). */
 export async function openMenu(page: Page) {
   await page.getByRole('button', { name: 'Menu', exact: true }).click();
   return page.getByRole('dialog', { name: 'Menu' });
 }
 
+/** Settings, Apartment side. */
 export async function openSettings(page: Page) {
-  const menu = await openMenu(page);
-  await menu.getByRole('button', { name: /Apartment settings/ }).click();
-  await page.getByRole('heading', { name: 'Apartment settings' }).waitFor();
+  await section(page, 'Settings');
+  await page.getByRole('heading', { name: 'Settings' }).waitFor();
+}
+
+/** Settings, Account side: who you are, language, signing out. */
+export async function openAccount(page: Page) {
+  await section(page, 'Settings');
+  await page.getByRole('radiogroup', { name: 'Settings for' }).getByRole('radio', { name: 'Account' }).click();
+  return page.getByRole('region', { name: 'Account' });
 }
 
 /** The six one-time-code boxes. */

@@ -32,6 +32,10 @@ export const fi: Record<MessageKey, string> = {
   'nav.costs': 'Kulut',
   'nav.tax': 'Vero',
   'nav.menu': 'Valikko',
+  'nav.ledger': 'Vuokrat ja kulut',
+  'nav.history': 'Historia',
+  'nav.settings': 'Asetukset',
+  'ledger.view': 'Vuokrat tai kulut',
   'nav.allApartments': 'Kaikki asunnot',
   'nav.allApartmentsHint': 'Osuutesi yhteensä',
   'nav.apartments': 'Asunnot',
@@ -50,7 +54,6 @@ export const fi: Record<MessageKey, string> = {
 
   // — account menu —
   'menu.title': 'Valikko',
-  'menu.apartmentSettings': 'Asunnon asetukset',
   'menu.signOut': 'Kirjaudu ulos',
   'menu.deleteAccount': 'Poista tili',
   'menu.deleteAccountAbout': 'tilisi',
@@ -246,8 +249,22 @@ export const fi: Record<MessageKey, string> = {
   'check.invites.todo.one': '{n} kutsuttu omistaja ei ole vielä liittynyt – tarkista, että osuudet ovat lopulliset',
   'check.invites.todo.other': '{n} kutsuttua omistajaa ei ole vielä liittynyt – tarkista, että osuudet ovat lopulliset',
 
-  // — apartment settings —
-  'settings.title': 'Asunnon asetukset',
+  // — history —
+  'history.title': 'Historia',
+  'history.allYears': 'Nettotulo, kaikki vuodet',
+  'history.allYearsAbout': 'kaikki vuodet',
+  'history.allYearsInfo': 'Kaikkien kirjaamiesi vuosien vuokratulojen nettotulo yhteensä. Tappiolliset vuodet lasketaan negatiivisina.',
+  'history.years': 'Vuosittain',
+  'history.summary': 'Vuokra {rent} · Kulut {costs}',
+  'history.netTitle': 'Nettotulo {year}',
+  'history.hint': 'Avaa vuoden veroyhteenveto napauttamalla vuotta.',
+  'history.onlyOne': 'Aiemmat vuodet näkyvät tässä, kun kirjaat niille vuokria tai kuluja.',
+
+  // — settings —
+  'settings.title': 'Asetukset',
+  'settings.view': 'Asetukset kohteelle',
+  'settings.apartment': 'Asunto',
+  'settings.account': 'Tili',
   'settings.owners': 'Omistajat',
   'settings.ownersAbout': 'omistajat ja osuudet',
   'settings.ownersInfo':

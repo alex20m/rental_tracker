@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { api, ApiError } from '@/lib/client/api';
 import { pct } from '@/lib/domain/tax';
 import type { ApartmentView, PortfolioItem } from '@/lib/domain/types';
-import { Avatar, ErrorNote, Icon, Sheet, YearStepper } from '@/components/ui';
+import { Avatar, ErrorNote, Icon, Segmented, Sheet, YearStepper } from '@/components/ui';
 import { useI18n } from '@/components/I18nProvider';
 import AddApartment from '@/components/AddApartment';
 import MenuSheet from '@/components/MenuSheet';
@@ -13,20 +13,23 @@ import Home from '@/components/pages/Home';
 import RentLog from '@/components/pages/RentLog';
 import Costs from '@/components/pages/Costs';
 import Tax from '@/components/pages/Tax';
+import History from '@/components/pages/History';
 import SettingsPage from '@/components/pages/SettingsPage';
 
-export type Tab = 'home' | 'rent' | 'costs' | 'tax' | 'settings' | 'portfolio';
+export type Tab = 'home' | 'rent' | 'costs' | 'tax' | 'history' | 'settings' | 'portfolio';
 /** Where a tap can lead: a page. */
 export type Destination = Tab;
 export type Go = (to: Destination) => void;
 /** Whose figures to show for an apartment owned by several people. */
 export type Scope = 'mine' | 'whole';
 
+/** The bottom navigation. Rent and costs share one tab; a switch at its top tells them apart. */
 const SECTIONS = [
   { id: 'home', icon: Icon.home },
-  { id: 'rent', icon: Icon.rent },
-  { id: 'costs', icon: Icon.cost },
+  { id: 'ledger', icon: Icon.rent },
   { id: 'tax', icon: Icon.tax },
+  { id: 'history', icon: Icon.history },
+  { id: 'settings', icon: Icon.gear },
 ] as const;
 
 const SELECTED_KEY = 'rental-tracker:selected-apartment';
@@ -67,6 +70,7 @@ async function fetchSnapshot(): Promise<Snapshot> {
 export type Account = { userId: string; name: string; email: string; emailVerified: boolean };
 
 type SheetName = 'switch' | 'menu' | null;
+type LedgerView = 'rent' | 'costs';
 
 export default function RentalApp() {
   const { t } = useI18n();
@@ -158,7 +162,7 @@ export default function RentalApp() {
   /** Pick an apartment; stay on the same section so switching never loses your place. */
   const open = (id: string) => {
     setSelectedId(id);
-    setTab((t) => (t === 'portfolio' || t === 'settings' ? 'home' : t));
+    setTab((t) => (t === 'portfolio' ? 'home' : t));
     setSheet(null);
     setAdding(false);
   };
@@ -179,15 +183,7 @@ export default function RentalApp() {
   );
 
   const menuSheet = sheet === 'menu' && (
-    <MenuSheet
-      account={account}
-      apartmentName={apt?.settings.name}
-      onSettings={() => {
-        setSheet(null);
-        setTab('settings');
-      }}
-      onClose={() => setSheet(null)}
-    />
+    <MenuSheet account={account} onClose={() => setSheet(null)} />
   );
 
   // Nothing to show yet: one field, one button. The menu sheet is a sibling of
@@ -239,8 +235,7 @@ export default function RentalApp() {
               {Icon.down}
             </button>
           </div>
-          {tab !== 'settings' && <YearStepper year={year} years={years} onChange={setYear} />}
-          {menuButton}
+          {tab !== 'settings' && tab !== 'history' && <YearStepper year={year} years={years} onChange={setYear} />}
         </header>
 
         <ErrorNote message={error} />
@@ -258,16 +253,38 @@ export default function RentalApp() {
           {apt && tab === 'home' && (
             <Home apt={apt} year={year} account={account} scope={scope} onScope={setScope} go={go} />
           )}
+          {apt && (tab === 'rent' || tab === 'costs') && (
+            <Segmented<LedgerView>
+              label={t('ledger.view')}
+              value={tab}
+              onChange={setTab}
+              options={[
+                { value: 'rent', label: t('nav.rent') },
+                { value: 'costs', label: t('nav.costs') },
+              ]}
+            />
+          )}
           {apt && tab === 'rent' && <RentLog apt={apt} year={year} onChanged={reloadSelected} />}
           {apt && tab === 'costs' && <Costs apt={apt} year={year} onChanged={reloadSelected} />}
           {apt && tab === 'tax' && (
             <Tax apt={apt} year={year} taxpayerName={account.name} scope={scope} onScope={setScope} go={go} />
           )}
+          {apt && tab === 'history' && (
+            <History
+              apt={apt}
+              thisYear={thisYear}
+              scope={scope}
+              onScope={setScope}
+              onPick={(y) => {
+                setYear(y);
+                setTab('tax');
+              }}
+            />
+          )}
           {apt && tab === 'settings' && (
             <SettingsPage
               apt={apt}
               account={account}
-              onBack={() => setTab('home')}
               onChanged={reloadSelected}
               onGone={async () => {
                 setSelectedId(null);
@@ -278,20 +295,24 @@ export default function RentalApp() {
           )}
         </main>
 
-        {inPortfolio && <div className="side-brand">{t('app.name')}</div>}
-        {!inPortfolio && (
-          <nav className="nav" aria-label={t('nav.sections')}>
-            <div className="nav-brand">{t('app.name')}</div>
-            <div className="nav-inner">
-              {SECTIONS.map((s) => (
-                <button key={s.id} aria-current={tab === s.id ? 'page' : undefined} onClick={() => setTab(s.id)}>
+        <nav className="nav" aria-label={t('nav.sections')}>
+          <div className="nav-brand">{t('app.name')}</div>
+          <div className="nav-inner">
+            {SECTIONS.map((s) => {
+              const current = s.id === 'ledger' ? tab === 'rent' || tab === 'costs' : tab === s.id;
+              return (
+                <button
+                  key={s.id}
+                  aria-current={current ? 'page' : undefined}
+                  onClick={() => setTab(s.id === 'ledger' ? 'rent' : s.id)}
+                >
                   {s.icon}
                   <span>{t(`nav.${s.id}`)}</span>
                 </button>
-              ))}
-            </div>
-          </nav>
-        )}
+              );
+            })}
+          </div>
+        </nav>
 
         {sheet === 'switch' && (
           <Sheet

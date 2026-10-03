@@ -6,32 +6,48 @@ import { PROPERTY_TYPES } from '@/lib/domain/types';
 import { api } from '@/lib/client/api';
 import { computeDepreciation, eur, pct } from '@/lib/domain/tax';
 import { isWholeApartment, shareTotal } from '@/lib/domain/shares';
-import { Avatar, ErrorNote, Heading, Icon, Info, Label, Sheet, Switch } from '@/components/ui';
+import { Avatar, ErrorNote, Heading, Icon, Info, Label, Segmented, Sheet, Switch } from '@/components/ui';
+import AccountPanel from '@/components/AccountPanel';
 import type { Account } from '@/components/RentalApp';
 import { useI18n } from '@/components/I18nProvider';
 
 type Props = {
   apt: ApartmentView;
   account: Account;
-  onBack: () => void;
   onChanged: () => Promise<void>;
   /** The apartment is no longer the viewer's: deleted, or they left it. */
   onGone: () => Promise<void>;
 };
 
-export default function SettingsPage({ apt, account, onBack, onChanged, onGone }: Props) {
+type View = 'apartment' | 'account';
+
+/** One place for everything adjustable: this apartment's details and owners, or the account. */
+export default function SettingsPage({ apt, account, onChanged, onGone }: Props) {
   const { t } = useI18n();
+  const [view, setView] = useState<View>('apartment');
   return (
     <>
       <div className="pagehead">
-        <button className="iconbtn" aria-label={t('common.back')} onClick={onBack}>
-          {Icon.left}
-        </button>
         <h1>{t('settings.title')}</h1>
       </div>
-      <Owners key={`owners-${apt.id}`} apt={apt} account={account} onChanged={onChanged} onGone={onGone} />
-      <PropertyForm key={`settings-${apt.id}`} apt={apt} onChanged={onChanged} />
-      <DangerZone apt={apt} account={account} onGone={onGone} />
+      <Segmented<View>
+        label={t('settings.view')}
+        value={view}
+        onChange={setView}
+        options={[
+          { value: 'apartment', label: t('settings.apartment') },
+          { value: 'account', label: t('settings.account') },
+        ]}
+      />
+      {view === 'apartment' ? (
+        <>
+          <Owners key={`owners-${apt.id}`} apt={apt} account={account} onChanged={onChanged} onGone={onGone} />
+          <PropertyForm key={`settings-${apt.id}`} apt={apt} onChanged={onChanged} />
+          <DangerZone apt={apt} account={account} onGone={onGone} />
+        </>
+      ) : (
+        <AccountPanel account={account} />
+      )}
     </>
   );
 }
@@ -57,7 +73,7 @@ function useAction(onDone: () => Promise<void>) {
  * Who owns how much of this one apartment. Sharing here shares this apartment
  * only; the rest of each owner's portfolio stays private to them.
  */
-function Owners({ apt, account, onChanged, onGone }: Omit<Props, 'onBack'>) {
+function Owners({ apt, account, onChanged, onGone }: Props) {
   const { t } = useI18n();
   // The viewer reaches an apartment only as one of its owners.
   const me = apt.owners.find((o) => o.userId === account.userId)!;

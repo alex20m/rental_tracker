@@ -70,13 +70,14 @@ afterEach(() => {
 describe('choosing a language', () => {
   it('switches the whole screen to Swedish from the menu and remembers the choice', async () => {
     app();
-    await userEvent.click(await screen.findByRole('button', { name: 'Menu' }));
+    await userEvent.click(await screen.findByRole('button', { name: 'Settings' }));
+    await userEvent.click(screen.getByRole('radio', { name: 'Account' }));
     await userEvent.click(screen.getByRole('radio', { name: 'Svenska' }));
 
-    // The open menu, the navigation behind it and the page all change language.
-    expect(screen.getByRole('dialog', { name: 'Meny' })).toBeTruthy();
-    expect(screen.getByRole('button', { name: 'Kostnader' })).toBeTruthy();
-    expect(screen.getByText('Förbered deklarationen 2026')).toBeTruthy();
+    // The open settings, the navigation around them and the page all change language.
+    expect(screen.getByRole('region', { name: 'Konto' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Hyror & kostnader' })).toBeTruthy();
+    expect(screen.getByRole('heading', { name: 'Inställningar' })).toBeTruthy();
     expect(screen.queryByText('Sign out')).toBeNull();
     expect(localStorage.getItem('rental-tracker:language')).toBe('sv');
     expect(document.documentElement.lang).toBe('sv');
@@ -84,10 +85,10 @@ describe('choosing a language', () => {
 
   it('switches to Finnish, including pluralised and dated text', async () => {
     app();
-    await userEvent.click(await screen.findByRole('button', { name: 'Menu' }));
+    await userEvent.click(await screen.findByRole('button', { name: 'Settings' }));
+    await userEvent.click(screen.getByRole('radio', { name: 'Account' }));
     await userEvent.click(screen.getByRole('radio', { name: 'Suomi' }));
-    await userEvent.click(screen.getByRole('button', { name: 'Sulje' }));
-    await userEvent.click(screen.getByRole('button', { name: 'Vuokra' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Vuokrat ja kulut' }));
 
     // The month grid is in Finnish.
     expect(screen.getAllByText('tammi').length).toBeGreaterThan(0);
@@ -97,18 +98,18 @@ describe('choosing a language', () => {
   it('starts in the language the person chose last time', async () => {
     localStorage.setItem('rental-tracker:language', 'fi');
     app();
-    expect(await screen.findByRole('button', { name: 'Kulut' })).toBeTruthy();
+    expect(await screen.findByRole('button', { name: 'Vuokrat ja kulut' })).toBeTruthy();
   });
 
   it('starts in Swedish for a browser that prefers Swedish and has no saved choice', async () => {
     setBrowserLanguages(['sv-SE', 'en']);
     app();
-    expect(await screen.findByRole('button', { name: 'Kostnader' })).toBeTruthy();
+    expect(await screen.findByRole('button', { name: 'Hyror & kostnader' })).toBeTruthy();
   });
 
   it('stays in English for a browser language we do not offer', async () => {
     setBrowserLanguages(['de-DE']);
     app();
-    expect(await screen.findByRole('button', { name: 'Costs' })).toBeTruthy();
+    expect(await screen.findByRole('button', { name: 'Rent & costs' })).toBeTruthy();
   });
 });
