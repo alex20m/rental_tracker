@@ -37,12 +37,9 @@ export const fi: Record<MessageKey, string> = {
   'nav.settings': 'Asetukset',
   'ledger.view': 'Vuokrat tai kulut',
   'nav.allApartments': 'Kaikki asunnot',
-  'nav.allApartmentsHint': 'Osuutesi yhteensä',
-  'nav.apartments': 'Asunnot',
   'nav.newApartment': 'Uusi asunto',
   'nav.loadFailed': 'Asuntoa ei voitu ladata.',
   'nav.tryAgain': 'Yritä uudelleen',
-  'nav.shareYours': '{pct} sinun',
 
   // — first run —
   'welcome.title': 'Lisää ensimmäinen asuntosi',
@@ -262,8 +259,6 @@ export const fi: Record<MessageKey, string> = {
 
   // — settings —
   'settings.title': 'Asetukset',
-  'settings.view': 'Asetukset kohteelle',
-  'settings.apartment': 'Asunto',
   'settings.account': 'Tili',
   'settings.owners': 'Omistajat',
   'settings.ownersAbout': 'omistajat ja osuudet',

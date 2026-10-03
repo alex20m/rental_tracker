@@ -9,9 +9,10 @@ declaration package (PDF + CSV + receipts, zipped) for their own share.
 - **Accounts.** Email + password sign-in with Neon Auth. Email addresses are
   verified with a one-time code.
 - **A portfolio per person.** Any number of apartments. The app always shows
-  one apartment at a time; tap its name at the top to switch, add one, or open
-  **All apartments** — your share of each, and your totals for the year with
-  the capital income tax estimated on all of them together.
+  one apartment at a time. The **portfolio** page lists them all, with your
+  share of each and your totals for the year (capital income tax estimated on
+  all of them together); open one from there, and add a new one there — only
+  there. Inside an apartment, the ‹ at the top goes back to the portfolio.
 - **Sharing one apartment.** In an apartment's settings, share it with another
   owner's email and choose their percentage; it is taken from your own share.
   They get that apartment — and only that one — the next time they sign in
@@ -22,7 +23,7 @@ declaration package (PDF + CSV + receipts, zipped) for their own share.
 - **Per-owner tax.** Rent and costs are logged for the whole apartment. The Tax
   tab, the PDF and the CSV show the apartment total next to your share, and the
   share is what you declare.
-- **English, Swedish and Finnish.** Pick the language under **Settings → Account** (or on the
+- **English, Swedish and Finnish.** Pick the language under the account **Menu** on the portfolio page (or on the
   sign-in page). It defaults to the browser's language, is remembered on that
   device, and covers the whole interface. Server error messages, the PDF and the
   CSV stay as they are — the PDF follows the Finnish form. Strings live in
@@ -31,9 +32,11 @@ declaration package (PDF + CSV + receipts, zipped) for their own share.
 
 ## Using it
 
-The top bar is always the same: the **apartment** you are looking at (tap to
-switch or add one) and the **tax year** (‹ ›). Everything else is in the bottom
-navigation, five places and nothing hidden behind other buttons:
+Two levels. The **portfolio** page lists your apartments and has **New
+apartment** and the round **account menu** (who you are, language, sign out,
+delete account). Open an apartment and the top bar shows its name, a ‹ back to
+the portfolio, and the **tax year** (‹ ›). Everything about that apartment is in
+the bottom navigation, five places and nothing hidden behind other buttons:
 
 - **Home** – net income for the year in one big number, with rent, deductions
   and estimated tax under it; a short to-do list of what is still missing;
@@ -51,15 +54,12 @@ navigation, five places and nothing hidden behind other buttons:
   you to where it is fixed — and **Download declaration (.zip)**.
 - **History** – every year of the apartment side by side, newest first, with
   the combined net income of all years. Tap a year to open its tax summary.
-- **Settings** – one switch, two sides. *Apartment*: owners & shares, inviting
-  co-owners, property details — flat or property, how the financing charge
-  is booked — building depreciation (poisto) for a property, delete. *Account*: who
-  you are signed in as, language, sign out, delete account.
+- **Settings** – this apartment's owners & shares, inviting co-owners, property
+  details — flat or property, how the financing charge is booked — building
+  depreciation (poisto) for a property, delete.
 
 The name printed on the declaration is the one given when the account was
-created (it is required there); there is nothing to fill in separately. Before
-the first apartment exists there is no Settings tab yet, so the account (sign
-out, language) is behind the round button at the top.
+created (it is required there); there is nothing to fill in separately.
 
 Explanations are tucked behind small **ⓘ** icons instead of printed as grey
 text: tap one to read it, tap anywhere else (or press Escape) to dismiss it.

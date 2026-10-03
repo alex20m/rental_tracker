@@ -19,7 +19,7 @@ test.describe('interface language', () => {
     const account = await openAccount(page);
     await account.getByRole('radiogroup', { name: 'Language' }).getByRole('radio', { name: 'Svenska' }).click();
 
-    await expect(page.getByRole('region', { name: 'Konto' })).toBeVisible();
+    await expect(page.getByRole('dialog', { name: 'Meny' })).toBeVisible();
     await expect(page.locator('html')).toHaveAttribute('lang', 'sv');
 
     await page.reload();

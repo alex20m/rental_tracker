@@ -162,7 +162,9 @@ test.describe('owners and shares', () => {
 
     page.once('dialog', (d) => d.accept());
     await page.getByRole('button', { name: 'Leave this apartment' }).click();
-    await expect(page.locator('button.pill')).toHaveText('Other');
+    // Back at the portfolio, which no longer lists it.
+    await expect(page.getByRole('button', { name: /^Other/ })).toBeVisible();
+    await expect(page.getByRole('button', { name: /^Kauppakatu/ })).toHaveCount(0);
   });
 
   test('leaves settings through the bottom navigation', async ({ page, api }) => {
@@ -171,18 +173,6 @@ test.describe('owners and shares', () => {
     await openSettings(page);
     await section(page, 'Home');
     await expect(page.getByTestId('net-income')).toBeVisible();
-  });
-
-  test('stays in settings when another apartment is picked, showing that apartment', async ({ page, api }) => {
-    api.addApartment({ name: 'First', address: 'Eka katu 1' });
-    api.addApartment({ name: 'Second', address: 'Toka katu 2' });
-    await page.goto('/');
-    await openSettings(page);
-    await expect(page.getByLabel('Address')).toHaveValue('Eka katu 1');
-
-    await openApartment(page, 'Second');
-    await expect(page.getByRole('heading', { name: 'Settings', exact: true })).toBeVisible();
-    await expect(page.getByLabel('Address')).toHaveValue('Toka katu 2');
   });
 });
 
@@ -288,7 +278,7 @@ test.describe('deleting', () => {
 
     page.once('dialog', (d) => d.accept());
     await page.getByRole('button', { name: 'Delete this apartment' }).click();
-    await expect(page.locator('button.pill')).toHaveText('Kept');
+    await expect(page.getByRole('button', { name: /^Kept/ })).toBeVisible();
     expect(api.apartments.size).toBe(1);
   });
 

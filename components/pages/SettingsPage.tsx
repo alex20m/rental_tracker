@@ -6,8 +6,7 @@ import { PROPERTY_TYPES } from '@/lib/domain/types';
 import { api } from '@/lib/client/api';
 import { computeDepreciation, eur, pct } from '@/lib/domain/tax';
 import { isWholeApartment, shareTotal } from '@/lib/domain/shares';
-import { Avatar, ErrorNote, Heading, Icon, Info, Label, Segmented, Sheet, Switch } from '@/components/ui';
-import AccountPanel from '@/components/AccountPanel';
+import { Avatar, ErrorNote, Heading, Icon, Info, Label, Sheet, Switch } from '@/components/ui';
 import type { Account } from '@/components/RentalApp';
 import { useI18n } from '@/components/I18nProvider';
 
@@ -19,35 +18,17 @@ type Props = {
   onGone: () => Promise<void>;
 };
 
-type View = 'apartment' | 'account';
-
-/** One place for everything adjustable: this apartment's details and owners, or the account. */
+/** Everything adjustable about this one apartment: its owners, details and depreciation. */
 export default function SettingsPage({ apt, account, onChanged, onGone }: Props) {
   const { t } = useI18n();
-  const [view, setView] = useState<View>('apartment');
   return (
     <>
       <div className="pagehead">
         <h1>{t('settings.title')}</h1>
       </div>
-      <Segmented<View>
-        label={t('settings.view')}
-        value={view}
-        onChange={setView}
-        options={[
-          { value: 'apartment', label: t('settings.apartment') },
-          { value: 'account', label: t('settings.account') },
-        ]}
-      />
-      {view === 'apartment' ? (
-        <>
-          <Owners key={`owners-${apt.id}`} apt={apt} account={account} onChanged={onChanged} onGone={onGone} />
-          <PropertyForm key={`settings-${apt.id}`} apt={apt} onChanged={onChanged} />
-          <DangerZone apt={apt} account={account} onGone={onGone} />
-        </>
-      ) : (
-        <AccountPanel account={account} />
-      )}
+      <Owners key={`owners-${apt.id}`} apt={apt} account={account} onChanged={onChanged} onGone={onGone} />
+      <PropertyForm key={`settings-${apt.id}`} apt={apt} onChanged={onChanged} />
+      <DangerZone apt={apt} account={account} onGone={onGone} />
     </>
   );
 }

@@ -1,7 +1,7 @@
 import type { Page } from '@playwright/test';
 import { expect, test } from './fixtures';
 import { coOwned, ledger, m, YEAR } from './data';
-import { alert, openAccount, openApartment, openMenu, section } from './nav';
+import { alert, openAccount, openApartment, openMenu, openPortfolio, section } from './nav';
 
 const netIncome = (page: Page) => page.getByTestId('net-income');
 
@@ -14,7 +14,7 @@ test.describe('the first visit', () => {
     await page.getByLabel('Apartment name').fill('  Rantatie 5  ');
     await page.getByRole('button', { name: 'Add apartment' }).click();
 
-    await expect(page.locator('button.pill')).toHaveText('Rantatie 5');
+    await expect(page.locator('h1.aptname')).toHaveText('Rantatie 5');
     expect(api.callsTo('POST /api/apartments')[0]!.body).toEqual({ name: 'Rantatie 5' });
     // A new apartment has nothing logged yet, and Home says how to start.
     await expect(page.getByText('Nothing logged yet.')).toBeVisible();
@@ -72,7 +72,7 @@ test.describe('loading', () => {
     await page.goto('/');
 
     await expect(page.getByText('Couldn’t load this apartment.')).toBeVisible();
-    await expect(page.locator('button.pill')).toHaveText('Flaky');
+    await expect(page.locator('h1.aptname')).toHaveText('Flaky');
     await page.getByRole('button', { name: 'Try again' }).click();
     await expect(netIncome(page)).toBeVisible();
   });
@@ -88,7 +88,7 @@ test.describe('loading', () => {
     });
     await page.goto('/');
 
-    await expect(page.locator('button.pill')).toHaveText('Private mode');
+    await expect(page.locator('h1.aptname')).toHaveText('Private mode');
   });
 });
 
@@ -245,38 +245,32 @@ test.describe('home', () => {
   });
 });
 
-test.describe('switching apartments', () => {
-  test('switches apartments from the pill, staying on the same section', async ({ page, api }) => {
+test.describe('the portfolio', () => {
+  test('lists every apartment and opens one at its Home, remembering it across a reload', async ({ page, api }) => {
     coOwned(api, 'First');
     api.addApartment({ name: 'Second', address: 'Toinen katu 2' }, ledger());
     await page.goto('/');
     await section(page, 'Rent');
 
-    await page.locator('button.pill').click();
-    const sheet = page.getByRole('dialog', { name: 'Apartments' });
-    await expect(sheet.getByRole('button', { name: /^First/ })).toContainText('60 % yours · Kauppakatu 12 B 7, Vaasa');
-    await expect(sheet.getByRole('button', { name: /^Second/ })).toContainText('Toinen katu 2');
-    await sheet.getByRole('button', { name: /^Second/ }).click();
+    await openPortfolio(page);
+    await expect(page.getByRole('navigation', { name: 'Sections' })).toBeHidden();
+    await expect(page.getByRole('button', { name: /^First/ })).toContainText('You own 60 % · 2 owners · Kauppakatu 12 B 7, Vaasa');
+    await expect(page.getByRole('button', { name: /^Second/ })).toContainText('Toinen katu 2');
+    await page.getByRole('button', { name: /^Second/ }).click();
 
-    await expect(page.locator('button.pill')).toHaveText('Second');
-    await expect(page.getByRole('heading', { name: 'Months' })).toBeVisible();
+    await expect(page.locator('h1.aptname')).toHaveText('Second');
+    await expect(netIncome(page)).toBeVisible();
 
-    // Remembered across a reload.
     await page.reload();
-    await expect(page.locator('button.pill')).toHaveText('Second');
+    await expect(page.locator('h1.aptname')).toHaveText('Second');
   });
 
   test('shows the whole portfolio, the viewer’s share added together', async ({ page, api }) => {
     coOwned(api);
     api.addApartment({ name: 'Rantatie 5' }, ledger());
     await page.goto('/');
-    await page.locator('button.pill').click();
-    await page.getByRole('button', { name: /All apartments/ }).click();
+    await openPortfolio(page);
 
-    await expect(page.locator('button.pill')).toHaveText('All apartments');
-    // The bottom navigation stays, with no tab marked, and leads back into the selected apartment.
-    const nav = page.getByRole('navigation', { name: 'Sections' });
-    await expect(nav.locator('[aria-current=page]')).toHaveCount(0);
     // −189,60 (60 % of Kauppakatu) + 2 184,00 (Rantatie) = 1 994,40; tax at 30 % on the total.
     await expect(netIncome(page)).toHaveText('1 994,40 €');
     await expect(page.locator('.hero')).toContainText('598 €');
@@ -286,16 +280,8 @@ test.describe('switching apartments', () => {
     await expect(rows.nth(1)).toContainText('Yours');
     await expect(rows.nth(1)).toContainText('2 184,00 €');
 
-    // The switcher marks where you are.
-    await page.locator('button.pill').click();
-    const sheet = page.getByRole('dialog', { name: 'Apartments' });
-    // Its icon and a check mark; the apartments' rows have only their icon.
-    await expect(sheet.getByRole('button', { name: /All apartments/ }).locator('svg')).toHaveCount(2);
-    await expect(sheet.getByRole('button', { name: /Rantatie 5/ }).locator('svg')).toHaveCount(1);
-    await page.keyboard.press('Escape');
-
     await rows.nth(1).click();
-    await expect(page.locator('button.pill')).toHaveText('Rantatie 5');
+    await expect(page.locator('h1.aptname')).toHaveText('Rantatie 5');
     await expect(netIncome(page)).toHaveText('2 184,00 €');
   });
 
@@ -303,8 +289,7 @@ test.describe('switching apartments', () => {
     coOwned(api);
     api.addApartment({ name: 'Empty' });
     await page.goto('/');
-    await page.locator('button.pill').click();
-    await page.getByRole('button', { name: /All apartments/ }).click();
+    await openPortfolio(page);
 
     await expect(netIncome(page)).toHaveText('−189,60 €');
     await expect(netIncome(page)).toHaveClass(/neg/);
@@ -315,58 +300,54 @@ test.describe('switching apartments', () => {
     const flaky = api.addApartment({ name: 'Flaky' }, ledger());
     api.failNext('GET', new RegExp(`/api/apartments/${flaky.id}$`), { status: 500 });
     await page.goto('/');
-    await page.locator('button.pill').click();
-    await page.getByRole('button', { name: /All apartments/ }).click();
+    await openPortfolio(page);
 
     await expect(netIncome(page)).toHaveText('2 184,00 €');
     await expect(page.locator('li').filter({ hasText: 'Flaky' }).locator('.num')).toHaveCount(0);
   });
 
-  test('adds another apartment from the switcher', async ({ page, api }) => {
+  test('adds an apartment from the portfolio, and only from there', async ({ page, api }) => {
     api.addApartment({ name: 'First' });
     await page.goto('/');
-    await openApartment(page, 'First');
-    await page.locator('button.pill').click();
+    await expect(page.getByRole('button', { name: 'New apartment' })).toHaveCount(0);
+
+    await openPortfolio(page);
     await page.getByRole('button', { name: 'New apartment' }).click();
     await page.getByLabel('Apartment name').fill('Second');
     await page.getByRole('button', { name: 'Add apartment' }).click();
 
-    await expect(page.locator('button.pill')).toHaveText('Second');
+    await expect(page.locator('h1.aptname')).toHaveText('Second');
     expect(api.apartments.size).toBe(2);
   });
 
-  test('centres the dialog on a phone-sized screen instead of docking it to the bottom', async ({ page, api }) => {
+  test('centres the menu dialog on a phone-sized screen instead of docking it to the bottom', async ({ page, api }) => {
     api.addApartment({ name: 'Flat' });
     await page.setViewportSize({ width: 390, height: 844 });
     await page.goto('/');
 
-    await page.locator('button.pill').click();
+    await openAccount(page);
     // The dialog slides in; measure once it has settled.
     await expect
       .poll(async () => {
         const box = (await page.getByRole('dialog').boundingBox())!;
-        return Math.round(box.y - (844 - (box.y + box.height)));
+        return Math.abs(Math.round(box.y - (844 - (box.y + box.height))));
       })
       .toBe(0);
     const box = (await page.getByRole('dialog').boundingBox())!;
     expect(box.y).toBeGreaterThan(20);
   });
 
-  test('closes the switcher with its close button, or by tapping outside', async ({ page, api }) => {
+  test('closes the menu with its close button, or by tapping outside', async ({ page, api }) => {
     api.addApartment({ name: 'Flat' });
     await page.goto('/');
+    await openAccount(page);
 
-    await page.locator('button.pill').click();
-    await page.getByRole('button', { name: 'New apartment' }).click();
     await page.getByRole('button', { name: 'Close' }).click();
     await expect(page.getByRole('dialog')).toHaveCount(0);
 
-    await page.locator('button.pill').click();
+    await openMenu(page);
     await page.locator('.sheet-bg').click({ position: { x: 5, y: 5 } });
     await expect(page.getByRole('dialog')).toHaveCount(0);
-    // A new apartment form opened earlier does not reappear.
-    await page.locator('button.pill').click();
-    await expect(page.getByRole('button', { name: 'New apartment' })).toBeVisible();
   });
 });
 
