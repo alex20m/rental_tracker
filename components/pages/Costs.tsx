@@ -4,11 +4,10 @@ import { useRef, useState } from 'react';
 import type { ApartmentView, CostCategory, CostEntry } from '@/lib/domain/types';
 import { CATEGORIES, COST_CATEGORIES } from '@/lib/domain/types';
 import { api, compressImage } from '@/lib/client/api';
-import { eur } from '@/lib/domain/tax';
-import type { MessageKey } from '@/lib/i18n';
+import { computeTax, deductionOf, eur, FURNITURE_LIMIT, improvementYears, IMPROVEMENT_YEARS } from '@/lib/domain/tax';
 import { shortDate } from '@/lib/ui/format';
 import { useI18n } from '@/components/I18nProvider';
-import { ErrorNote, Icon, Info, Label, Money, Sheet } from '@/components/ui';
+import { ErrorNote, Icon, Info, Label, Money, Sheet, Switch } from '@/components/ui';
 
 const todayIso = () => {
   const d = new Date();
@@ -40,7 +39,11 @@ export default function Costs({ apt, year, onChanged }: Props) {
   const { t, tn, lang } = useI18n();
   const [editing, setEditing] = useState<CostEntry | 'new' | null>(null);
   const list = apt.costs.filter((c) => c.date.startsWith(String(year))).sort((a, b) => b.date.localeCompare(a.date));
-  const total = list.filter((c) => CATEGORIES[c.category].deductible).reduce((a, c) => a + c.amount, 0);
+  // What this year's costs take off the rent: whole costs, plus this year's part
+  // of the ones spread over several years (not the building, which is no cost).
+  const tax = computeTax(apt, year);
+  const total =
+    tax.deductibleCosts + tax.depreciationLines.filter((d) => d.kind !== 'building').reduce((a, d) => a + d.amount, 0);
   const coOwned = apt.owners.length > 1 || apt.invites.length > 0;
 
   return (
@@ -64,26 +67,29 @@ export default function Costs({ apt, year, onChanged }: Props) {
           <div className="empty">{t('costs.none', { year })}</div>
         ) : (
           <ul className="list">
-            {list.map((c) => (
-              <li key={c.id}>
-                <button className="row-btn" onClick={() => setEditing(c)}>
-                  <Thumb apt={apt} cost={c} />
-                  <div className="main">
-                    <div className="t">{c.description || t(`cat.${c.category}.label`)}</div>
-                    <div className="s">
-                      {shortDate(c.date, lang)}
-                      {c.description && ` · ${t(`cat.${c.category}.label`)}`}{' '}
-                      {!CATEGORIES[c.category].deductible && (
-                        <span className="chip warn">{t('common.notDeductible')}</span>
-                      )}
+            {list.map((c) => {
+              const how = deductionOf(c, apt.settings);
+              return (
+                <li key={c.id}>
+                  <button className="row-btn" onClick={() => setEditing(c)}>
+                    <Thumb apt={apt} cost={c} />
+                    <div className="main">
+                      <div className="t">{c.description || t(`cat.${c.category}.label`)}</div>
+                      <div className="s">
+                        {shortDate(c.date, lang)}
+                        {c.description && ` · ${t(`cat.${c.category}.label`)}`}{' '}
+                        {how === 'none' && <span className="chip warn">{t('common.notDeductible')}</span>}
+                        {how === 'improvement' && (
+                          <span className="chip">{t('costs.overYears', { n: improvementYears(c) })}</span>
+                        )}
+                        {how === 'furniture' && <span className="chip">{t('costs.furnitureRate')}</span>}
+                      </div>
                     </div>
-                  </div>
-                  <div className={'strong num ' + (CATEGORIES[c.category].deductible ? '' : 'dim')}>
-                    {eur(c.amount)}
-                  </div>
-                </button>
-              </li>
-            ))}
+                    <div className={'strong num ' + (how === 'none' ? 'dim' : '')}>{eur(c.amount)}</div>
+                  </button>
+                </li>
+              );
+            })}
           </ul>
         )}
       </section>
@@ -119,6 +125,7 @@ function CostForm({
   const [category, setCategory] = useState<CostCategory>(cost?.category ?? 'maintenance_charge');
   const [description, setDescription] = useState(cost?.description ?? '');
   const [amount, setAmount] = useState(cost ? String(cost.amount) : '');
+  const [spreadYears, setSpreadYears] = useState(cost?.spreadYears ?? IMPROVEMENT_YEARS);
   const [newImage, setNewImage] = useState<string>();
   const [removeImage, setRemoveImage] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -154,7 +161,7 @@ function CostForm({
 
   const save = () =>
     run(async () => {
-      const entry = { date, category, description: description.trim(), amount: Number(amount) };
+      const entry = { date, category, description: description.trim(), amount: Number(amount), spreadYears };
       const id = cost
         ? (await api.updateCost(apt.id, cost.id, entry), cost.id)
         : (await api.createCost(apt.id, entry)).id;
@@ -165,6 +172,8 @@ function CostForm({
   const remove = () => run(() => api.deleteCost(apt.id, cost!.id));
 
   const cat = CATEGORIES[category];
+  const how = deductionOf({ category, amount: Number(amount), spreadYears }, apt.settings);
+  const validYears = Number.isInteger(spreadYears) && spreadYears >= 1 && spreadYears <= IMPROVEMENT_YEARS;
 
   return (
     <Sheet title={cost ? t('costs.edit') : t('costs.add')} onClose={onClose}>
@@ -185,7 +194,11 @@ function CostForm({
 
       <Label
         id="cost-category"
-        info={<Info about={t('costs.categoryAbout')}>{t('costs.categoryInfo', { fi: cat.fi })}</Info>}
+        info={
+          <Info about={t('costs.categoryAbout')}>
+            {t('costs.categoryInfo', { fi: cat.fi })} {t(`cat.${category}.hint`)}
+          </Info>
+        }
       >
         {t('costs.category')}
       </Label>
@@ -203,10 +216,34 @@ function CostForm({
           </button>
         ))}
       </div>
-      {!cat.deductible && (
+      {how === 'none' && (
         <div style={{ marginTop: 8 }}>
           <span className="chip warn">{t('common.notDeductibleCap')}</span>
-          <Info about={t('costs.notDeductibleAbout')}>{t(`cat.${category}.hint` as MessageKey)}</Info>
+          <Info about={t('costs.notDeductibleAbout')}>{t(`cat.${category}.hint`)}</Info>
+        </div>
+      )}
+      {cat.treatment === 'improvement' && (
+        <>
+          <Label htmlFor="cost-years" info={<Info about={t('costs.yearsAbout')}>{t('costs.yearsInfo')}</Info>}>
+            {t('costs.years')}
+          </Label>
+          <input
+            id="cost-years"
+            type="number"
+            inputMode="numeric"
+            min="1"
+            max={IMPROVEMENT_YEARS}
+            step="1"
+            value={spreadYears}
+            onChange={(e) => setSpreadYears(Number(e.target.value))}
+          />
+        </>
+      )}
+      {cat.treatment === 'furniture' && Number(amount) > FURNITURE_LIMIT && (
+        <div style={{ marginTop: 12 }}>
+          <Switch checked={spreadYears === 1} onChange={(v) => setSpreadYears(v ? 1 : IMPROVEMENT_YEARS)}>
+            {t('costs.shortLived')}
+          </Switch>
         </div>
       )}
 
@@ -270,7 +307,7 @@ function CostForm({
             {t('common.delete')}
           </button>
         )}
-        <button className="btn primary" onClick={save} disabled={!(Number(amount) > 0 && date && date <= lastDayOfMonth()) || busy}>
+        <button className="btn primary" onClick={save} disabled={!(Number(amount) > 0 && date && date <= lastDayOfMonth() && validYears) || busy}>
           {t('common.save')}
         </button>
       </div>

@@ -1,9 +1,17 @@
 import { describe, expect, it } from 'vitest';
-import { computeTax, estimateCapitalTax, ownerShare, portfolioTotals } from '@/lib/domain/tax';
-import { defaultSettings, type Ledger } from '@/lib/domain/types';
+import { computeDepreciation, computeTax, estimateCapitalTax, ownerShare, portfolioTotals } from '@/lib/domain/tax';
+import { defaultSettings, type CostEntry, type Ledger } from '@/lib/domain/types';
 
 const ledger: Ledger = {
-  settings: { ...defaultSettings, purchasePrice: 100000, useDepreciation: true, depreciationPrior: 10000 },
+  // A property of one's own (kiinteistö): the only kind whose building is depreciated.
+  settings: {
+    ...defaultSettings,
+    propertyType: 'property',
+    purchasePrice: 100000,
+    useDepreciation: true,
+    depreciationRate: 2.5,
+    depreciationPrior: 10000,
+  },
   rents: [
     { month: '2025-01', status: 'paid', amount: 700, receivedDate: '2025-01-03', note: '' },
     { month: '2025-02', status: 'vacant', amount: 0, receivedDate: '', note: '' },
@@ -166,6 +174,114 @@ describe("an owner's share of an apartment", () => {
     expect(s.rentIncome).toBe(0);
     expect(s.netIncome).toBe(0);
     expect(s.estimatedTax).toBe(0);
+  });
+});
+
+describe('building depreciation', () => {
+  it('never depreciates the purchase price of a housing-company share', () => {
+    // vero.fi: the price of a flat or of shares in a housing company cannot be
+    // deducted as depreciation — only a building one owns can.
+    const share = { settings: { ...ledger.settings, propertyType: 'share' as const } };
+    expect(computeDepreciation(share)).toBe(0);
+  });
+
+  it('is 4 % of the remaining building cost by default for a property', () => {
+    const settings = { ...defaultSettings, propertyType: 'property' as const, purchasePrice: 200000, buildingSharePct: 75, useDepreciation: true };
+    // (200 000 × 75 %) × 4 %
+    expect(computeDepreciation({ settings })).toBe(6000);
+  });
+
+  it('starts every new apartment as a housing-company share', () => {
+    expect(defaultSettings.propertyType).toBe('share');
+  });
+});
+
+describe('expense rules', () => {
+  const cost = (c: Partial<CostEntry> & Pick<CostEntry, 'category' | 'amount' | 'date'>): CostEntry => ({
+    id: `${c.category}-${c.date}-${c.amount}`,
+    description: '',
+    hasReceipt: true,
+    ...c,
+  });
+  const withCosts = (costs: CostEntry[], settings: Partial<Ledger['settings']> = {}): Ledger => ({
+    settings: { ...defaultSettings, ...settings },
+    rents: [],
+    costs,
+  });
+  const depr = (l: Ledger, year: number, kind: string) =>
+    computeTax(l, year, afterYearEnd).depreciationLines.find((d) => d.kind === kind)?.amount ?? 0;
+
+  it('deducts the financing charge when the housing company books it as income', () => {
+    const l = withCosts([cost({ category: 'financing_charge', date: '2025-02-01', amount: 150 })], {
+      financingChargeDeductible: true,
+    });
+    const t = computeTax(l, 2025, afterYearEnd);
+    expect(t.deductibleCosts).toBe(150);
+    expect(t.nonDeductibleCosts).toBe(0);
+    expect(t.lines).toEqual([expect.objectContaining({ category: 'financing_charge', deductible: true, amount: 150 })]);
+  });
+
+  it('deducts water and maintenance charges, travel and property tax in the year paid', () => {
+    const l = withCosts([
+      cost({ category: 'water_charge', date: '2025-01-05', amount: 40 }),
+      cost({ category: 'travel', date: '2025-04-05', amount: 27 }),
+      cost({ category: 'property_tax', date: '2025-09-30', amount: 310 }),
+    ]);
+    expect(computeTax(l, 2025, afterYearEnd).deductibleCosts).toBe(377);
+  });
+
+  it('spreads a basic improvement evenly over ten years from the year it was paid', () => {
+    // vero.fi's own example: balcony glazing for 3 000 € is 300 € a year.
+    const l = withCosts([cost({ category: 'improvement', date: '2025-05-01', amount: 3000 })]);
+    const t = computeTax(l, 2025, afterYearEnd);
+    expect(t.deductibleCosts).toBe(0);
+    expect(t.lines).toEqual([]);
+    expect(depr(l, 2025, 'improvements')).toBe(300);
+    expect(depr(l, 2034, 'improvements')).toBe(300);
+    expect(depr(l, 2035, 'improvements')).toBe(0);
+    expect(depr(l, 2024, 'improvements')).toBe(0);
+    expect(computeTax(l, 2025, afterYearEnd).netIncome).toBe(-300);
+  });
+
+  it('spreads an improvement over fewer years when it lasts less, and the years add up to the cost', () => {
+    const l = withCosts([cost({ category: 'improvement', date: '2025-05-01', amount: 1000, spreadYears: 3 })]);
+    expect([2025, 2026, 2027, 2028].map((y) => depr(l, y, 'improvements'))).toEqual([333.33, 333.33, 333.34, 0]);
+  });
+
+  it('deducts furniture costing up to 1 200 € at once', () => {
+    const l = withCosts([cost({ category: 'furniture', date: '2025-03-01', amount: 1200 })]);
+    const t = computeTax(l, 2025, afterYearEnd);
+    expect(t.deductibleCosts).toBe(1200);
+    expect(t.depreciation).toBe(0);
+  });
+
+  it('depreciates dearer furniture by 25 % of what is left each year', () => {
+    const l = withCosts([cost({ category: 'furniture', date: '2025-03-01', amount: 2000 })]);
+    expect(computeTax(l, 2025, afterYearEnd).deductibleCosts).toBe(0);
+    expect([2024, 2025, 2026, 2027].map((y) => depr(l, y, 'furniture'))).toEqual([0, 500, 375, 281.25]);
+  });
+
+  it('deducts dearer furniture at once when it lasts under three years', () => {
+    const l = withCosts([cost({ category: 'furniture', date: '2025-03-01', amount: 2000, spreadYears: 1 })]);
+    expect(computeTax(l, 2025, afterYearEnd).deductibleCosts).toBe(2000);
+    expect(depr(l, 2026, 'furniture')).toBe(0);
+  });
+
+  it("splits every kind of depreciation by the owner's share and adds the parts up", () => {
+    const l = withCosts(
+      [
+        cost({ category: 'improvement', date: '2025-05-01', amount: 3000 }),
+        cost({ category: 'furniture', date: '2025-03-01', amount: 2000 }),
+      ],
+      { propertyType: 'property', purchasePrice: 50000, useDepreciation: true },
+    );
+    const s = ownerShare(computeTax(l, 2025, afterYearEnd), 25);
+    expect(s.depreciationLines).toEqual([
+      { kind: 'building', amount: 500 },
+      { kind: 'improvements', amount: 75 },
+      { kind: 'furniture', amount: 125 },
+    ]);
+    expect(s.depreciation).toBe(700);
   });
 });
 

@@ -15,7 +15,7 @@ test.describe('the tax page', () => {
     await expect(kv('Rent received')).toContainText('1 440,00 €');
     await expect(kv('Repairs & upkeep')).toContainText('72,00 €');
     await expect(kv('Financing charge')).toContainText('not deductible');
-    await expect(kv('Depreciation')).toContainText('1 500,00 €');
+    await expect(kv('Building depreciation')).toContainText('1 500,00 €');
     await expect(kv('Deductible total')).toContainText('1 629,60 €');
 
     await page.getByRole('radio', { name: 'Whole apartment' }).click();
@@ -139,6 +139,42 @@ test.describe('the tax page', () => {
     expect(text).toContain('2019-03-01 for 150 000,00 EUR');
     expect(text).toContain('The apartment has 1 owner and 1 pending.');
     expect(await zip.file(`ledger-${YEAR}.csv`)!.async('string')).toContain(`"${m(1)}-02","rent","paid","Rent for ${YEAR - 1}-12"`);
+  });
+
+  test('shows this year’s part of spread costs, and loan interest as declared separately, in the page and the PDF', async ({ page, api }) => {
+    const { rents } = ledger();
+    api.addApartment(
+      { name: 'Flat' },
+      {
+        rents,
+        costs: [
+          { id: 'k1', date: `${m(1)}-10`, category: 'loan_interest', description: '', amount: 400, hasReceipt: false },
+          { id: 'k2', date: `${YEAR - 1}-06-01`, category: 'improvement', description: 'Balcony glazing', amount: 3000, hasReceipt: false },
+          { id: 'k3', date: `${m(2)}-10`, category: 'furniture', description: 'Sofa', amount: 2000, hasReceipt: false },
+        ],
+      },
+    );
+    await page.goto('/');
+    await section(page, 'Tax');
+
+    const kv = (label: string) => page.locator('.kv').filter({ hasText: label });
+    await expect(kv('Loan interest')).toContainText('declared separately');
+    // Paid last year, so this is its second of ten parts.
+    await expect(kv('Basic improvements, this year’s part')).toContainText('300,00 €');
+    await expect(kv('Furniture & appliances, this year’s part')).toContainText('500,00 €');
+    await page.getByRole('button', { name: 'About Basic improvements, this year’s part' }).click();
+    await expect(page.getByRole('note')).toContainText('equal parts');
+    await page.keyboard.press('Escape');
+    // 400 + 300 + 500
+    await expect(kv('Deductible total')).toContainText('1 200,00 €');
+    await expect(page.locator('.kv').filter({ hasText: 'Building depreciation' })).toHaveCount(0);
+
+    const [pdf] = await Promise.all([page.waitForEvent('download'), page.getByRole('button', { name: 'PDF summary only' }).click()]);
+    const text = readFileSync(await pdf.path()).toString('latin1');
+    expect(text).toContain('summary for tax form 7H / OmaVero');
+    expect(text).toContain('Declared separately');
+    expect(text).toContain('Each basic improvement is deducted in equal parts');
+    expect(text).toContain('Furniture and appliances over 1 200 EUR: 25%');
   });
 
   test('describes co-owners in the PDF when nobody is still invited, and leaves out an empty section', async ({ page, api }) => {

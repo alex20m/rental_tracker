@@ -53,6 +53,8 @@ const SETTINGS_COLUMNS = `
   a.name,
   a.address,
   a.housing_company       as "housingCompany",
+  a.property_type         as "propertyType",
+  a.financing_charge_deductible as "financingChargeDeductible",
   coalesce(a.purchase_date::text, '') as "purchaseDate",
   a.purchase_price::float8     as "purchasePrice",
   a.building_share_pct::float8 as "buildingSharePct",
@@ -65,6 +67,8 @@ const SETTINGS_FIELDS: Record<keyof ApartmentSettings, string> = {
   name: 'name',
   address: 'address',
   housingCompany: 'housing_company',
+  propertyType: 'property_type',
+  financingChargeDeductible: 'financing_charge_deductible',
   purchaseDate: 'purchase_date',
   purchasePrice: 'purchase_price',
   buildingSharePct: 'building_share_pct',
@@ -171,6 +175,7 @@ export function portfolio(db: Queryable) {
         ),
         db.query<CostEntry>(
           `select c.id, c.date::text as date, c.category, c.description, c.amount::float8 as amount,
+                  c.spread_years as "spreadYears",
                   exists (select 1 from receipts r where r.cost_id = c.id) as "hasReceipt"
              from costs c where c.apartment_id = $1 order by c.date, c.created_at`,
           [apartmentId],
@@ -233,9 +238,9 @@ export function portfolio(db: Queryable) {
     async createCost(userId: string, apartmentId: string, cost: CostInput): Promise<string | null> {
       if (!(await owns(userId, apartmentId))) return null;
       const rows = await db.query<{ id: string }>(
-        `insert into costs (apartment_id, date, category, description, amount)
-         values ($1, $2, $3, $4, $5) returning id`,
-        [apartmentId, cost.date, cost.category, cost.description, cost.amount],
+        `insert into costs (apartment_id, date, category, description, amount, spread_years)
+         values ($1, $2, $3, $4, $5, $6) returning id`,
+        [apartmentId, cost.date, cost.category, cost.description, cost.amount, cost.spreadYears ?? 10],
       );
       return rows[0]!.id;
     },
@@ -243,9 +248,9 @@ export function portfolio(db: Queryable) {
     async updateCost(userId: string, apartmentId: string, costId: string, cost: CostInput): Promise<boolean> {
       if (!isUuid(costId) || !(await owns(userId, apartmentId))) return false;
       const rows = await db.query(
-        `update costs set date = $3, category = $4, description = $5, amount = $6
+        `update costs set date = $3, category = $4, description = $5, amount = $6, spread_years = $7
           where id = $1 and apartment_id = $2 returning id`,
-        [costId, apartmentId, cost.date, cost.category, cost.description, cost.amount],
+        [costId, apartmentId, cost.date, cost.category, cost.description, cost.amount, cost.spreadYears ?? 10],
       );
       return rows.length > 0;
     },

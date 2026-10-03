@@ -1,8 +1,7 @@
 'use client';
 
 import type { ApartmentView } from '@/lib/domain/types';
-import { CATEGORIES } from '@/lib/domain/types';
-import { computeTax, eur, ownerShare } from '@/lib/domain/tax';
+import { computeTax, deductionOf, eur, ownerShare } from '@/lib/domain/tax';
 import { buildChecklist } from '@/lib/domain/checklist';
 import { eurWhole, monthsShort, monthTitle, shortDate } from '@/lib/ui/format';
 import { useI18n } from '@/components/I18nProvider';
@@ -32,7 +31,7 @@ export default function Home({ apt, year, account, scope, onScope, go }: Props) 
       rentByMonth[Number(r.receivedDate.slice(5, 7)) - 1]! += r.amount;
   });
   apt.costs.forEach((c) => {
-    if (c.date.startsWith(y) && CATEGORIES[c.category].deductible)
+    if (c.date.startsWith(y) && deductionOf(c, apt.settings) !== 'none')
       costByMonth[Number(c.date.slice(5, 7)) - 1]! += c.amount;
   });
   const max = Math.max(1, ...rentByMonth, ...costByMonth);

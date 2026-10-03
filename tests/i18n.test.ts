@@ -5,7 +5,7 @@ import { sv } from '@/lib/i18n/sv';
 import { LANGS, pickLang, translator, type Lang } from '@/lib/i18n';
 import { buildChecklist } from '@/lib/domain/checklist';
 import { computeTax } from '@/lib/domain/tax';
-import { COST_CATEGORIES, CATEGORIES, defaultSettings, type ApartmentView } from '@/lib/domain/types';
+import { COST_CATEGORIES, defaultSettings, type ApartmentView } from '@/lib/domain/types';
 import { monthTitle, monthsShort, shortDate } from '@/lib/ui/format';
 
 const dictionaries: Record<Lang, Record<string, string>> = { en, sv, fi };
@@ -35,8 +35,8 @@ describe.each(['sv', 'fi'] as const)('the %s translation', (lang) => {
     expect(mismatched).toEqual([]);
   });
 
-  it('describes every non-deductible cost category with a hint', () => {
-    for (const c of COST_CATEGORIES.filter((k) => !CATEGORIES[k].deductible)) {
+  it('explains with a hint how every cost category is deducted', () => {
+    for (const c of COST_CATEGORIES) {
       expect(dict[`cat.${c}.hint`], c).toBeTruthy();
     }
   });

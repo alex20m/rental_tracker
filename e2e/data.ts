@@ -21,10 +21,21 @@ export function ledger(): Pick<ApartmentView, 'rents' | 'costs'> {
   };
 }
 
-/** Owned 60 % by the viewer, 25 % by Bob, and 15 % offered to Carol, who has not joined. */
+/**
+ * Owned 60 % by the viewer, 25 % by Bob, and 15 % offered to Carol, who has not
+ * joined. A property of its own, so its building is depreciated (2.5 % a year).
+ */
 export function coOwned(api: FakeApi, name = 'Kauppakatu 12') {
   return api.addApartment(
-    { name, address: 'Kauppakatu 12 B 7, Vaasa', purchasePrice: 100000, useDepreciation: true, monthlyRent: 800 },
+    {
+      name,
+      address: 'Kauppakatu 12 B 7, Vaasa',
+      propertyType: 'property',
+      purchasePrice: 100000,
+      useDepreciation: true,
+      depreciationRate: 2.5,
+      monthlyRent: 800,
+    },
     {
       ...ledger(),
       owners: [

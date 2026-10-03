@@ -281,6 +281,7 @@ describe('costs', () => {
       date: '2026-06-15',
       category: 'repairs',
       description: '',
+      spreadYears: 10,
       amount: 45.5,
     });
   });
