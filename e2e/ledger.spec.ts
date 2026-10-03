@@ -72,6 +72,8 @@ test.describe('the rent log', () => {
     await section(page, 'Rent');
 
     await expect(page.locator('.month.future')).toHaveCount(6);
+    await expect(page.locator('.month.future').first()).toBeDisabled();
+    await expect(page.locator('.month:not(.future)').first()).toBeEnabled();
     await expect(page.locator('.month').first()).toContainText('Add');
     await page.locator('.month').first().click();
     await page.getByLabel('Amount received (€)').fill('700');
@@ -93,6 +95,7 @@ test.describe('the rent log', () => {
 test.describe('costs and receipts', () => {
   test('adds a cost with a receipt photo, then shows its thumbnail', async ({ page, api }) => {
     const apt = api.addApartment({ name: 'Flat' });
+    await page.clock.setFixedTime(new Date(`${YEAR}-12-15T12:00:00`));
     await page.goto('/');
     await section(page, 'Costs');
     await expect(page.getByText(`No costs logged for ${YEAR}.`)).toBeVisible();
@@ -118,6 +121,22 @@ test.describe('costs and receipts', () => {
     await expect(page.locator('.list li')).toContainText('14 Feb · Repairs & upkeep');
     await expect(page.locator('.list img.thumb')).toBeVisible();
     expect(apt.costs[0]).toMatchObject({ date: `${m(2)}-14`, category: 'repairs', description: 'Kitchen tap', amount: 142.5, hasReceipt: true });
+  });
+
+  test('will not save a cost dated in a month that has not started', async ({ page, api }) => {
+    api.addApartment({ name: 'Flat' });
+    await page.clock.setFixedTime(new Date(`${YEAR}-06-15T12:00:00`));
+    await page.goto('/');
+    await section(page, 'Costs');
+    await page.getByRole('button', { name: 'Add cost' }).click();
+    const sheet = page.getByRole('dialog', { name: 'Add cost' });
+    await sheet.getByLabel('Amount (€)').fill('50');
+    const save = sheet.getByRole('button', { name: 'Save' });
+
+    await sheet.getByLabel('Date').fill(`${m(7)}-01`);
+    await expect(save).toBeDisabled();
+    await sheet.getByLabel('Date').fill(`${m(6)}-30`);
+    await expect(save).toBeEnabled();
   });
 
   test('lists costs, leaves the financing charge out of the total, and says how many there are', async ({ page, api }) => {

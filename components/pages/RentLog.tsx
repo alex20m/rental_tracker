@@ -47,7 +47,7 @@ export default function RentLog({ apt, year, onChanged }: Props) {
             const future = month > nowKey;
             const cls = entry ? entry.status : future ? 'future' : 'todo-m';
             return (
-              <button key={month} className={'month ' + cls} onClick={() => setEditing({ month, entry })}>
+              <button key={month} className={'month ' + cls} disabled={future} onClick={() => setEditing({ month, entry })}>
                 <span className="m">{name}</span>
                 <span className="a">
                   {!entry && (future ? '—' : t('rent.add'))}
