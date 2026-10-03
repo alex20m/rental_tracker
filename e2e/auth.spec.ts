@@ -243,8 +243,10 @@ test.describe('the one-time code boxes', () => {
       el.dispatchEvent(new ClipboardEvent('paste', { clipboardData: data, bubbles: true, cancelable: true }));
     });
 
-    await expect.poll(() => values(boxes)).toEqual(['1', '2', '3', '4', '5', '6']);
+    // A full code submits at once and the screen moves on, so the boxes may be gone before they can
+    // be read; the code that was sent is what shows where each digit landed.
     await expect.poll(() => verifyCalls(api).length).toBe(1);
+    expect(verifyCalls(api)[0]!.body).toMatchObject({ otp: '123456' });
   });
 
   test('ignores a paste with no digits in it', async ({ page }) => {
@@ -274,8 +276,10 @@ test.describe('the one-time code boxes', () => {
       el.dispatchEvent(new ClipboardEvent('paste', { clipboardData: data, bubbles: true, cancelable: true }));
     });
 
-    await expect.poll(() => values(boxes)).toEqual(['1', '2', '3', '4', '5', '6']);
+    // A full code submits at once and the screen moves on, so the boxes may be gone before they can
+    // be read; the code that was sent is what shows where each digit landed.
     await expect.poll(() => verifyCalls(api).length).toBe(1);
+    expect(verifyCalls(api)[0]!.body).toMatchObject({ otp: '123456' });
   });
 
   test('pasting into a box past the first empty one lands at the first empty one instead, never leaving a gap', async ({
