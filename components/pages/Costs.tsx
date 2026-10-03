@@ -14,6 +14,13 @@ const todayIso = () => {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 };
 
+/** The last day of the current month — costs can be dated any time up to then, never in a month yet to come. */
+const lastDayOfMonth = () => {
+  const d = new Date();
+  const last = new Date(d.getFullYear(), d.getMonth() + 1, 0);
+  return `${last.getFullYear()}-${String(last.getMonth() + 1).padStart(2, '0')}-${String(last.getDate()).padStart(2, '0')}`;
+};
+
 type Props = { apt: ApartmentView; year: number; onChanged: () => Promise<void> };
 
 function Thumb({ apt, cost }: { apt: ApartmentView; cost: CostEntry }) {
@@ -251,7 +258,7 @@ function CostForm({
       <div className="cols">
         <div>
           <label htmlFor="cost-date">{t('costs.date')}</label>
-          <input id="cost-date" type="date" value={date} onChange={(e) => setDate(e.target.value)} />
+          <input id="cost-date" type="date" max={lastDayOfMonth()} value={date} onChange={(e) => setDate(e.target.value)} />
         </div>
         <div>
           <label htmlFor="cost-receipt">{t('costs.receipt')}</label>
@@ -300,7 +307,7 @@ function CostForm({
             {t('common.delete')}
           </button>
         )}
-        <button className="btn primary" onClick={save} disabled={!(Number(amount) > 0 && date && validYears) || busy}>
+        <button className="btn primary" onClick={save} disabled={!(Number(amount) > 0 && date && date <= lastDayOfMonth() && validYears) || busy}>
           {t('common.save')}
         </button>
       </div>

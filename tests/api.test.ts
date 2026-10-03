@@ -260,6 +260,31 @@ describe('the ledger through the API', () => {
     expect(res.status).toBe(400);
   });
 
+  it('refuses rent and costs for a month that has not started yet, but accepts the current month', async () => {
+    const id = await createApartment(alice);
+    signIn(alice);
+    const now = new Date();
+    const key = (offset: number) => {
+      const d = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + offset, 1));
+      return d.toISOString().slice(0, 7);
+    };
+    const vacant = { status: 'vacant', amount: 0, receivedDate: '', note: '' };
+    const costOn = (date: string) => ({ date, category: 'repairs', description: '', amount: 10 });
+
+    const futureRent = await rents.PUT(req('PUT', vacant), ctx({ id, month: key(2) }));
+    const futureCost = await costs.POST(req('POST', costOn(`${key(2)}-01`)), ctx({ id }));
+    const currentRent = await rents.PUT(req('PUT', vacant), ctx({ id, month: key(0) }));
+    const currentCost = await costs.POST(req('POST', costOn(`${key(0)}-01`)), ctx({ id }));
+    const existing = await costs.POST(req('POST', costOn('2025-02-10')), ctx({ id }));
+    const { id: costId } = (await existing.json()) as { id: string };
+    const moveToFuture = await cost.PUT(req('PUT', costOn(`${key(2)}-01`)), ctx({ id, costId }));
+
+    expect([futureRent.status, futureCost.status, moveToFuture.status]).toEqual([400, 400, 400]);
+    expect([currentRent.status, currentCost.status]).toEqual([200, 201]);
+    expect(await db.query('select month from rents')).toHaveLength(1);
+    expect(await db.query('select date from costs')).toHaveLength(2);
+  });
+
   it('refuses to spread a cost over more than the ten years the law allows', async () => {
     const id = await createApartment(alice);
     signIn(alice);
