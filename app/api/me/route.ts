@@ -19,6 +19,7 @@ export async function GET(request: Request): Promise<Response> {
 
   return Response.json({
     userId: session.userId,
+    name: session.name,
     email: session.email,
     emailVerified: session.emailVerified,
   });

@@ -455,22 +455,6 @@ export function portfolio(db: Queryable) {
       return rows.length ? 'ok' : 'has_share';
     },
 
-    async profile(userId: string): Promise<{ taxpayerName: string }> {
-      const rows = await db.query<{ taxpayerName: string }>(
-        'select taxpayer_name as "taxpayerName" from user_profiles where user_id = $1',
-        [userId],
-      );
-      return rows[0] ?? { taxpayerName: '' };
-    },
-
-    async setProfile(userId: string, profile: { taxpayerName: string }): Promise<void> {
-      await db.query(
-        `insert into user_profiles (user_id, taxpayer_name) values ($1, $2)
-         on conflict (user_id) do update set taxpayer_name = excluded.taxpayer_name, updated_at = now()`,
-        [userId, profile.taxpayerName],
-      );
-    },
-
 
     /**
      * Erases the account and everything that is only theirs. Apartments they

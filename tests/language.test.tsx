@@ -6,7 +6,7 @@ import RentalApp from '@/components/RentalApp';
 import { I18nProvider } from '@/components/I18nProvider';
 import { defaultSettings, type ApartmentView } from '@/lib/domain/types';
 
-const m = vi.hoisted(() => ({ me: vi.fn(), portfolio: vi.fn(), profile: vi.fn(), apartment: vi.fn() }));
+const m = vi.hoisted(() => ({ me: vi.fn(), portfolio: vi.fn(), apartment: vi.fn() }));
 
 vi.mock('next/navigation', () => ({ useRouter: () => ({ replace: vi.fn(), refresh: vi.fn() }) }));
 vi.mock('@/lib/client/authClient', () => ({ authClient: () => ({ signOut: vi.fn() }) }));
@@ -22,7 +22,7 @@ vi.mock('@/lib/client/api', () => {
   }
   return {
     ApiError,
-    api: { me: m.me, portfolio: m.portfolio, profile: m.profile, apartment: m.apartment, receiptUrl: () => '/r' },
+    api: { me: m.me, portfolio: m.portfolio, apartment: m.apartment, receiptUrl: () => '/r' },
     compressImage: vi.fn(),
     download: vi.fn(),
   };
@@ -52,12 +52,11 @@ beforeEach(() => {
   vi.useFakeTimers({ toFake: ['Date'] });
   vi.setSystemTime(new Date('2026-06-15T12:00:00'));
   localStorage.clear();
-  m.me.mockResolvedValue({ userId: 'u1', email: 'me@example.test', emailVerified: true });
+  m.me.mockResolvedValue({ userId: 'u1', name: 'Maija', email: 'me@example.test', emailVerified: true });
   m.portfolio.mockResolvedValue({
     apartments: [{ id: 'a1', name: 'Alpha', address: '', mySharePct: 100, ownerCount: 1 }],
     emailVerified: true,
   });
-  m.profile.mockResolvedValue({ taxpayerName: 'Maija' });
   m.apartment.mockResolvedValue(flat);
 });
 

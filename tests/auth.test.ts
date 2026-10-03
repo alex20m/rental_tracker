@@ -41,7 +41,7 @@ describe('an authenticated route', () => {
 
   it('answers with the signed-in account', async () => {
     setAuthProvider(
-      providerReturning({ userId: 'user_123', email: 'someone@example.test', emailVerified: true }),
+      providerReturning({ userId: 'user_123', name: 'Some One', email: 'someone@example.test', emailVerified: true }),
     );
 
     const response = await GET(request());
@@ -49,6 +49,7 @@ describe('an authenticated route', () => {
     expect(response.status).toBe(200);
     expect(await response.json()).toEqual({
       userId: 'user_123',
+      name: 'Some One',
       email: 'someone@example.test',
       emailVerified: true,
     });

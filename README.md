@@ -48,9 +48,11 @@ sections:
   apartment), a checklist of anything to fix before filing — each item takes
   you to where it is fixed — and **Download declaration (.zip)**.
 
-The **menu** holds your name on declarations, **Apartment
+The **menu** shows who you are signed in as, **Apartment
 settings** (owners & shares, inviting co-owners, property details,
-depreciation (poisto), delete) and sign out.
+depreciation (poisto), delete) and sign out. The name printed on the
+declaration is the one given when the account was created (it is required
+there); there is nothing to fill in separately.
 
 Explanations are tucked behind small **ⓘ** icons instead of printed as grey
 text: tap one to read it, tap anywhere else (or press Escape) to dismiss it.

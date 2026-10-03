@@ -7,7 +7,7 @@ import { authClient } from '@/lib/client/authClient';
 import type { Account } from '@/components/RentalApp';
 import { useI18n } from '@/components/I18nProvider';
 import LanguagePicker from '@/components/LanguagePicker';
-import { Avatar, ErrorNote, Icon, Info, Label, Sheet } from '@/components/ui';
+import { Avatar, ErrorNote, Icon, Info, Sheet } from '@/components/ui';
 
 type Props = {
   account: Account;
@@ -15,7 +15,6 @@ type Props = {
   apartmentName?: string;
   onSettings: () => void;
   onClose: () => void;
-  onAccountChanged: (a: Account) => void;
 };
 
 /** Everything about you rather than about an apartment. */
@@ -24,24 +23,10 @@ export default function MenuSheet({
   apartmentName,
   onSettings,
   onClose,
-  onAccountChanged,
 }: Props) {
   const router = useRouter();
   const { t } = useI18n();
-  const [name, setName] = useState(account.taxpayerName);
-  const [msg, setMsg] = useState('');
   const [error, setError] = useState('');
-
-  const saveName = async () => {
-    setError('');
-    try {
-      await api.setProfile(name.trim());
-      onAccountChanged({ ...account, taxpayerName: name.trim() });
-      setMsg(t('menu.saved'));
-    } catch (e) {
-      setError((e as Error).message);
-    }
-  };
 
   const signOut = async () => {
     await authClient()
@@ -65,9 +50,9 @@ export default function MenuSheet({
   return (
     <Sheet title={t('menu.title')} onClose={onClose}>
       <div className="row" style={{ borderBottom: 0, paddingTop: 4 }}>
-        <Avatar text={account.taxpayerName || account.email} />
+        <Avatar text={account.name} />
         <div className="main">
-          <div className="t">{account.taxpayerName || t('menu.signedIn')}</div>
+          <div className="t">{account.name}</div>
           <div className="s">{account.email}</div>
         </div>
       </div>
@@ -83,31 +68,6 @@ export default function MenuSheet({
         </button>
       )}
 
-      <Label
-        htmlFor="taxpayer"
-        info={
-          <Info about={t('menu.nameAbout')}>{t('menu.nameInfo')}</Info>
-        }
-      >
-        {t('menu.nameLabel')}
-      </Label>
-      <div className="cols" style={{ alignItems: 'center' }}>
-        <input id="taxpayer" autoComplete="name" value={name} onChange={(e) => setName(e.target.value)} />
-        <button
-          className="btn"
-          style={{ flex: 'none' }}
-          onClick={saveName}
-          disabled={name.trim() === account.taxpayerName}
-        >
-          {t('menu.saveName')}
-        </button>
-      </div>
-
-      {msg && (
-        <p className="msg" style={{ marginTop: 8 }}>
-          {msg}
-        </p>
-      )}
       <ErrorNote message={error} />
 
       <div style={{ marginTop: 14 }}>

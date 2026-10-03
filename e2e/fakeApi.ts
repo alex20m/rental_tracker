@@ -19,6 +19,8 @@ import type { ApartmentSettings, ApartmentView, CostEntry, Owner, PendingInvite 
 import { defaultSettings } from '../lib/domain/types';
 
 export const ME = { userId: 'usr_me', email: 'me@example.test' };
+/** The name given at sign-up, which is what the declaration is printed in. */
+export const ME_NAME = 'Aino Aalto';
 
 type Failure = { method: string; path: RegExp; status?: number; body?: unknown; text?: string; abort?: boolean };
 type Account = { password: string; verified: boolean; userId: string };
@@ -29,7 +31,6 @@ const uuid = () => `00000000-0000-4000-8000-${String(++ids).padStart(12, '0')}`;
 export class FakeApi {
   signedIn = true;
   emailVerified = true;
-  profile = { taxpayerName: '' };
   apartments = new Map<string, ApartmentView>();
   receipts = new Map<string, { contentType: string; data: Buffer }>();
   /** Neon Auth accounts, by email. */
@@ -115,18 +116,11 @@ export class FakeApi {
     const notFound = { status: 404, body: { error: 'Not found' } };
 
     if (root === 'me' && method === 'GET') {
-      return { status: 200, body: { ...ME, emailVerified: this.emailVerified } };
+      return { status: 200, body: { ...ME, name: ME_NAME, emailVerified: this.emailVerified } };
     }
     if (root === 'me' && method === 'DELETE') {
       this.signedIn = false;
       return ok;
-    }
-    if (root === 'profile') {
-      if (method === 'GET') return { status: 200, body: this.profile };
-      if (method === 'PUT') {
-        this.profile = { taxpayerName: String(body.taxpayerName) };
-        return ok;
-      }
     }
     if (root === 'import' && method === 'POST') {
       const apt = this.addApartment(body.settings as ApartmentSettings, {
@@ -256,7 +250,7 @@ export class FakeApi {
   private auth(route: Route, method: string, endpoint: string, body: unknown) {
     const b = (body ?? {}) as Record<string, string>;
     const email = (b.email ?? '').toLowerCase();
-    const session = () => ({ user: { id: ME.userId, email: ME.email, emailVerified: this.emailVerified }, session: { id: 's' } });
+    const session = () => ({ user: { id: ME.userId, name: ME_NAME, email: ME.email, emailVerified: this.emailVerified }, session: { id: 's' } });
 
     if (endpoint === 'get-session' && method === 'GET') return json(route, this.signedIn ? session() : null);
     if (endpoint === 'sign-out' && method === 'POST') {

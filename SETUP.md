@@ -99,7 +99,7 @@ Check the tables exist:
 
 ```bash
 psql "$(grep ^DATABASE_URL_UNPOOLED= .env.local | cut -d= -f2- | tr -d '"')" -c '\dt'
-# apartments, apartment_owners, apartment_invites, rents, costs, receipts, user_profiles, pgmigrations
+# apartments, apartment_owners, apartment_invites, rents, costs, receipts, user_profiles (no longer written by the app; kept until a later migration drops it), pgmigrations
 ```
 
 Receipt photos are stored in Postgres (`receipts.data`, compressed JPEGs of a

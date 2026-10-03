@@ -32,7 +32,7 @@ export default function Tax({ apt, year, taxpayerName, scope, onScope, go }: Pro
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
 
-  const checklist = buildChecklist({ apt, tax, taxpayerName }, i18n);
+  const checklist = buildChecklist({ apt, tax }, i18n);
 
   const makePackage = async () => {
     setBusy(true);

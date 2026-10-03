@@ -15,12 +15,33 @@ describe('mapping a Neon session', () => {
 
   it('carries the account through', () => {
     expect(
-      sessionFromNeon({ user: { id: 'usr_abc', email: 'someone@example.test', emailVerified: true } }),
+      sessionFromNeon({
+        user: { id: 'usr_abc', name: 'Maija Meikäläinen', email: 'someone@example.test', emailVerified: true },
+      }),
     ).toEqual({
       userId: 'usr_abc',
+      name: 'Maija Meikäläinen',
       email: 'someone@example.test',
       emailVerified: true,
     });
+  });
+
+  it('trims the name, which becomes the name printed on the declaration', () => {
+    const session = sessionFromNeon({
+      user: { id: 'usr_abc', name: '  Maija Meikäläinen ', email: 'someone@example.test' },
+    });
+
+    expect(session?.name).toBe('Maija Meikäläinen');
+  });
+
+  it('falls back to the email when the provider has no usable name', () => {
+    // Accounts made before the name was required may have none; the menu's
+    // avatar and the printed declaration must never be handed an empty string.
+    const missing = sessionFromNeon({ user: { id: 'usr_abc', email: 'someone@example.test' } });
+    const blank = sessionFromNeon({ user: { id: 'usr_abc', name: '  ', email: 'someone@example.test' } });
+
+    expect(missing?.name).toBe('someone@example.test');
+    expect(blank?.name).toBe('someone@example.test');
   });
 
   it('reports an unverified email as unverified', () => {

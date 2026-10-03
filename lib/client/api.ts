@@ -52,7 +52,7 @@ export type CostInput = { date: string; category: CostCategory; description: str
 export type RentInput = { status: RentStatus; amount: number; receivedDate: string; note: string };
 
 export const api = {
-  me: () => call<{ userId: string; email: string; emailVerified: boolean }>('GET', '/api/me'),
+  me: () => call<{ userId: string; name: string; email: string; emailVerified: boolean }>('GET', '/api/me'),
   portfolio: () => call<{ apartments: PortfolioItem[]; emailVerified: boolean }>('GET', '/api/apartments'),
   apartment: (id: string) => call<ApartmentView>('GET', apt(id)),
   createApartment: (settings: Partial<ApartmentSettings>) => call<{ id: string }>('POST', '/api/apartments', settings),
@@ -79,8 +79,6 @@ export const api = {
 
   deleteAccount: () => call('DELETE', '/api/me'),
 
-  profile: () => call<{ taxpayerName: string }>('GET', '/api/profile'),
-  setProfile: (taxpayerName: string) => call('PUT', '/api/profile', { taxpayerName }),
 };
 
 /** A receipt photo as bytes, for the declaration zip. Undefined if there is none. */

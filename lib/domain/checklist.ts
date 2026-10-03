@@ -3,10 +3,10 @@ import type { ApartmentView } from './types';
 import { translator, type Translator } from '@/lib/i18n';
 
 /** Where fixing a checklist item happens. */
-export type FixTarget = 'rent' | 'costs' | 'settings' | 'account';
+export type FixTarget = 'rent' | 'costs' | 'settings';
 
 export interface ChecklistItem {
-  id: 'name' | 'price' | 'logged' | 'unpaid' | 'receipts' | 'invites';
+  id: 'price' | 'logged' | 'unpaid' | 'receipts' | 'invites';
   ok: boolean;
   /** What is wrong, or — when `ok` — what is fine. */
   text: string;
@@ -18,17 +18,11 @@ export interface ChecklistItem {
  * both the Home to-do and the Tax page, so the two can never disagree.
  */
 export function buildChecklist(
-  args: { apt: ApartmentView; tax: TaxResult; taxpayerName: string },
+  args: { apt: ApartmentView; tax: TaxResult },
   { t, tn }: Translator = translator('en'),
 ): ChecklistItem[] {
-  const { apt, tax, taxpayerName } = args;
+  const { apt, tax } = args;
   const items: ChecklistItem[] = [
-    {
-      id: 'name',
-      ok: !!taxpayerName,
-      text: t(taxpayerName ? 'check.name.ok' : 'check.name.todo'),
-      to: 'account',
-    },
     {
       id: 'price',
       ok: apt.settings.purchasePrice > 0,

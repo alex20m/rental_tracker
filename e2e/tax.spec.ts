@@ -31,13 +31,12 @@ test.describe('the tax page', () => {
       { name: 'Flat', purchasePrice: 10 },
       { rents: [...ledger().rents, { month: m(5), status: 'unpaid', amount: 0, receivedDate: '', note: '' }] },
     );
-    api.profile = { taxpayerName: 'Aino' };
     await page.clock.setFixedTime(new Date(`${YEAR}-05-20T12:00:00`));
     await page.goto('/');
     await section(page, 'Tax');
 
     const list = page.locator('.todo');
-    await expect(list.locator('.done')).toHaveText(['Name on the declaration', 'Purchase price set', 'Every month logged', 'Every cost has a receipt']);
+    await expect(list.locator('.done')).toHaveText(['Purchase price set', 'Every month logged', 'Every cost has a receipt']);
     await list.getByRole('button', { name: '1 month unpaid — not counted as income' }).click();
     await expect(page.getByRole('heading', { name: 'Months' })).toBeVisible();
 
@@ -56,7 +55,6 @@ test.describe('the tax page', () => {
     api.receipts.set(apt.costs[0]!.id, { contentType: 'image/jpeg', data: readFileSync(`${__dirname}/receipt.jpg`) });
     api.receipts.set(apt.costs[1]!.id, { contentType: 'image/png', data: Buffer.from([0x89, 0x50]) });
     api.receipts.set(apt.costs[2]!.id, { contentType: 'image/webp', data: Buffer.from('RIFF') });
-    api.profile = { taxpayerName: 'Aino Aalto' };
     await page.clock.install();
     await page.goto('/');
     await section(page, 'Tax');

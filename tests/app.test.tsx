@@ -15,12 +15,10 @@ import {
 const m = vi.hoisted(() => ({
   me: vi.fn(),
   portfolio: vi.fn(),
-  profile: vi.fn(),
   apartment: vi.fn(),
   createApartment: vi.fn(),
   putRent: vi.fn(),
   createCost: vi.fn(),
-  setProfile: vi.fn(),
   replace: vi.fn(),
 }));
 
@@ -41,12 +39,10 @@ vi.mock('@/lib/client/api', () => {
     api: {
       me: m.me,
       portfolio: m.portfolio,
-      profile: m.profile,
       apartment: m.apartment,
       createApartment: m.createApartment,
       putRent: m.putRent,
       createCost: m.createCost,
-      setProfile: m.setProfile,
       receiptUrl: (id: string, c: string) => `/r/${id}/${c}`,
     },
     compressImage: vi.fn(),
@@ -83,10 +79,9 @@ const item = (v: ApartmentView): PortfolioItem => ({
   ownerCount: v.owners.length,
 });
 
-function serve(views: ApartmentView[], { taxpayerName = 'Maija', emailVerified = true } = {}) {
-  m.me.mockResolvedValue({ userId: 'u1', email: 'me@example.test', emailVerified });
+function serve(views: ApartmentView[], { name = 'Maija Meikäläinen', emailVerified = true } = {}) {
+  m.me.mockResolvedValue({ userId: 'u1', name, email: 'me@example.test', emailVerified });
   m.portfolio.mockResolvedValue({ apartments: views.map(item), emailVerified });
-  m.profile.mockResolvedValue({ taxpayerName });
   m.apartment.mockImplementation(async (id: string) => views.find((v) => v.id === id));
 }
 
@@ -320,25 +315,12 @@ describe('costs', () => {
 });
 
 describe('the tax page', () => {
-  it('opens the account sheet from the checklist when the declaration name is missing', async () => {
-    serve([view('a1', 'Alpha')], { taxpayerName: '' });
+  it('has no declaration-name item to fix, because the name comes from the account', async () => {
+    serve([view('a1', 'Alpha')]);
     render(<RentalApp />);
     await user().click(await screen.findByRole('button', { name: 'Tax' }));
 
-    await user().click(screen.getByRole('button', { name: /Add your name for the declaration/ }));
-
-    const sheet = screen.getByRole('dialog', { name: 'Menu' });
-    expect(within(sheet).getByLabelText('Your name on declarations')).toBeTruthy();
-  });
-
-  it('saves the name from the account sheet', async () => {
-    serve([view('a1', 'Alpha')], { taxpayerName: '' });
-    m.setProfile.mockResolvedValue({});
-    render(<RentalApp />);
-    await user().click(await screen.findByRole('button', { name: 'Menu' }));
-    await user().type(screen.getByLabelText('Your name on declarations'), 'Maija Meikäläinen');
-    await user().click(screen.getByRole('button', { name: 'Save name' }));
-    expect(m.setProfile).toHaveBeenCalledWith('Maija Meikäläinen');
+    expect(screen.queryByText(/name (on|for) the declaration/i)).toBeNull();
   });
 
   it('shows every checklist item, ticked when fine', async () => {
@@ -346,7 +328,6 @@ describe('the tax page', () => {
     render(<RentalApp />);
     await user().click(await screen.findByRole('button', { name: 'Tax' }));
     expect(screen.getByText('Every month logged')).toBeTruthy();
-    expect(screen.getByText('Name on the declaration')).toBeTruthy();
   });
 
   it('lists the Finnish form term behind an info icon on each expense line', async () => {

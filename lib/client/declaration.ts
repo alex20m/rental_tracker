@@ -98,7 +98,7 @@ export function buildPdf(apt: ApartmentView, t: TaxResult, share: OwnerShare, ta
   y += 6;
 
   h2('Taxpayer & property');
-  row('Taxpayer', taxpayerName || '—');
+  row('Taxpayer', taxpayerName);
   row('Ownership share', pctText(share.sharePct));
   row('Property', s.name);
   row('Address', s.address || '—');

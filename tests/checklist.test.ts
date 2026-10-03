@@ -26,8 +26,7 @@ function apartment(over: Partial<ApartmentView> = {}): ApartmentView {
   };
 }
 
-const check = (apt: ApartmentView, taxpayerName = 'Maija Meikäläinen') =>
-  buildChecklist({ apt, tax: computeTax(apt, 2026, today), taxpayerName });
+const check = (apt: ApartmentView) => buildChecklist({ apt, tax: computeTax(apt, 2026, today) });
 
 const byId = (items: ReturnType<typeof check>) => Object.fromEntries(items.map((i) => [i.id, i]));
 
@@ -36,12 +35,6 @@ describe('the declaration checklist', () => {
     const items = check(apartment());
     expect(items.filter((i) => !i.ok)).toEqual([]);
     expect(items.length).toBeGreaterThan(0);
-  });
-
-  it('sends a missing declaration name to the account', () => {
-    const name = byId(check(apartment(), ''))['name']!;
-    expect(name.ok).toBe(false);
-    expect(name.to).toBe('account');
   });
 
   it('sends a missing purchase price to the apartment settings', () => {

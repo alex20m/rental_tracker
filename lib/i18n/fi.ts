@@ -50,13 +50,7 @@ export const fi: Record<MessageKey, string> = {
 
   // — account menu —
   'menu.title': 'Valikko',
-  'menu.signedIn': 'Kirjautunut',
   'menu.apartmentSettings': 'Asunnon asetukset',
-  'menu.nameLabel': 'Nimesi veroilmoituksessa',
-  'menu.nameAbout': 'nimesi',
-  'menu.nameInfo': 'Tämä nimi tulostetaan veroilmoitukseen. Älä syötä henkilötunnusta – sitä ei tarvita.',
-  'menu.saveName': 'Tallenna nimi',
-  'menu.saved': 'Tallennettu.',
   'menu.signOut': 'Kirjaudu ulos',
   'menu.deleteAccount': 'Poista tili',
   'menu.deleteAccountAbout': 'tilisi',
@@ -204,8 +198,6 @@ export const fi: Record<MessageKey, string> = {
   'tax.packageFailed': 'Pakettia ei voitu luoda: {message}',
 
   // — checklist —
-  'check.name.ok': 'Nimi veroilmoituksessa',
-  'check.name.todo': 'Lisää nimesi veroilmoitusta varten',
   'check.price.ok': 'Ostohinta annettu',
   'check.price.todo': 'Lisää ostohinta (poistoja ja tuottoa varten)',
   'check.logged.ok': 'Jokainen kuukausi on kirjattu',
@@ -291,6 +283,7 @@ export const fi: Record<MessageKey, string> = {
   'auth.checkEmail': 'Tarkista sähköpostisi',
   'auth.lead': 'Vuokrat, kulut ja veroilmoitukset vuokra-asunnoillesi.',
   'auth.name': 'Nimi',
+  'auth.nameRequired': 'Anna nimesi',
   'auth.email': 'Sähköposti',
   'auth.password': 'Salasana',
   'auth.code': 'Sähköpostin koodi',
