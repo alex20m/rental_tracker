@@ -8,6 +8,7 @@
  */
 
 import { sessionFor } from '@/lib/auth';
+import { json, withUser } from '@/lib/api';
 
 export async function GET(request: Request): Promise<Response> {
   const session = await sessionFor(request);
@@ -20,5 +21,13 @@ export async function GET(request: Request): Promise<Response> {
     userId: session.userId,
     email: session.email,
     emailVerified: session.emailVerified,
+  });
+}
+
+/** Deletes the caller's account and the data that is only theirs. */
+export async function DELETE(request: Request): Promise<Response> {
+  return withUser(request, async ({ session, store }) => {
+    await store.deleteAccount(session);
+    return json({ ok: true });
   });
 }

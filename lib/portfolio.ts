@@ -471,6 +471,46 @@ export function portfolio(db: Queryable) {
       );
     },
 
+
+    /**
+     * Erases the account and everything that is only theirs. Apartments they
+     * own alone are deleted (rents, costs and receipts cascade). In an
+     * apartment with co-owners their share goes to the co-owner holding the
+     * most, so the shares still add up to 100 and nobody else loses access.
+     * Invites addressed to them and their profile go too; the sign-in identity
+     * goes last, so a failure part-way leaves an account that can retry.
+     */
+    async deleteAccount(actor: Actor): Promise<void> {
+      const { userId, email } = actor;
+      await db.query(
+        `delete from apartments a
+          where exists (select 1 from apartment_owners o where o.apartment_id = a.id and o.user_id = $1)
+            and not exists (select 1 from apartment_owners o where o.apartment_id = a.id and o.user_id <> $1)`,
+        [userId],
+      );
+      await db.query(
+        `with leaving as (
+           select apartment_id, share_pct from apartment_owners where user_id = $1
+         ), heirs as (
+           select distinct on (o.apartment_id) o.apartment_id, o.user_id
+             from apartment_owners o join leaving l using (apartment_id)
+            where o.user_id <> $1
+            order by o.apartment_id, o.share_pct desc, o.joined_at, o.user_id
+         )
+         update apartment_owners o set share_pct = o.share_pct + l.share_pct
+           from heirs h join leaving l using (apartment_id)
+          where o.apartment_id = h.apartment_id and o.user_id = h.user_id`,
+        [userId],
+      );
+      await db.query('delete from apartment_owners where user_id = $1', [userId]);
+      await db.query('delete from apartment_invites where email = lower($1)', [email]);
+      await db.query('delete from user_profiles where user_id = $1', [userId]);
+
+      // Identity lives in the neon_auth schema of this same database; it is
+      // absent on a plain Postgres. Its session and account rows cascade.
+      const [auth] = await db.query<{ present: boolean }>(`select to_regclass('neon_auth."user"') is not null as present`);
+      if (auth?.present) await db.query('delete from neon_auth."user" where id = $1', [userId]);
+    },
   };
 }
 

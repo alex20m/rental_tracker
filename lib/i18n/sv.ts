@@ -58,6 +58,10 @@ export const sv: Record<MessageKey, string> = {
   'menu.saveName': 'Spara namn',
   'menu.saved': 'Sparat.',
   'menu.signOut': 'Logga ut',
+  'menu.deleteAccount': 'Ta bort konto',
+  'menu.deleteAccountAbout': 'ditt konto',
+  'menu.deleteAccountInfo': 'Detta tar bort ditt konto och de lägenheter du äger ensam, med hyror, kostnader och kvitton. Delade lägenheter stannar hos de andra ägarna, som också får din andel.',
+  'menu.deleteAccountConfirm': 'Ta bort ditt konto och alla dina uppgifter permanent? Detta kan inte ångras.',
 
   // — notices —
   'verify.link': 'Verifiera din e-postadress',

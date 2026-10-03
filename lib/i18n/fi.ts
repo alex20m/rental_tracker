@@ -58,6 +58,10 @@ export const fi: Record<MessageKey, string> = {
   'menu.saveName': 'Tallenna nimi',
   'menu.saved': 'Tallennettu.',
   'menu.signOut': 'Kirjaudu ulos',
+  'menu.deleteAccount': 'Poista tili',
+  'menu.deleteAccountAbout': 'tilisi',
+  'menu.deleteAccountInfo': 'Tämä poistaa tilisi ja asunnot, jotka omistat yksin, vuokrineen, kuluineen ja kuitteineen. Jaetut asunnot jäävät muille omistajille, jotka saavat myös osuutesi.',
+  'menu.deleteAccountConfirm': 'Poistetaanko tilisi ja kaikki tietosi pysyvästi? Tätä ei voi perua.',
 
   // — notices —
   'verify.link': 'Vahvista sähköpostiosoitteesi',

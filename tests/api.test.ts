@@ -12,6 +12,7 @@ import * as invite from '@/app/api/apartments/[id]/invites/[inviteId]/route';
 import * as shares from '@/app/api/apartments/[id]/shares/route';
 import * as owners from '@/app/api/apartments/[id]/owners/[userId]/route';
 import * as profile from '@/app/api/profile/route';
+import * as me from '@/app/api/me/route';
 import { setMailerForTesting } from '@/lib/mail';
 import { testDb, type TestDb } from './support/testDb';
 
@@ -95,6 +96,7 @@ describe('every route, signed out', () => {
       owners.DELETE(req('DELETE'), p),
       profile.GET(req('GET')),
       profile.PUT(req('PUT', { taxpayerName: 'x' })),
+      me.DELETE(req('DELETE')),
     ]);
 
     expect(responses.map((r) => r.status)).toEqual(responses.map(() => 401));
@@ -297,5 +299,22 @@ describe('the ledger through the API', () => {
 
     expect(res.status).toBe(400);
     expect(await db.query('select * from receipts')).toEqual([]);
+  });
+});
+
+describe('deleting your account through the API', () => {
+  it('removes the caller’s data and leaves everyone else’s', async () => {
+    const mine = await createApartment(alice, 'Mine');
+    const theirs = await createApartment(bob, 'Theirs');
+
+    signIn(alice);
+    const res = await me.DELETE(req('DELETE'));
+
+    expect(res.status).toBe(200);
+    expect(await res.json()).toEqual({ ok: true });
+    expect((await portfolioOf(alice)).apartments).toEqual([]);
+    expect((await portfolioOf(bob)).apartments.map((a) => a.id)).toEqual([theirs]);
+    signIn(alice);
+    expect((await apartment.GET(req('GET'), ctx({ id: mine }))).status).toBe(404);
   });
 });
