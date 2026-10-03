@@ -1,7 +1,6 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { useRouter } from 'next/navigation';
 import { api, ApiError } from '@/lib/client/api';
 import { pct } from '@/lib/domain/tax';
 import type { ApartmentView, PortfolioItem } from '@/lib/domain/types';
@@ -70,7 +69,6 @@ export type Account = { userId: string; email: string; emailVerified: boolean; t
 type SheetName = 'switch' | 'menu' | null;
 
 export default function RentalApp() {
-  const router = useRouter();
   const { t } = useI18n();
   const thisYear = new Date().getFullYear();
 
@@ -85,13 +83,8 @@ export default function RentalApp() {
   const [adding, setAdding] = useState(false);
   const [error, setError] = useState('');
 
-  const fail = useCallback(
-    (e: unknown) => {
-      if (e instanceof ApiError && e.status === 401) router.replace('/sign-in');
-      else setError(e instanceof Error ? e.message : String(e));
-    },
-    [router],
-  );
+  // A 401 has already sent the browser to /sign-in (lib/client/api.ts).
+  const fail = useCallback((e: unknown) => setError((e as Error).message), []);
 
   const loadApartment = useCallback(
     async (id: string) => {

@@ -221,7 +221,8 @@ export class FakeApi {
         syncMine();
         const invite: PendingInvite = { id: uuid(), email: String(body.email).toLowerCase(), sharePct: share };
         apt.invites.push(invite);
-        return { status: 201, body: { id: invite.id } };
+        // No mail goes out from the fake; the real route reports whether Resend sent it.
+        return { status: 201, body: { id: invite.id, emailSent: false } };
       }
       if (subId && method === 'DELETE') {
         const invite = apt.invites.find((i) => i.id === subId);

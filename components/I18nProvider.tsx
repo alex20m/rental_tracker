@@ -6,11 +6,14 @@ import { DEFAULT_LANG, LANG_KEY, pickLang, translator, type Lang, type Translato
 
 type I18n = Translator & { setLang: (lang: Lang) => void };
 
-// Without a provider (a component rendered on its own) the app speaks English.
-const Context = createContext<I18n>({ ...translator(DEFAULT_LANG), setLang: () => {} });
+// No default: every screen sits under <I18nProvider> (app/layout.tsx), and a
+// component rendered on its own — in a unit test — is wrapped in it too
+// (tests/support/render.tsx). A silent English fallback with a do-nothing
+// setLang would only hide a missing provider.
+const Context = createContext<I18n | null>(null);
 
 export function useI18n(): I18n {
-  return useContext(Context);
+  return useContext(Context)!;
 }
 
 function remember(lang: Lang) {
