@@ -1,7 +1,7 @@
 import type { Page } from '@playwright/test';
 import { expect, test } from './fixtures';
 import { coOwned, ledger, m, YEAR } from './data';
-import { alert, openAccount, openApartment, openMenu, openPortfolio, section } from './nav';
+import { alert, openAccount, openMenu, openPortfolio, section } from './nav';
 
 const netIncome = (page: Page) => page.getByTestId('net-income');
 
