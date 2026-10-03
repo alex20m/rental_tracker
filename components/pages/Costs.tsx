@@ -140,7 +140,7 @@ function CostForm({
 
   const save = () =>
     run(async () => {
-      const entry = { date, category, description: description.trim(), amount: Number(amount) || 0 };
+      const entry = { date, category, description: description.trim(), amount: Number(amount) };
       const id = cost
         ? (await api.updateCost(apt.id, cost.id, entry), cost.id)
         : (await api.createCost(apt.id, entry)).id;
@@ -220,7 +220,7 @@ function CostForm({
             id="cost-receipt"
             className="btn block"
             style={{ padding: '11px 8px' }}
-            onClick={() => fileRef.current?.click()}
+            onClick={() => fileRef.current!.click()}
             disabled={busy}
           >
             {Icon.camera}

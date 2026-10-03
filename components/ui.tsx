@@ -66,7 +66,7 @@ export function Sheet({ title, children, onClose }: { title: string; children: R
  * on Escape, on an outside click and on scroll, and only ever closes itself —
  * not a sheet it happens to sit in.
  */
-export function Info({ about, children }: { about?: string; children: ReactNode }) {
+export function Info({ about, children }: { about: string; children: ReactNode }) {
   const [open, setOpen] = useState(false);
   const [pos, setPos] = useState<Placement | null>(null);
   const button = useRef<HTMLButtonElement>(null);
@@ -120,7 +120,7 @@ export function Info({ about, children }: { about?: string; children: ReactNode 
         ref={button}
         type="button"
         className="info"
-        aria-label={about ? `About ${about}` : 'More info'}
+        aria-label={`About ${about}`}
         aria-expanded={open}
         aria-controls={open ? id : undefined}
         onClick={() => {
@@ -283,7 +283,7 @@ export function Heading({ children, info, action }: { children: ReactNode; info?
 export function Avatar({ text }: { text: string }) {
   return (
     <span className="avatar" aria-hidden="true">
-      {(text.trim()[0] ?? '?').toUpperCase()}
+      {text.trim()[0]!.toUpperCase()}
     </span>
   );
 }

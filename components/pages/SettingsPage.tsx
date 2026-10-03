@@ -55,7 +55,8 @@ function useAction(onDone: () => Promise<void>) {
  * only; the rest of each owner's portfolio stays private to them.
  */
 function Owners({ apt, account, onChanged, onGone }: Omit<Props, 'onBack'>) {
-  const me = apt.owners.find((o) => o.userId === account.userId);
+  // The viewer reaches an apartment only as one of its owners.
+  const me = apt.owners.find((o) => o.userId === account.userId)!;
   const [editing, setEditing] = useState(false);
   const [inviting, setInviting] = useState(false);
   const [draft, setDraft] = useState<Record<string, string>>({});
@@ -145,7 +146,7 @@ function Owners({ apt, account, onChanged, onGone }: Omit<Props, 'onBack'>) {
                 step="0.01"
                 min="0"
                 max="100"
-                value={draft[r.key] ?? ''}
+                value={draft[r.key]!}
                 onChange={(e) => setDraft({ ...draft, [r.key]: e.target.value })}
               />
             ) : (
@@ -199,7 +200,7 @@ function Owners({ apt, account, onChanged, onGone }: Omit<Props, 'onBack'>) {
         </button>
       )}
 
-      {me && apt.owners.length > 1 && !editing && (
+      {apt.owners.length > 1 && !editing && (
         <div className="row" style={{ borderBottom: 0, paddingTop: 0 }}>
           <button
             className="link danger"
@@ -224,7 +225,7 @@ function Owners({ apt, account, onChanged, onGone }: Omit<Props, 'onBack'>) {
       <ErrorNote message={error} />
 
       {inviting && (
-        <InviteSheet apt={apt} me={me?.sharePct ?? 0} onClose={() => setInviting(false)} onChanged={onChanged} />
+        <InviteSheet apt={apt} me={me.sharePct} onClose={() => setInviting(false)} onChanged={onChanged} />
       )}
     </section>
   );
@@ -287,7 +288,7 @@ function InviteSheet({
           inputMode="decimal"
           step="0.01"
           min="0.01"
-          max={me || 100}
+          max={me}
           placeholder="e.g. 50"
           value={share}
           onChange={(e) => setShare(e.target.value)}
