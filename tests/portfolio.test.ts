@@ -67,6 +67,8 @@ describe('a portfolio', () => {
       name: 'Rantatie 5',
       address: 'Rantatie 5 A 3, 65100 Vaasa',
       housingCompany: 'As Oy Ranta',
+      propertyType: 'property' as const,
+      financingChargeDeductible: true,
       purchaseDate: '2020-05-04',
       purchasePrice: 95000.5,
       buildingSharePct: 80,
@@ -78,6 +80,38 @@ describe('a portfolio', () => {
     const id = await p.create(alice, settings);
 
     expect((await p.get(alice.userId, id))!.settings).toEqual(settings);
+  });
+
+  it('keeps over how many years an improvement is spread, and accepts every new category', async () => {
+    const id = await p.create(alice, flat('Spread'));
+    const costId = await p.createCost(alice.userId, id, {
+      date: '2025-05-01',
+      category: 'improvement',
+      description: 'Balcony glazing',
+      amount: 3000,
+      spreadYears: 6,
+    });
+    for (const category of ['water_charge', 'furniture', 'travel', 'property_tax'] as const) {
+      await p.createCost(alice.userId, id, { date: '2025-06-01', category, description: category, amount: 1 });
+    }
+    expect((await p.get(alice.userId, id))!.costs[0]).toMatchObject({ id: costId, spreadYears: 6 });
+
+    await p.updateCost(alice.userId, id, costId!, {
+      date: '2025-05-01',
+      category: 'improvement',
+      description: 'Balcony glazing',
+      amount: 3000,
+      spreadYears: 10,
+    });
+    const costs = (await p.get(alice.userId, id))!.costs;
+    expect(costs[0]!.spreadYears).toBe(10);
+    // Left out, it is the legal maximum.
+    expect(costs.slice(1).map((c) => [c.category, c.spreadYears])).toEqual([
+      ['water_charge', 10],
+      ['furniture', 10],
+      ['travel', 10],
+      ['property_tax', 10],
+    ]);
   });
 });
 
@@ -423,7 +457,7 @@ describe("an apartment's ledger", () => {
     await p.updateCost(alice.userId, id, costId!, { date: '2025-02-11', category: 'repairs', description: 'Tap', amount: 142.5 });
 
     expect((await p.get(alice.userId, id))!.costs).toEqual([
-      { id: costId, date: '2025-02-11', category: 'repairs', description: 'Tap', amount: 142.5, hasReceipt: false },
+      { id: costId, date: '2025-02-11', category: 'repairs', description: 'Tap', amount: 142.5, spreadYears: 10, hasReceipt: false },
     ]);
 
     expect(await p.deleteCost(alice.userId, id, costId!)).toBe(true);

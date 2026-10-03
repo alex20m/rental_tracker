@@ -5,7 +5,7 @@
  */
 
 import { z } from 'zod';
-import { COST_CATEGORIES, RENT_STATUSES, defaultSettings } from '@/lib/domain/types';
+import { COST_CATEGORIES, PROPERTY_TYPES, RENT_STATUSES, defaultSettings } from '@/lib/domain/types';
 
 const isRealDate = (s: string) => {
   const d = new Date(`${s}T00:00:00Z`);
@@ -31,6 +31,8 @@ export const settingsSchema = z.object({
   name: text(200).min(1, 'Give the apartment a name'),
   address: text(300),
   housingCompany: text(200),
+  propertyType: z.enum(PROPERTY_TYPES),
+  financingChargeDeductible: z.boolean(),
   purchaseDate: z.union([z.literal(''), isoDate]),
   purchasePrice: money,
   buildingSharePct: percent,
@@ -67,6 +69,8 @@ export const costSchema = z
     category: z.enum(COST_CATEGORIES),
     description: text(500),
     amount: money.refine((n) => n > 0, 'Amount must be more than zero'),
+    /** Left out, a cost is spread over the legal maximum of ten years where spreading applies. */
+    spreadYears: z.number().int().min(1).max(10).optional(),
   })
   .strict();
 
