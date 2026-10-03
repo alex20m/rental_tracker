@@ -42,12 +42,9 @@ export const en = {
   'nav.settings': 'Settings',
   'ledger.view': 'Rent or costs',
   'nav.allApartments': 'All apartments',
-  'nav.allApartmentsHint': 'Your share, added together',
-  'nav.apartments': 'Apartments',
   'nav.newApartment': 'New apartment',
   'nav.loadFailed': 'Couldn’t load this apartment.',
   'nav.tryAgain': 'Try again',
-  'nav.shareYours': '{pct} yours',
 
   // — first run —
   'welcome.title': 'Add your first apartment',
@@ -264,8 +261,6 @@ export const en = {
 
   // — settings —
   'settings.title': 'Settings',
-  'settings.view': 'Settings for',
-  'settings.apartment': 'Apartment',
   'settings.account': 'Account',
   'settings.owners': 'Owners',
   'settings.ownersAbout': 'owners and shares',

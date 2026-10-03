@@ -334,7 +334,7 @@ test.describe('verifying from inside the app', () => {
     await expect(page.getByText(/^We sent a code to /)).toBeVisible();
     await fillCode(page, '123456');
 
-    await expect(page.locator('button.pill')).toHaveText('Flat');
+    await expect(page.locator('h1.aptname')).toHaveText('Flat');
     await expect(page.getByText('to receive apartments other owners share with you.')).toHaveCount(0);
   });
 

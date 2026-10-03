@@ -1,11 +1,13 @@
 'use client';
 
+import { useState } from 'react';
 import { computeTax, eur, ownerShare, pct, portfolioTotals } from '@/lib/domain/tax';
 import type { ApartmentView, PortfolioItem } from '@/lib/domain/types';
 import type { Account } from '@/components/RentalApp';
 import { VerifyNotice } from '@/components/Notices';
 import { eurWhole } from '@/lib/ui/format';
 import { useI18n } from '@/components/I18nProvider';
+import AddApartment from '@/components/AddApartment';
 import { Heading, Icon, Info, Money } from '@/components/ui';
 
 type Props = {
@@ -14,11 +16,14 @@ type Props = {
   year: number;
   account: Account;
   onOpen: (id: string) => void;
+  /** A new apartment exists; the portfolio is reloaded and it is opened. */
+  onCreated: (id: string) => Promise<void>;
 };
 
 /** Your share of every apartment, added together — what your own tax return sees. */
-export default function Portfolio({ items, details, year, account, onOpen }: Props) {
+export default function Portfolio({ items, details, year, account, onOpen, onCreated }: Props) {
   const { t } = useI18n();
+  const [adding, setAdding] = useState(false);
   const shares = items.flatMap((i) => {
     const d = details[i.id];
     return d ? [{ item: i, share: ownerShare(computeTax(d, year), d.mySharePct) }] : [];
@@ -73,6 +78,7 @@ export default function Portfolio({ items, details, year, account, onOpen }: Pro
                     <div className="s">
                       {i.mySharePct === 100 ? t('common.yours') : t('portfolio.youOwn', { pct: pct(i.mySharePct) })}
                       {i.ownerCount > 1 ? t('portfolio.owners', { n: i.ownerCount }) : ''}
+                      {i.address ? ` · ${i.address}` : ''}
                     </div>
                   </div>
                   {s && (
@@ -86,6 +92,20 @@ export default function Portfolio({ items, details, year, account, onOpen }: Pro
             );
           })}
         </ul>
+        {adding ? (
+          <div style={{ marginTop: 16 }}>
+            <AddApartment autoFocus onCreated={onCreated} />
+          </div>
+        ) : (
+          <button
+            className="row-btn"
+            style={{ borderBottom: 0, color: 'var(--brand)', fontWeight: 600 }}
+            onClick={() => setAdding(true)}
+          >
+            {Icon.plus}
+            <div className="main">{t('nav.newApartment')}</div>
+          </button>
+        )}
       </section>
     </>
   );
