@@ -337,6 +337,23 @@ test.describe('switching apartments', () => {
     expect(api.apartments.size).toBe(2);
   });
 
+  test('centres the dialog on a phone-sized screen instead of docking it to the bottom', async ({ page, api }) => {
+    api.addApartment({ name: 'Flat' });
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto('/');
+
+    await page.locator('button.pill').click();
+    // The dialog slides in; measure once it has settled.
+    await expect
+      .poll(async () => {
+        const box = (await page.getByRole('dialog').boundingBox())!;
+        return Math.round(box.y - (844 - (box.y + box.height)));
+      })
+      .toBe(0);
+    const box = (await page.getByRole('dialog').boundingBox())!;
+    expect(box.y).toBeGreaterThan(20);
+  });
+
   test('closes the switcher with its close button, or by tapping outside', async ({ page, api }) => {
     api.addApartment({ name: 'Flat' });
     await page.goto('/');
