@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { cleanup, screen, waitFor, within } from '@testing-library/react';
+import { cleanup, screen, within } from '@testing-library/react';
 import { render } from './support/render';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -87,6 +87,12 @@ function serve(views: ApartmentView[], { name = 'Maija Meikäläinen', emailVeri
 
 const user = () => userEvent.setup();
 
+/** Rent and Costs share the "Rent & costs" tab: open it, then pick one with its switch. */
+async function openLedger(which: 'Rent' | 'Costs') {
+  await user().click(await screen.findByRole('button', { name: 'Rent & costs' }));
+  await user().click(within(screen.getByRole('radiogroup', { name: 'Rent or costs' })).getByRole('radio', { name: which }));
+}
+
 beforeEach(() => {
   vi.useFakeTimers({ toFake: ['Date'] });
   vi.setSystemTime(new Date('2026-06-15T12:00:00'));
@@ -143,7 +149,7 @@ describe('moving between apartments', () => {
   it('keeps you on the same section when you switch apartment', async () => {
     serve([view('a1', 'Alpha'), view('a2', 'Beta')]);
     render(<RentalApp />);
-    await user().click(await screen.findByRole('button', { name: 'Costs' }));
+    await openLedger('Costs');
 
     await user().click(screen.getByRole('button', { name: 'Alpha' }));
     await user().click(
@@ -151,7 +157,8 @@ describe('moving between apartments', () => {
     );
 
     expect(screen.getByRole('button', { name: 'Beta' })).toBeTruthy();
-    expect(screen.getByRole('button', { name: 'Costs' }).getAttribute('aria-current')).toBe('page');
+    expect(screen.getByRole('button', { name: 'Rent & costs' }).getAttribute('aria-current')).toBe('page');
+    expect(screen.getByRole('radio', { name: 'Costs' }).getAttribute('aria-checked')).toBe('true');
   });
 
   it('offers the all-apartments overview only when there is more than one apartment', async () => {
@@ -170,7 +177,13 @@ describe('moving between apartments', () => {
     // 6 × 700 + 300 rent, nothing deducted
     expect(await screen.findByTestId('net-income')).toBeTruthy();
     expect(screen.getByTestId('net-income').textContent).toMatch(/4\s?500,00/);
-    expect(screen.queryByRole('navigation', { name: 'Sections' })).toBeNull();
+
+    // The navigation stays, with nothing marked; a tap leads into the apartment that was selected.
+    const nav = screen.getByRole('navigation', { name: 'Sections' });
+    expect(within(nav).queryByRole('button', { current: 'page' })).toBeNull();
+    await user().click(within(nav).getByRole('button', { name: 'History' }));
+    expect(screen.getByRole('button', { name: 'Alpha' })).toBeTruthy();
+    expect(screen.getByRole('heading', { name: 'History' })).toBeTruthy();
   });
 
   it('steps the tax year with the arrows', async () => {
@@ -225,7 +238,7 @@ describe('the rent log', () => {
     serve([view('a1', 'Alpha', { rents: [] })]);
     m.putRent.mockResolvedValue({});
     render(<RentalApp />);
-    await user().click(await screen.findByRole('button', { name: 'Rent' }));
+    await openLedger('Rent');
 
     await user().click(screen.getByRole('button', { name: /^Mar/ }));
     const sheet = screen.getByRole('dialog', { name: 'March 2026' });
@@ -243,7 +256,7 @@ describe('the rent log', () => {
   it('keeps the explanation behind an info icon instead of printing it', async () => {
     serve([view('a1', 'Alpha')]);
     render(<RentalApp />);
-    await user().click(await screen.findByRole('button', { name: 'Rent' }));
+    await openLedger('Rent');
 
     expect(screen.queryByText(/taxed in the year/i)).toBeNull();
     await user().click(screen.getByRole('button', { name: 'About rent timing' }));
@@ -256,7 +269,7 @@ describe('costs', () => {
     serve([view('a1', 'Alpha')]);
     m.createCost.mockResolvedValue({ id: 'c1' });
     render(<RentalApp />);
-    await user().click(await screen.findByRole('button', { name: 'Costs' }));
+    await openLedger('Costs');
     await user().click(screen.getByRole('button', { name: 'Add cost' }));
 
     const sheet = screen.getByRole('dialog', { name: 'Add cost' });
@@ -275,7 +288,7 @@ describe('costs', () => {
   it('cannot be saved without an amount', async () => {
     serve([view('a1', 'Alpha')]);
     render(<RentalApp />);
-    await user().click(await screen.findByRole('button', { name: 'Costs' }));
+    await openLedger('Costs');
     await user().click(screen.getByRole('button', { name: 'Add cost' }));
     const sheet = screen.getByRole('dialog', { name: 'Add cost' });
     expect((within(sheet).getByRole('button', { name: 'Save' }) as HTMLButtonElement).disabled).toBe(true);
@@ -284,7 +297,7 @@ describe('costs', () => {
   it('explains through an info icon why the financing charge is not deductible', async () => {
     serve([view('a1', 'Alpha')]);
     render(<RentalApp />);
-    await user().click(await screen.findByRole('button', { name: 'Costs' }));
+    await openLedger('Costs');
     await user().click(screen.getByRole('button', { name: 'Add cost' }));
     const sheet = screen.getByRole('dialog', { name: 'Add cost' });
 
@@ -305,7 +318,7 @@ describe('costs', () => {
     };
     serve([view('a1', 'Alpha', { costs: [cost] })]);
     render(<RentalApp />);
-    await user().click(await screen.findByRole('button', { name: 'Costs' }));
+    await openLedger('Costs');
 
     const row = screen.getByRole('button', { name: /Home insurance/ });
     expect(row.textContent).toContain('12 Mar');
@@ -354,7 +367,8 @@ describe('the home screen', () => {
     await user().click(await screen.findByRole('button', { name: /5 months not logged yet/ }));
     // …and lands on the rent log, with the months still waiting to be logged
     expect(screen.getByRole('button', { name: /^Feb/ }).className).toContain('todo-m');
-    expect(screen.getByRole('button', { name: 'Rent' }).getAttribute('aria-current')).toBe('page');
+    expect(screen.getByRole('button', { name: 'Rent & costs' }).getAttribute('aria-current')).toBe('page');
+    expect(screen.getByRole('radio', { name: 'Rent' }).getAttribute('aria-checked')).toBe('true');
   });
 
   it('lists recent activity with readable months and no fake income for an unpaid month', async () => {
@@ -373,8 +387,8 @@ describe('the home screen', () => {
     render(<RentalApp />);
     const nav = await screen.findByRole('navigation', { name: 'Sections' });
     expect(within(nav).getByRole('button', { name: 'Home' }).getAttribute('aria-current')).toBe('page');
-    await user().click(within(nav).getByRole('button', { name: 'Costs' }));
-    expect(within(nav).getByRole('button', { name: 'Costs' }).getAttribute('aria-current')).toBe('page');
+    await user().click(within(nav).getByRole('button', { name: 'Rent & costs' }));
+    expect(within(nav).getByRole('button', { name: 'Rent & costs' }).getAttribute('aria-current')).toBe('page');
     expect(within(nav).getByRole('button', { name: 'Home' }).getAttribute('aria-current')).toBeNull();
   });
 
@@ -386,28 +400,73 @@ describe('the home screen', () => {
   });
 });
 
-describe('apartment settings', () => {
-  it('opens from the menu and can go back home', async () => {
+describe('settings', () => {
+  it('opens from the bottom navigation and leaves through it', async () => {
     serve([view('a1', 'Alpha')]);
     render(<RentalApp />);
-    await user().click(await screen.findByRole('button', { name: 'Menu' }));
-    await user().click(screen.getByRole('button', { name: /Apartment settings/ }));
-    expect(await screen.findByRole('heading', { name: 'Apartment settings' })).toBeTruthy();
-    await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
+    await user().click(await screen.findByRole('button', { name: 'Settings' }));
+    expect(await screen.findByRole('heading', { name: 'Settings' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Settings' }).getAttribute('aria-current')).toBe('page');
 
-    await user().click(screen.getByRole('button', { name: 'Back' }));
+    await user().click(screen.getByRole('button', { name: 'Home' }));
     expect(screen.getByRole('button', { name: 'Home' }).getAttribute('aria-current')).toBe('page');
   });
 
   it('only offers to save once something has changed', async () => {
     serve([view('a1', 'Alpha')]);
     render(<RentalApp />);
-    await user().click(await screen.findByRole('button', { name: 'Menu' }));
-    await user().click(screen.getByRole('button', { name: /Apartment settings/ }));
-    await screen.findByRole('heading', { name: 'Apartment settings' });
+    await user().click(await screen.findByRole('button', { name: 'Settings' }));
+    await screen.findByRole('heading', { name: 'Settings' });
     expect(screen.queryByRole('button', { name: 'Save changes' })).toBeNull();
 
     await user().type(screen.getByLabelText('Address'), 'x');
     expect(screen.getByRole('button', { name: 'Save changes' })).toBeTruthy();
+  });
+});
+
+describe('history', () => {
+  it('lists this year and every earlier year with data, newest first, skipping years with nothing logged', async () => {
+    serve([view('a1', 'Alpha', { rents: [paid('2024-03', 500), paid('2026-01', 700)] })]);
+    render(<RentalApp />);
+    await user().click(await screen.findByRole('button', { name: 'History' }));
+
+    const years = screen.getAllByRole('listitem').map((li) => li.textContent ?? '');
+    expect(years).toHaveLength(2);
+    expect(years[0]).toMatch(/^2026/);
+    expect(years[0]).toMatch(/700,00/);
+    expect(years[1]).toMatch(/^2024/);
+    expect(years[1]).toMatch(/500,00/);
+    expect(screen.getByTestId('history-total').textContent).toMatch(/1\s?200,00/);
+  });
+
+  it('opens a year’s tax summary when the year is tapped', async () => {
+    serve([view('a1', 'Alpha', { rents: [paid('2024-03', 500)] })]);
+    render(<RentalApp />);
+    await user().click(await screen.findByRole('button', { name: 'History' }));
+    await user().click(screen.getByRole('button', { name: /^2024/ }));
+
+    expect(screen.getByRole('button', { name: 'Tax' }).getAttribute('aria-current')).toBe('page');
+    expect(screen.getByLabelText('Tax year').textContent).toBe('2024');
+  });
+
+  it('says earlier years will appear once there is data for them', async () => {
+    serve([view('a1', 'Alpha')]);
+    render(<RentalApp />);
+    await user().click(await screen.findByRole('button', { name: 'History' }));
+    expect(screen.getByText(/Earlier years appear here/)).toBeTruthy();
+  });
+});
+
+describe('settings sections', () => {
+  it('shows the apartment first and the account on the other side of one switch', async () => {
+    serve([view('a1', 'Alpha')]);
+    render(<RentalApp />);
+    await user().click(await screen.findByRole('button', { name: 'Settings' }));
+    expect(screen.getByLabelText('Address')).toBeTruthy();
+    expect(screen.queryByRole('region', { name: 'Account' })).toBeNull();
+
+    await user().click(screen.getByRole('radio', { name: 'Account' }));
+    expect(screen.getByRole('region', { name: 'Account' })).toBeTruthy();
+    expect(screen.queryByLabelText('Address')).toBeNull();
   });
 });

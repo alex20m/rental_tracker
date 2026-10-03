@@ -1,7 +1,7 @@
 import type { Page } from '@playwright/test';
 import { expect, test } from './fixtures';
 import { coOwned, ledger, m, YEAR } from './data';
-import { alert, openApartment, openMenu, section } from './nav';
+import { alert, openAccount, openApartment, openMenu, section } from './nav';
 
 const netIncome = (page: Page) => page.getByTestId('net-income');
 
@@ -128,7 +128,7 @@ test.describe('home', () => {
     for (const [item, arrival] of [
       ['8 months not logged yet', page.getByRole('heading', { name: 'Months' })],
       ['3 costs have no receipt photo', page.getByRole('button', { name: 'Add cost' })],
-      ['1 invited owner hasn’t joined yet — check the shares are final', page.getByRole('heading', { name: 'Apartment settings' })],
+      ['1 invited owner hasn’t joined yet — check the shares are final', page.getByRole('heading', { name: 'Settings', exact: true })],
     ] as const) {
       await todo.getByRole('button', { name: item }).click();
       await expect(arrival).toBeVisible();
@@ -231,8 +231,7 @@ test.describe('home', () => {
     await expect(note).toHaveCount(0);
   });
 
-  test('keeps a popover inside a sheet from closing the sheet', async ({ page, api }) => {
-    api.addApartment({ name: 'Flat' });
+  test('keeps a popover inside a sheet from closing the sheet', async ({ page }) => {
     await page.goto('/');
     const menu = await openMenu(page);
     await menu.getByRole('button', { name: 'About your account' }).click();
@@ -275,7 +274,9 @@ test.describe('switching apartments', () => {
     await page.getByRole('button', { name: /All apartments/ }).click();
 
     await expect(page.locator('button.pill')).toHaveText('All apartments');
-    await expect(page.getByRole('navigation', { name: 'Sections' })).toHaveCount(0);
+    // The bottom navigation stays, with no tab marked, and leads back into the selected apartment.
+    const nav = page.getByRole('navigation', { name: 'Sections' });
+    await expect(nav.locator('[aria-current=page]')).toHaveCount(0);
     // −189,60 (60 % of Kauppakatu) + 2 184,00 (Rantatie) = 1 994,40; tax at 30 % on the total.
     await expect(netIncome(page)).toHaveText('1 994,40 €');
     await expect(page.locator('.hero')).toContainText('598 €');
@@ -369,11 +370,11 @@ test.describe('switching apartments', () => {
   });
 });
 
-test.describe('the menu', () => {
+test.describe('the account settings', () => {
   test('shows the name given at sign-up, which is the name on the declaration, and offers no way to retype it', async ({ page, api }) => {
     api.addApartment({ name: 'Flat' });
     await page.goto('/');
-    const menu = await openMenu(page);
+    const menu = await openAccount(page);
 
     await expect(menu.locator('.t').first()).toHaveText('Aino Aalto');
     await expect(menu.getByLabel('Your name on declarations')).toHaveCount(0);
