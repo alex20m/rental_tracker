@@ -15,7 +15,19 @@ const isRealDate = (s: string) => {
 /** YYYY-MM-DD that names a day that exists — 2025-02-30 is refused. */
 export const isoDate = z.string().regex(/^\d{4}-\d{2}-\d{2}$/).refine(isRealDate, 'Not a real date');
 
+/**
+ * The latest month that has begun anywhere on Earth (UTC+14), as YYYY-MM. The
+ * server cannot know the user's time zone, so it allows whatever month the
+ * browser could legitimately be in; the browser itself blocks by local time.
+ */
+export const latestMonth = (now = new Date()) => new Date(now.getTime() + 14 * 3_600_000).toISOString().slice(0, 7);
+
+const NOT_FUTURE = 'Cannot log a month that has not started yet';
+
 export const month = z.string().regex(/^\d{4}-(0[1-9]|1[0-2])$/, 'Expected YYYY-MM');
+
+/** A month that has started: the ledger only records what already happened. */
+export const pastOrCurrentMonth = month.refine((m) => m <= latestMonth(), NOT_FUTURE);
 
 const hundredths = (n: number) => Math.abs(n * 100 - Math.round(n * 100)) < 1e-6;
 
@@ -63,7 +75,7 @@ export const rentSchema = z
 
 export const costSchema = z
   .object({
-    date: isoDate,
+    date: isoDate.refine((d) => d.slice(0, 7) <= latestMonth(), NOT_FUTURE),
     category: z.enum(COST_CATEGORIES),
     description: text(500),
     amount: money.refine((n) => n > 0, 'Amount must be more than zero'),
