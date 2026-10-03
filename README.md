@@ -8,9 +8,10 @@ declaration package (PDF + CSV + receipts, zipped) for their own share.
 
 - **Accounts.** Email + password sign-in with Neon Auth. Email addresses are
   verified with a one-time code.
-- **A portfolio per person.** Any number of apartments. The Portfolio tab
-  shows each one with your share, and your totals for the year with the
-  capital income tax estimated on all of them together.
+- **A portfolio per person.** Any number of apartments. The app always shows
+  one apartment at a time; tap its name at the top to switch, add one, or open
+  **All apartments** — your share of each, and your totals for the year with
+  the capital income tax estimated on all of them together.
 - **Sharing one apartment.** In an apartment's settings, share it with another
   owner's email and choose their percentage; it is taken from your own share.
   They get that apartment — and only that one — the next time they sign in
@@ -22,21 +23,34 @@ declaration package (PDF + CSV + receipts, zipped) for their own share.
   tab, the PDF and the CSV show the apartment total next to your share, and the
   share is what you declare.
 - **Moving from the first version.** That version kept everything in one
-  browser. Export a backup there, then use **Portfolio → Import backup** here:
+  browser. Export a backup there, then use **Menu → Import backup** here:
   it becomes a new apartment with its rent log, costs and receipt photos.
 
-## Pages
+## Using it
 
-- **Portfolio** – your apartments, your share of the year's figures, add an
-  apartment, your name on declarations, import a backup, sign out.
-- **Overview** – rent received, deductible costs, net income (whole apartment
-  and your share), occupancy, yield, monthly chart.
-- **Rent log** – tap a month: paid (amount + received date), vacant, or unpaid.
-- **Costs** – costs by category with a receipt photo (camera or gallery).
-- **Tax** – summary by Finnish form categories with your share, warnings for
-  missing data, and **Generate declaration (.zip)**.
-- **Apartment settings** (gear) – owners & shares, sharing by email, property
-  details, depreciation (poisto), delete.
+The top bar is always the same: the **apartment** you are looking at (tap to
+switch or add one), the **tax year** (‹ ›), and your **menu**. Below it, four
+sections:
+
+- **Home** – net income for the year in one big number, with rent, deductions
+  and estimated tax under it; a short to-do list of what is still missing;
+  monthly chart; occupancy and yield; recent activity. For a co-owned apartment
+  a toggle switches between *your share* (what you declare) and the *whole
+  apartment*.
+- **Rent** – tap a month to log it: paid (amount and received date are
+  pre-filled), vacant, or unpaid.
+- **Costs** – the **+** button adds a cost: amount, a category chip, optional
+  description, date and receipt photo (camera or gallery).
+- **Tax** – the figures by Finnish form category for your share (or the whole
+  apartment), a checklist of anything to fix before filing — each item takes
+  you to where it is fixed — and **Download declaration (.zip)**.
+
+The **menu** holds your name on declarations, **Import backup**, **Apartment
+settings** (owners & shares, inviting co-owners, property details,
+depreciation (poisto), delete) and sign out.
+
+Explanations are tucked behind small **ⓘ** icons instead of printed as grey
+text: tap one to read it, tap anywhere else (or press Escape) to dismiss it.
 
 ## Tax logic (`lib/domain/tax.ts`)
 
@@ -49,7 +63,7 @@ declaration package (PDF + CSV + receipts, zipped) for their own share.
 - Each owner's figures are the apartment's figures × their ownership %, rounded
   to the cent line by line.
 - Estimated tax: 30 % up to 30 000 €, 34 % above (capital income only), on your
-  share; on the Portfolio tab, on the total of all your shares.
+  share; in **All apartments**, on the total of all your shares.
 
 ## Important
 

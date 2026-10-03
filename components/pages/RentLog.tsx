@@ -2,12 +2,15 @@
 
 import { useState } from 'react';
 import type { ApartmentView, RentEntry, RentStatus } from '@/lib/domain/types';
-import { RENT_STATUSES } from '@/lib/domain/types';
 import { api } from '@/lib/client/api';
-import { eur, MONTHS } from '@/lib/domain/tax';
-import { ErrorNote, Sheet } from '@/components/ui';
+import { computeTax, eur, MONTHS } from '@/lib/domain/tax';
+import { monthTitle } from '@/lib/ui/format';
+import { ErrorNote, Heading, Info, Money, Segmented, Sheet } from '@/components/ui';
 
-const todayIso = () => new Date().toISOString().slice(0, 10);
+const todayIso = () => {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+};
 
 type Props = { apt: ApartmentView; year: number; onChanged: () => Promise<void> };
 
@@ -15,34 +18,47 @@ export default function RentLog({ apt, year, onChanged }: Props) {
   const [editing, setEditing] = useState<{ month: string; entry?: RentEntry } | null>(null);
   const now = new Date();
   const nowKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+  const t = computeTax(apt, year);
+  const coOwned = apt.owners.length > 1 || apt.invites.length > 0;
 
   return (
     <>
-      <div className="card">
-        <h2>{year} — tap a month to log it</h2>
+      <section className="hero">
+        <div className="label">
+          Rent received · {year}
+          <Info about="rent timing">
+            Rent is taxed in the year you receive it, so the received date decides which year it counts in.
+            {coOwned && ' Log the rent for the whole apartment — each owner’s share is worked out for you.'}
+          </Info>
+        </div>
+        <div className="big">
+          <Money value={t.rentIncome} />
+        </div>
+      </section>
+
+      <section>
+        <Heading>Months</Heading>
         <div className="months">
           {MONTHS.map((name, i) => {
             const month = `${year}-${String(i + 1).padStart(2, '0')}`;
             const entry = apt.rents.find((r) => r.month === month);
-            const cls = entry ? entry.status : month > nowKey ? 'future' : '';
+            const future = month > nowKey;
+            const cls = entry ? entry.status : future ? 'future' : 'todo-m';
             return (
               <button key={month} className={'month ' + cls} onClick={() => setEditing({ month, entry })}>
-                <div className="m">{name}</div>
-                <div className="a">
-                  {!entry && (month > nowKey ? '—' : 'Not logged')}
+                <span className="m">{name}</span>
+                <span className="a">
+                  {!entry && (future ? '—' : 'Add')}
                   {entry?.status === 'paid' && eur(entry.amount)}
                   {entry?.status === 'vacant' && 'Vacant'}
                   {entry?.status === 'unpaid' && 'Unpaid'}
-                </div>
+                </span>
               </button>
             );
           })}
         </div>
-      </div>
-      <div className="note" style={{ padding: '0 4px' }}>
-        Rent is taxed in the year you receive it, so the received date decides which tax year it counts in.
-        {apt.owners.length > 1 && ' Log the rent for the whole apartment — each owner’s share is worked out from it.'}
-      </div>
+      </section>
+
       {editing && (
         <RentForm
           apt={apt}
@@ -73,6 +89,7 @@ function RentForm({
   const [amount, setAmount] = useState(String(entry?.amount || apt.settings.monthlyRent || ''));
   const [date, setDate] = useState(entry?.receivedDate || todayIso());
   const [note, setNote] = useState(entry?.note ?? '');
+  const [showNote, setShowNote] = useState(!!entry?.note);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
 
@@ -101,18 +118,19 @@ function RentForm({
   const remove = () => run(() => api.deleteRent(apt.id, month));
 
   return (
-    <Sheet onClose={onClose}>
-      <h3>Rent for {month}</h3>
-      <label>Status</label>
-      <div className="seg">
-        {RENT_STATUSES.map((s) => (
-          <button key={s} className={status === s ? 'on' : ''} onClick={() => setStatus(s)}>
-            {s[0]!.toUpperCase() + s.slice(1)}
-          </button>
-        ))}
-      </div>
+    <Sheet title={monthTitle(month)} onClose={onClose}>
+      <Segmented<RentStatus>
+        label="Status"
+        value={status}
+        onChange={setStatus}
+        options={[
+          { value: 'paid', label: 'Paid' },
+          { value: 'vacant', label: 'Vacant' },
+          { value: 'unpaid', label: 'Unpaid' },
+        ]}
+      />
       {status === 'paid' && (
-        <div className="row">
+        <div className="cols">
           <div>
             <label htmlFor="rent-amount">Amount received (€)</label>
             <input
@@ -130,21 +148,39 @@ function RentForm({
           </div>
         </div>
       )}
-      <label htmlFor="rent-note">Note</label>
-      <input
-        id="rent-note"
-        value={note}
-        placeholder={status === 'vacant' ? 'e.g. between tenants' : 'optional'}
-        onChange={(e) => setNote(e.target.value)}
-      />
+      {status === 'unpaid' && (
+        <p className="msg" style={{ marginTop: 12 }}>
+          Unpaid rent isn’t counted as income until you receive it.
+        </p>
+      )}
+      {showNote ? (
+        <>
+          <label htmlFor="rent-note">Note</label>
+          <input
+            id="rent-note"
+            autoFocus
+            value={note}
+            placeholder={status === 'vacant' ? 'e.g. between tenants' : ''}
+            onChange={(e) => setNote(e.target.value)}
+          />
+        </>
+      ) : (
+        <button className="link" style={{ marginTop: 14 }} onClick={() => setShowNote(true)}>
+          + Add a note
+        </button>
+      )}
       <ErrorNote message={error} />
-      <div className="row" style={{ marginTop: 16 }}>
+      <div className="sheet-foot">
         {entry && (
           <button className="btn danger" onClick={remove} disabled={busy}>
             Delete
           </button>
         )}
-        <button className="btn primary" onClick={save} disabled={busy || (status === 'paid' && !(Number(amount) > 0 && date))}>
+        <button
+          className="btn primary"
+          onClick={save}
+          disabled={busy || (status === 'paid' && !(Number(amount) > 0 && date))}
+        >
           {busy ? 'Saving…' : 'Save'}
         </button>
       </div>

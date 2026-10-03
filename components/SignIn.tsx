@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { isAuthError } from '@neondatabase/auth/next';
 import { authClient } from '@/lib/client/authClient';
-import { ErrorNote } from '@/components/ui';
+import { ErrorNote, Icon } from '@/components/ui';
 
 type Mode = 'sign-in' | 'sign-up' | 'verify';
 
@@ -90,95 +90,106 @@ export default function SignIn() {
       setInfo('Email verified. Sign in to continue.');
     });
 
+  const title = mode === 'sign-in' ? 'Welcome back' : mode === 'sign-up' ? 'Create your account' : 'Check your email';
+
   return (
     <div className="app auth">
-      <header className="topbar">
+      <div className="welcome">
+        <div className="logo">{Icon.building}</div>
         <div>
-          <h1>Rental Tracker</h1>
-          <div className="sub">Rent, costs and tax declarations for your rental apartments</div>
+          <h1>{title}</h1>
+          <p className="lead" style={{ marginTop: 8 }}>
+            Rent, costs and tax declarations for your rental apartments.
+          </p>
         </div>
-      </header>
-      <form
-        className="card"
-        onSubmit={(e) => {
-          e.preventDefault();
-          void (mode === 'sign-in' ? signIn() : mode === 'sign-up' ? signUp() : verify());
-        }}
-      >
-        <h2>{mode === 'sign-in' ? 'Sign in' : mode === 'sign-up' ? 'Create an account' : 'Verify your email'}</h2>
-        {info && <div className="note">{info}</div>}
-
-        {mode === 'sign-up' && (
-          <>
-            <label htmlFor="name">Name</label>
-            <input id="name" autoComplete="name" value={name} onChange={(e) => setName(e.target.value)} />
-          </>
-        )}
-        <label htmlFor="email">Email</label>
-        <input
-          id="email"
-          type="email"
-          autoComplete="email"
-          required
-          value={email}
-          readOnly={mode === 'verify' && !!verifyEmail}
-          onChange={(e) => setEmail(e.target.value)}
-        />
-        {mode !== 'verify' ? (
-          <>
-            <label htmlFor="password">Password</label>
-            <input
-              id="password"
-              type="password"
-              autoComplete={mode === 'sign-up' ? 'new-password' : 'current-password'}
-              required
-              minLength={8}
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-            />
-          </>
-        ) : (
-          <>
-            <label htmlFor="code">Code from the email</label>
-            <input
-              id="code"
-              inputMode="numeric"
-              autoComplete="one-time-code"
-              required
-              value={code}
-              onChange={(e) => setCode(e.target.value)}
-            />
-          </>
-        )}
-
-        <ErrorNote message={error} />
-        <button className="btn primary block" style={{ marginTop: 14 }} disabled={busy}>
-          {busy ? 'Please wait…' : mode === 'sign-in' ? 'Sign in' : mode === 'sign-up' ? 'Create account' : 'Verify'}
-        </button>
-
-        <div className="row" style={{ marginTop: 10 }}>
-          {mode === 'sign-in' && (
-            <button type="button" className="btn" onClick={() => setMode('sign-up')}>
-              New here? Create an account
-            </button>
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            void (mode === 'sign-in' ? signIn() : mode === 'sign-up' ? signUp() : verify());
+          }}
+        >
+          {info && (
+            <div className="notice" style={{ marginBottom: 6 }}>
+              {info}
+            </div>
           )}
+
           {mode === 'sign-up' && (
-            <button type="button" className="btn" onClick={() => setMode('sign-in')}>
-              Have an account? Sign in
-            </button>
-          )}
-          {mode === 'verify' && (
             <>
-              <button type="button" className="btn" disabled={busy || !email.trim()} onClick={() => step(sendCode)}>
-                Send a new code
-              </button>
-              <button type="button" className="btn" onClick={() => (verifyEmail ? router.replace('/') : setMode('sign-in'))}>
-                Back
-              </button>
+              <label htmlFor="name">Name</label>
+              <input id="name" autoComplete="name" value={name} onChange={(e) => setName(e.target.value)} />
             </>
           )}
-        </div>
-      </form>
+          <label htmlFor="email">Email</label>
+          <input
+            id="email"
+            type="email"
+            autoComplete="email"
+            required
+            value={email}
+            readOnly={mode === 'verify' && !!verifyEmail}
+            onChange={(e) => setEmail(e.target.value)}
+          />
+          {mode !== 'verify' ? (
+            <>
+              <label htmlFor="password">Password</label>
+              <input
+                id="password"
+                type="password"
+                autoComplete={mode === 'sign-up' ? 'new-password' : 'current-password'}
+                required
+                minLength={8}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+              />
+            </>
+          ) : (
+            <>
+              <label htmlFor="code">Code from the email</label>
+              <input
+                id="code"
+                inputMode="numeric"
+                autoComplete="one-time-code"
+                required
+                value={code}
+                onChange={(e) => setCode(e.target.value)}
+              />
+            </>
+          )}
+
+          <ErrorNote message={error} />
+          <button className="btn primary block" style={{ marginTop: 18 }} disabled={busy}>
+            {busy ? 'Please wait…' : mode === 'sign-in' ? 'Sign in' : mode === 'sign-up' ? 'Create account' : 'Verify'}
+          </button>
+
+          <div style={{ display: 'flex', gap: 18, marginTop: 16 }}>
+            {mode === 'sign-in' && (
+              <button type="button" className="link" onClick={() => setMode('sign-up')}>
+                New here? Create an account
+              </button>
+            )}
+            {mode === 'sign-up' && (
+              <button type="button" className="link" onClick={() => setMode('sign-in')}>
+                Have an account? Sign in
+              </button>
+            )}
+            {mode === 'verify' && (
+              <>
+                <button type="button" className="link" disabled={busy || !email.trim()} onClick={() => step(sendCode)}>
+                  Send a new code
+                </button>
+                <button
+                  type="button"
+                  className="link"
+                  onClick={() => (verifyEmail ? router.replace('/') : setMode('sign-in'))}
+                >
+                  Back
+                </button>
+              </>
+            )}
+          </div>
+        </form>
+      </div>
     </div>
   );
 }

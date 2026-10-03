@@ -5,9 +5,13 @@ import type { ApartmentView, CostCategory, CostEntry } from '@/lib/domain/types'
 import { CATEGORIES, COST_CATEGORIES } from '@/lib/domain/types';
 import { api, compressImage } from '@/lib/client/api';
 import { eur } from '@/lib/domain/tax';
-import { ErrorNote, Sheet } from '@/components/ui';
+import { shortDate } from '@/lib/ui/format';
+import { ErrorNote, Icon, Info, Label, Money, Sheet } from '@/components/ui';
 
-const todayIso = () => new Date().toISOString().slice(0, 10);
+const todayIso = () => {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+};
 
 type Props = { apt: ApartmentView; year: number; onChanged: () => Promise<void> };
 
@@ -16,7 +20,9 @@ function Thumb({ apt, cost }: { apt: ApartmentView; cost: CostEntry }) {
     // eslint-disable-next-line @next/next/no-img-element -- a private, per-user image; not for the image optimizer
     <img className="thumb" src={api.receiptUrl(apt.id, cost.id)} alt="Receipt" loading="lazy" />
   ) : (
-    <div className="thumb">no img</div>
+    <span className="thumb missing" role="img" aria-label="No receipt photo" title="No receipt photo yet">
+      {Icon.camera}
+    </span>
   );
 }
 
@@ -24,44 +30,61 @@ export default function Costs({ apt, year, onChanged }: Props) {
   const [editing, setEditing] = useState<CostEntry | 'new' | null>(null);
   const list = apt.costs.filter((c) => c.date.startsWith(String(year))).sort((a, b) => b.date.localeCompare(a.date));
   const total = list.filter((c) => CATEGORIES[c.category].deductible).reduce((a, c) => a + c.amount, 0);
+  const coOwned = apt.owners.length > 1 || apt.invites.length > 0;
 
   return (
     <>
-      <div className="card">
-        <div className="stat">
-          <div className="v">{eur(total)}</div>
-          <div className="l">
-            Deductible costs in {year} · {list.length} entries
-            {apt.owners.length > 1 && ' · whole apartment'}
-          </div>
+      <section className="hero">
+        <div className="label">
+          Deductible costs · {year}
+          <Info about="costs">
+            {list.length} {list.length === 1 ? 'entry' : 'entries'} this year. Financing charges are listed but not
+            counted — they aren’t deductible.
+            {coOwned && ' Log costs for the whole apartment — each owner’s share is worked out for you.'}
+          </Info>
         </div>
-      </div>
-      <div className="card">
+        <div className="big">
+          <Money value={total} />
+        </div>
+      </section>
+
+      <section>
         {list.length === 0 ? (
-          <div className="empty">No costs for {year}. Add repairs, maintenance charges, insurance, loan interest…</div>
+          <div className="empty">No costs logged for {year}. Tap + to add the first one.</div>
         ) : (
           <ul className="list">
             {list.map((c) => (
-              <li key={c.id} onClick={() => setEditing(c)}>
-                <Thumb apt={apt} cost={c} />
-                <div className="main">
-                  <div className="t">{c.description || CATEGORIES[c.category].label}</div>
-                  <div className="s">
-                    {c.date} · {CATEGORIES[c.category].label}
-                    {!CATEGORIES[c.category].deductible && ' · not deductible'}
+              <li key={c.id}>
+                <button className="row-btn" onClick={() => setEditing(c)}>
+                  <Thumb apt={apt} cost={c} />
+                  <div className="main">
+                    <div className="t">{c.description || CATEGORIES[c.category].label}</div>
+                    <div className="s">
+                      {shortDate(c.date)}
+                      {c.description && ` · ${CATEGORIES[c.category].label}`}{' '}
+                      {!CATEGORIES[c.category].deductible && <span className="chip warn">not deductible</span>}
+                    </div>
                   </div>
-                </div>
-                <div style={{ fontWeight: 600 }}>{eur(c.amount)}</div>
+                  <div className={'strong num ' + (CATEGORIES[c.category].deductible ? '' : 'dim')}>
+                    {eur(c.amount)}
+                  </div>
+                </button>
               </li>
             ))}
           </ul>
         )}
-      </div>
-      <button className="btn primary fab" onClick={() => setEditing('new')}>
-        + Add cost
+      </section>
+
+      <button className="btn primary fab" aria-label="Add cost" onClick={() => setEditing('new')}>
+        {Icon.plus}
       </button>
       {editing && (
-        <CostForm apt={apt} cost={editing === 'new' ? undefined : editing} onClose={() => setEditing(null)} onChanged={onChanged} />
+        <CostForm
+          apt={apt}
+          cost={editing === 'new' ? undefined : editing}
+          onClose={() => setEditing(null)}
+          onChanged={onChanged}
+        />
       )}
     </>
   );
@@ -117,8 +140,10 @@ function CostForm({
 
   const save = () =>
     run(async () => {
-      const entry = { date, category, description: description.trim(), amount: Number(amount) };
-      const id = cost ? (await api.updateCost(apt.id, cost.id, entry), cost.id) : (await api.createCost(apt.id, entry)).id;
+      const entry = { date, category, description: description.trim(), amount: Number(amount) || 0 };
+      const id = cost
+        ? (await api.updateCost(apt.id, cost.id, entry), cost.id)
+        : (await api.createCost(apt.id, entry)).id;
       if (newImage) await api.putReceipt(apt.id, id, newImage);
       else if (removeImage && cost?.hasReceipt) await api.deleteReceipt(apt.id, id);
     });
@@ -128,69 +153,101 @@ function CostForm({
   const cat = CATEGORIES[category];
 
   return (
-    <Sheet onClose={onClose}>
-      <h3>{cost ? 'Edit cost' : 'Add cost'}</h3>
-      <div className="row">
+    <Sheet title={cost ? 'Edit cost' : 'Add cost'} onClose={onClose}>
+      <label htmlFor="cost-amount" style={{ marginTop: 6 }}>
+        Amount (€)
+      </label>
+      <input
+        id="cost-amount"
+        className="amount-input"
+        type="number"
+        inputMode="decimal"
+        step="0.01"
+        autoFocus={!cost}
+        placeholder="0"
+        value={amount}
+        onChange={(e) => setAmount(e.target.value)}
+      />
+
+      <Label id="cost-category" info={<Info about="this category">On the Finnish form: {cat.fi}.</Info>}>
+        Category
+      </Label>
+      <div className="chips" role="radiogroup" aria-labelledby="cost-category">
+        {COST_CATEGORIES.map((k) => (
+          <button
+            key={k}
+            type="button"
+            role="radio"
+            aria-checked={category === k}
+            className="choice"
+            onClick={() => setCategory(k)}
+          >
+            {CATEGORIES[k].label}
+          </button>
+        ))}
+      </div>
+      {!cat.deductible && (
+        <div style={{ marginTop: 8 }}>
+          <span className="chip warn">Not deductible</span>
+          <Info about="not deductible">{cat.hint}</Info>
+        </div>
+      )}
+
+      <label htmlFor="cost-description">Description</label>
+      <input
+        id="cost-description"
+        value={description}
+        placeholder="Optional — e.g. Kitchen tap replacement"
+        onChange={(e) => setDescription(e.target.value)}
+      />
+
+      <div className="cols">
         <div>
           <label htmlFor="cost-date">Date</label>
           <input id="cost-date" type="date" value={date} onChange={(e) => setDate(e.target.value)} />
         </div>
         <div>
-          <label htmlFor="cost-amount">Amount (€)</label>
+          <label htmlFor="cost-receipt">Receipt</label>
           <input
-            id="cost-amount"
-            type="number"
-            inputMode="decimal"
-            step="0.01"
-            value={amount}
-            onChange={(e) => setAmount(e.target.value)}
+            ref={fileRef}
+            type="file"
+            accept="image/*"
+            capture="environment"
+            hidden
+            onChange={(e) => pick(e.target.files?.[0])}
           />
+          <button
+            id="cost-receipt"
+            className="btn block"
+            style={{ padding: '11px 8px' }}
+            onClick={() => fileRef.current?.click()}
+            disabled={busy}
+          >
+            {Icon.camera}
+            {busy ? 'Processing…' : preview ? 'Replace photo' : 'Add photo'}
+          </button>
         </div>
       </div>
-      <label htmlFor="cost-category">Category</label>
-      <select id="cost-category" value={category} onChange={(e) => setCategory(e.target.value as CostCategory)}>
-        {COST_CATEGORIES.map((k) => (
-          <option key={k} value={k}>
-            {CATEGORIES[k].label} ({CATEGORIES[k].fi})
-          </option>
-        ))}
-      </select>
-      {cat.hint && (
-        <div className="note" style={{ marginTop: 6 }}>
-          {cat.hint}
+      {preview && (
+        <div className="receipt-box" style={{ marginTop: 12 }}>
+          {/* eslint-disable-next-line @next/next/no-img-element -- a data URL or a private, per-user image */}
+          <img className="receipt-img" src={preview} alt="Receipt preview" />
+          <div className="receipt-tools">
+            <button
+              className="btn danger"
+              onClick={() => {
+                setNewImage(undefined);
+                setRemoveImage(true);
+              }}
+            >
+              Remove
+            </button>
+          </div>
         </div>
       )}
-      <label htmlFor="cost-description">Description</label>
-      <input
-        id="cost-description"
-        value={description}
-        placeholder="e.g. Kitchen tap replacement"
-        onChange={(e) => setDescription(e.target.value)}
-      />
-
-      <label>Receipt</label>
-      <input ref={fileRef} type="file" accept="image/*" capture="environment" hidden onChange={(e) => pick(e.target.files?.[0])} />
-      <div className="row">
-        <button className="btn" onClick={() => fileRef.current!.click()} disabled={busy}>
-          {busy ? 'Processing…' : preview ? 'Replace photo' : 'Take / choose photo'}
-        </button>
-        {preview && (
-          <button
-            className="btn danger"
-            onClick={() => {
-              setNewImage(undefined);
-              setRemoveImage(true);
-            }}
-          >
-            Remove photo
-          </button>
-        )}
-      </div>
-      {/* eslint-disable-next-line @next/next/no-img-element -- a data URL or a private, per-user image */}
-      {preview && <img className="receipt-img" src={preview} alt="Receipt preview" />}
 
       <ErrorNote message={error} />
-      <div className="row" style={{ marginTop: 16 }}>
+      <div className="sheet-foot">
         {cost && (
           <button className="btn danger" onClick={remove} disabled={busy}>
             Delete
