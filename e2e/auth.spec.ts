@@ -9,7 +9,7 @@ test.describe('signing in', () => {
   test('sends a signed-out visitor to the sign-in page', async ({ page }) => {
     await page.goto('/');
     await expect(page).toHaveURL(/\/sign-in$/);
-    await expect(page.getByRole('heading', { name: 'Welcome back' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Sign in' })).toBeVisible();
   });
 
   test('signs in with a verified account and lands on the portfolio', async ({ page, api }) => {
@@ -115,7 +115,7 @@ test.describe('signing in', () => {
     await expect(page.locator('.alert[role=alert]')).toHaveText('User already exists');
 
     await page.getByRole('button', { name: 'Have an account? Sign in' }).click();
-    await expect(page.getByRole('heading', { name: 'Welcome back' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Sign in' })).toBeVisible();
   });
 
   test("shows the auth service's own explanation when it refuses", async ({ page, api }) => {
@@ -155,7 +155,7 @@ test.describe('signing in', () => {
     await expect(page.locator('.alert[role=alert]')).toHaveText('Too many codes, wait a minute');
 
     await page.getByRole('button', { name: 'Back' }).click();
-    await expect(page.getByRole('heading', { name: 'Welcome back' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Sign in' })).toBeVisible();
   });
 });
 

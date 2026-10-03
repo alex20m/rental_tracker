@@ -29,10 +29,10 @@ test.describe('interface language', () => {
   test('switches language on the sign-in page', async ({ page, api }) => {
     api.signedIn = false;
     await page.goto('/sign-in');
-    await expect(page.getByRole('heading', { name: 'Welcome back' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Sign in' })).toBeVisible();
     await page.getByRole('radio', { name: 'Suomi' }).click();
 
-    await expect(page.getByRole('heading', { name: 'Tervetuloa takaisin' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Kirjaudu sisään' })).toBeVisible();
   });
 
   test('a stored choice wins over the browser’s language', async ({ page }) => {

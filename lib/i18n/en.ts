@@ -343,10 +343,8 @@ export const en = {
   'settings.deleteInfo': 'Deletes the apartment with its rent log, costs and receipt photos. Your other apartments aren’t affected.',
 
   // — sign in —
-  'auth.welcomeBack': 'Welcome back',
   'auth.createTitle': 'Create your account',
   'auth.checkEmail': 'Check your email',
-  'auth.lead': 'Rent, costs and tax declarations for your rental apartments.',
   'auth.name': 'Name',
   'auth.nameRequired': 'Enter your name',
   'auth.email': 'Email',

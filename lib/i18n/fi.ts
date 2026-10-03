@@ -341,10 +341,8 @@ export const fi: Record<MessageKey, string> = {
     'Poistaa asunnon sekä sen vuokrakirjanpidon, kulut ja kuittikuvat. Muihin asuntoihisi tämä ei vaikuta.',
 
   // — sign in —
-  'auth.welcomeBack': 'Tervetuloa takaisin',
   'auth.createTitle': 'Luo tili',
   'auth.checkEmail': 'Tarkista sähköpostisi',
-  'auth.lead': 'Vuokrat, kulut ja veroilmoitukset vuokra-asunnoillesi.',
   'auth.name': 'Nimi',
   'auth.nameRequired': 'Anna nimesi',
   'auth.email': 'Sähköposti',

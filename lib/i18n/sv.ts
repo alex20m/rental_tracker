@@ -343,10 +343,8 @@ export const sv: Record<MessageKey, string> = {
     'Tar bort lägenheten med hyreslogg, kostnader och kvittobilder. Dina övriga lägenheter påverkas inte.',
 
   // — sign in —
-  'auth.welcomeBack': 'Välkommen tillbaka',
   'auth.createTitle': 'Skapa ditt konto',
   'auth.checkEmail': 'Kontrollera din e-post',
-  'auth.lead': 'Hyra, kostnader och skattedeklarationer för dina hyreslägenheter.',
   'auth.name': 'Namn',
   'auth.nameRequired': 'Ange ditt namn',
   'auth.email': 'E-post',

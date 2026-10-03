@@ -6,7 +6,7 @@ import { isAuthError } from '@neondatabase/auth/next';
 import { authClient } from '@/lib/client/authClient';
 import { useI18n } from '@/components/I18nProvider';
 import LanguagePicker from '@/components/LanguagePicker';
-import { ErrorNote, Icon, OtpInput } from '@/components/ui';
+import { ErrorNote, OtpInput } from '@/components/ui';
 
 type Mode = 'sign-in' | 'sign-up' | 'verify';
 
@@ -101,18 +101,12 @@ export default function SignIn() {
     });
 
   const title =
-    mode === 'sign-in' ? t('auth.welcomeBack') : mode === 'sign-up' ? t('auth.createTitle') : t('auth.checkEmail');
+    mode === 'sign-in' ? t('auth.signIn') : mode === 'sign-up' ? t('auth.createTitle') : t('auth.checkEmail');
 
   return (
     <div className="app auth">
       <div className="welcome">
-        <div className="logo">{Icon.building}</div>
-        <div>
-          <h1>{title}</h1>
-          <p className="lead" style={{ marginTop: 8 }}>
-            {t('auth.lead')}
-          </p>
-        </div>
+        <h1>{title}</h1>
         <form
           onSubmit={(e) => {
             e.preventDefault();
