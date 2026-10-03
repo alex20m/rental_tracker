@@ -461,7 +461,7 @@ export function portfolio(db: Queryable) {
      * own alone are deleted (rents, costs and receipts cascade). In an
      * apartment with co-owners their share goes to the co-owner holding the
      * most, so the shares still add up to 100 and nobody else loses access.
-     * Invites addressed to them and their profile go too; the sign-in identity
+     * Invites addressed to them go too; the sign-in identity
      * goes last, so a failure part-way leaves an account that can retry.
      */
     async deleteAccount(actor: Actor): Promise<void> {
@@ -488,7 +488,6 @@ export function portfolio(db: Queryable) {
       );
       await db.query('delete from apartment_owners where user_id = $1', [userId]);
       await db.query('delete from apartment_invites where email = lower($1)', [email]);
-      await db.query('delete from user_profiles where user_id = $1', [userId]);
 
       // Identity lives in the neon_auth schema of this same database; it is
       // absent on a plain Postgres. Its session and account rows cascade.
