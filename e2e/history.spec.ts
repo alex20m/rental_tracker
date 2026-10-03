@@ -1,0 +1,79 @@
+import { expect, test } from './fixtures';
+import { coOwned, ledger, YEAR } from './data';
+import { section } from './nav';
+
+const earlier = (years: number) => ({
+  rents: [{ month: `${YEAR - years}-06`, status: 'paid' as const, amount: 500, receivedDate: `${YEAR - years}-06-02`, note: '' }],
+  costs: [
+    { id: 'c-old', date: `${YEAR - years}-07-01`, category: 'repairs' as const, description: 'Old boiler', amount: 120, hasReceipt: false },
+  ],
+});
+
+test.describe('history', () => {
+  test('lists this year and every earlier year with data, newest first, with the combined net income', async ({ page, api }) => {
+    api.addApartment({ name: 'Flat', useDepreciation: false }, {
+      rents: [...ledger().rents, ...earlier(3).rents],
+      costs: [...ledger().costs, ...earlier(3).costs],
+    });
+    await page.goto('/');
+    await section(page, 'History');
+
+    const rows = page.getByRole('listitem');
+    await expect(rows).toHaveCount(2);
+    await expect(rows.nth(0)).toContainText(String(YEAR));
+    await expect(rows.nth(0)).toContainText('Rent 2 400 € · Costs 216 €');
+    await expect(rows.nth(1)).toContainText(String(YEAR - 3));
+    await expect(rows.nth(1)).toContainText('Rent 500 € · Costs 120 €');
+    await expect(rows.nth(1)).toContainText('380,00 €');
+    // 2 400 − 216 + 500 − 120
+    await expect(page.getByTestId('history-total')).toContainText('2 564,00 €');
+    // The year stepper belongs to the other pages; history already shows every year.
+    await expect(page.getByRole('button', { name: 'Previous year' })).toHaveCount(0);
+  });
+
+  test('opens the tax summary of the year that is tapped', async ({ page, api }) => {
+    api.addApartment({ name: 'Flat' }, earlier(2));
+    await page.goto('/');
+    await section(page, 'History');
+    await page.getByRole('button', { name: new RegExp(`^${YEAR - 2}`) }).click();
+
+    await expect(page.getByRole('navigation', { name: 'Sections' }).getByRole('button', { name: 'Tax' })).toHaveAttribute(
+      'aria-current',
+      'page',
+    );
+    await expect(page.getByLabel('Tax year')).toHaveText(String(YEAR - 2));
+    await expect(page.locator('.kv').filter({ hasText: 'Rent received' })).toContainText('500,00 €');
+  });
+
+  test('shows a year with more costs than rent as a loss, and counts it against the total', async ({ page, api }) => {
+    api.addApartment({ name: 'Flat' }, {
+      rents: [],
+      costs: [{ id: 'c-roof', date: `${YEAR - 1}-05-05`, category: 'repairs', description: 'Roof', amount: 300, hasReceipt: false }],
+    });
+    await page.goto('/');
+    await section(page, 'History');
+
+    await expect(page.getByRole('listitem').nth(1)).toContainText('−300,00 €');
+    await expect(page.getByTestId('history-total')).toHaveClass(/neg/);
+  });
+
+  test('switches between your share and the whole apartment for a co-owned apartment', async ({ page, api }) => {
+    coOwned(api);
+    await page.goto('/');
+    await section(page, 'History');
+
+    const thisYear = page.getByRole('listitem').first();
+    await expect(thisYear).toContainText('Rent 1 440 €');
+    await page.getByRole('radio', { name: 'Whole apartment' }).click();
+    await expect(thisYear).toContainText('Rent 2 400 €');
+  });
+
+  test('says earlier years will show up once they have data', async ({ page, api }) => {
+    api.addApartment({ name: 'Flat' });
+    await page.goto('/');
+    await section(page, 'History');
+
+    await expect(page.getByRole('listitem')).toHaveCount(1);
+    await expect(page.getByText('Earlier years appear here once you log rent or costs in them.')).toBeVisible();
+  });
+});
