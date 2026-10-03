@@ -1,5 +1,5 @@
 import { expect, test } from './fixtures';
-import { openMenu } from './nav';
+import { openAccount, openMenu } from './nav';
 
 test.describe('interface language', () => {
   test.describe('with a Finnish browser', () => {
@@ -16,10 +16,10 @@ test.describe('interface language', () => {
   test('switches to Swedish from the menu, and remembers it', async ({ page, api }) => {
     api.addApartment({ name: 'Flat' });
     await page.goto('/');
-    const menu = await openMenu(page);
-    await menu.getByRole('radiogroup', { name: 'Language' }).getByRole('radio', { name: 'Svenska' }).click();
+    const account = await openAccount(page);
+    await account.getByRole('radiogroup', { name: 'Language' }).getByRole('radio', { name: 'Svenska' }).click();
 
-    await expect(page.getByRole('dialog', { name: 'Meny' })).toBeVisible();
+    await expect(page.getByRole('region', { name: 'Konto' })).toBeVisible();
     await expect(page.locator('html')).toHaveAttribute('lang', 'sv');
 
     await page.reload();

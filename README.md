@@ -22,7 +22,7 @@ declaration package (PDF + CSV + receipts, zipped) for their own share.
 - **Per-owner tax.** Rent and costs are logged for the whole apartment. The Tax
   tab, the PDF and the CSV show the apartment total next to your share, and the
   share is what you declare.
-- **English, Swedish and Finnish.** Pick the language under **Menu** (or on the
+- **English, Swedish and Finnish.** Pick the language under **Settings → Account** (or on the
   sign-in page). It defaults to the browser's language, is remembered on that
   device, and covers the whole interface. Server error messages, the PDF and the
   CSV stay as they are — the PDF follows the Finnish form. Strings live in
@@ -32,27 +32,32 @@ declaration package (PDF + CSV + receipts, zipped) for their own share.
 ## Using it
 
 The top bar is always the same: the **apartment** you are looking at (tap to
-switch or add one), the **tax year** (‹ ›), and your **menu**. Below it, four
-sections:
+switch or add one) and the **tax year** (‹ ›). Everything else is in the bottom
+navigation, five places and nothing hidden behind other buttons:
 
 - **Home** – net income for the year in one big number, with rent, deductions
   and estimated tax under it; a short to-do list of what is still missing;
   monthly chart; occupancy and yield; recent activity. For a co-owned apartment
   a toggle switches between *your share* (what you declare) and the *whole
   apartment*.
-- **Rent** – tap a month to log it: paid (amount and received date are
-  pre-filled), vacant, or unpaid.
-- **Costs** – the **+** button adds a cost: amount, a category chip, optional
-  description, date and receipt photo (camera or gallery).
+- **Rent & costs** – one place for what comes in and goes out, with a
+  **Rent | Costs** switch at the top. *Rent*: tap a month to log it: paid
+  (amount and received date are pre-filled), vacant, or unpaid. *Costs*: the
+  **+** button adds a cost: amount, a category chip, optional description, date
+  and receipt photo (camera or gallery).
 - **Tax** – the figures by Finnish form category for your share (or the whole
   apartment), a checklist of anything to fix before filing — each item takes
   you to where it is fixed — and **Download declaration (.zip)**.
+- **History** – every year of the apartment side by side, newest first, with
+  the combined net income of all years. Tap a year to open its tax summary.
+- **Settings** – one switch, two sides. *Apartment*: owners & shares, inviting
+  co-owners, property details, depreciation (poisto), delete. *Account*: who
+  you are signed in as, language, sign out, delete account.
 
-The **menu** shows who you are signed in as, **Apartment
-settings** (owners & shares, inviting co-owners, property details,
-depreciation (poisto), delete) and sign out. The name printed on the
-declaration is the one given when the account was created (it is required
-there); there is nothing to fill in separately.
+The name printed on the declaration is the one given when the account was
+created (it is required there); there is nothing to fill in separately. Before
+the first apartment exists there is no Settings tab yet, so the account (sign
+out, language) is behind the round button at the top.
 
 Explanations are tucked behind small **ⓘ** icons instead of printed as grey
 text: tap one to read it, tap anywhere else (or press Escape) to dismiss it.
