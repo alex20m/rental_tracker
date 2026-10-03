@@ -1,4 +1,3 @@
-import { readFileSync } from 'node:fs';
 import type { Page } from '@playwright/test';
 import { expect, test } from './fixtures';
 import { coOwned, ledger, m, YEAR } from './data';
@@ -23,6 +22,17 @@ test.describe('the first visit', () => {
     await expect(page.getByRole('heading', { name: 'Months' })).toBeVisible();
   });
 
+  test('says when the apartment list could not be refreshed after adding one', async ({ page, api }) => {
+    await page.goto('/');
+    await expect(page.getByRole('heading', { name: 'Add your first apartment' })).toBeVisible();
+    api.failNext('GET', /^\/api\/apartments$/, { status: 503, body: { error: 'Try again shortly' } });
+    await page.getByLabel('Apartment name').fill('Rantatie 5');
+    await page.getByRole('button', { name: 'Add apartment' }).click();
+
+    await expect(alert(page).first()).toHaveText('Try again shortly');
+    expect(api.apartments.size).toBe(1);
+  });
+
   test('says why the apartment could not be added', async ({ page, api }) => {
     api.failNext('POST', /^\/api\/apartments$/, { status: 400, body: { error: 'name: Give the apartment a name' } });
     await page.goto('/');
@@ -30,14 +40,6 @@ test.describe('the first visit', () => {
     await page.getByRole('button', { name: 'Add apartment' }).click();
 
     await expect(alert(page)).toHaveText('name: Give the apartment a name');
-  });
-
-  test('offers the backup import from the welcome screen', async ({ page }) => {
-    await page.goto('/');
-    await page.getByRole('button', { name: 'Or import a backup from the old version' }).click();
-    await expect(page.getByRole('dialog', { name: 'Menu' })).toBeVisible();
-    // The menu has no apartment to offer settings for yet.
-    await expect(page.getByRole('button', { name: /Apartment settings/ })).toHaveCount(0);
   });
 });
 
@@ -380,79 +382,5 @@ test.describe('the menu', () => {
     await menu.getByRole('button', { name: 'Save name' }).click();
 
     await expect(alert(page)).toHaveText('taxpayerName: Too long');
-  });
-});
-
-test.describe('importing a backup from the first version', () => {
-  const backup = (receipts: Record<string, string>) =>
-    Buffer.from(
-      JSON.stringify({
-        version: 1,
-        db: {
-          settings: { taxpayerName: 'Old Name', propertyName: 'Imported flat', purchasePrice: 90000 },
-          rents: [{ id: 'r', month: m(1), status: 'paid', amount: 700, receivedDate: `${m(1)}-03`, note: '' }],
-          costs: [
-            { id: 'old1', date: `${m(2)}-01`, category: 'repairs', description: 'Door', amount: 50, hasReceipt: true },
-            { id: 'old2', date: `${m(2)}-02`, category: 'insurance', description: 'Policy', amount: 90, hasReceipt: true },
-          ],
-        },
-        receipts,
-      }),
-    );
-  const jpeg = `data:image/jpeg;base64,${readFileSync(`${__dirname}/receipt.jpg`).toString('base64')}`;
-  const file = (buffer: Buffer) => ({ name: 'backup.json', mimeType: 'application/json', buffer });
-
-  test('creates the apartment with its photos, and takes the name when none is set', async ({ page, api }) => {
-    await page.goto('/');
-    const menu = await openMenu(page);
-    const [chooser] = await Promise.all([page.waitForEvent('filechooser'), menu.getByRole('button', { name: 'Import backup' }).click()]);
-    await chooser.setFiles(file(backup({ old1: jpeg, old2: jpeg })));
-
-    await expect(menu.getByText('Imported “Imported flat” as a new apartment.')).toBeVisible();
-    await expect(menu.getByLabel('Your name on declarations')).toHaveValue('Old Name');
-    expect(api.callsTo('PUT /api/apartments/').filter((c) => c.call.endsWith('/receipt'))).toHaveLength(2);
-    await page.keyboard.press('Escape');
-    await expect(page.locator('button.pill')).toHaveText('Imported flat');
-  });
-
-  test('keeps an existing name, and counts photos that failed to upload', async ({ page, api }) => {
-    api.profile = { taxpayerName: 'Current Name' };
-    api.addApartment({ name: 'Flat' });
-    api.failNext('PUT', /\/receipt$/, { status: 400, body: { error: 'Not a JPEG, PNG or WebP image' } });
-    await page.goto('/');
-    const menu = await openMenu(page);
-    await menu.locator('input[type=file]').setInputFiles(file(backup({ old1: jpeg, old2: jpeg })));
-
-    await expect(menu.getByText('but 1 receipt photo(s) could not be uploaded.')).toBeVisible();
-    await expect(menu.getByLabel('Your name on declarations')).toHaveValue('Current Name');
-    expect(api.profile).toEqual({ taxpayerName: 'Current Name' });
-  });
-
-  test('says when the portfolio could not be refreshed after an import', async ({ page, api }) => {
-    await page.goto('/');
-    await expect(page.getByRole('heading', { name: 'Add your first apartment' })).toBeVisible();
-    api.failNext('GET', /^\/api\/apartments$/, { status: 503, body: { error: 'Try again shortly' } });
-    const menu = await openMenu(page);
-    await menu.locator('input[type=file]').setInputFiles(file(backup({})));
-
-    await expect(alert(page).first()).toHaveText('Try again shortly');
-    expect(api.apartments.size).toBe(1);
-  });
-
-  test('refuses a file that is not a backup, and creates nothing', async ({ page, api }) => {
-    await page.goto('/');
-    const menu = await openMenu(page);
-    await menu.locator('input[type=file]').setInputFiles({ name: 'notes.json', mimeType: 'application/json', buffer: Buffer.from('{"hello":1}') });
-
-    await expect(menu.locator('.alert[role=alert]')).toHaveText('Import failed: Not a Rental Tracker backup file');
-    expect(api.apartments.size).toBe(0);
-  });
-
-  test('does nothing when the file picker is closed without a file', async ({ page, api }) => {
-    await page.goto('/');
-    const menu = await openMenu(page);
-    await menu.locator('input[type=file]').setInputFiles([]);
-    await expect(menu.getByText(/Import/).first()).toBeVisible();
-    expect(api.calls).toEqual([]);
   });
 });

@@ -465,30 +465,3 @@ describe('a profile', () => {
     expect(await p.profile(bob.userId)).toEqual({ taxpayerName: '' });
   });
 });
-
-describe('importing a backup from the browser-only version', () => {
-  it('creates a new apartment, owned by the importer alone, with its rents and costs', async () => {
-    const costId = '0b7c2f7e-9f0e-4c8e-9a54-2a1d1f3d8a11';
-    const id = await p.importLedger(alice, {
-      settings: { ...defaultSettings, name: 'Imported', purchasePrice: 95000 },
-      rents: [
-        { month: '2024-01', status: 'paid', amount: 780, receivedDate: '2024-01-03', note: '' },
-        { month: '2024-02', status: 'vacant', amount: 0, receivedDate: '', note: 'between tenants' },
-      ],
-      costs: [{ id: costId, date: '2024-02-10', category: 'insurance', description: 'Home', amount: 96 }],
-    });
-
-    const a = await p.get(alice.userId, id);
-    expect(a!.settings.name).toBe('Imported');
-    expect(a!.settings.purchasePrice).toBe(95000);
-    expect(a!.mySharePct).toBe(100);
-    expect(a!.rents.map((r) => [r.month, r.status, r.amount, r.receivedDate])).toEqual([
-      ['2024-01', 'paid', 780, '2024-01-03'],
-      ['2024-02', 'vacant', 0, ''],
-    ]);
-    expect(a!.costs.map((c) => [c.id, c.description, c.amount])).toEqual([[costId, 'Home', 96]]);
-
-    // The client then uploads each receipt against the id it generated.
-    expect(await p.putReceipt(alice.userId, id, costId, { contentType: 'image/jpeg', base64: 'AQID' })).toBe(true);
-  });
-});

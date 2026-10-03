@@ -43,7 +43,6 @@ export const fi: Record<MessageKey, string> = {
   // — first run —
   'welcome.title': 'Lisää ensimmäinen asuntosi',
   'welcome.lead': 'Aluksi riittää pelkkä nimi – loput voit täyttää myöhemmin.',
-  'welcome.import': 'Tai tuo varmuuskopio vanhasta versiosta',
   'add.name': 'Asunnon nimi',
   'add.placeholder': 'esim. Kauppakatu 12 B 7',
   'add.submit': 'Lisää asunto',
@@ -58,14 +57,6 @@ export const fi: Record<MessageKey, string> = {
   'menu.nameInfo': 'Tämä nimi tulostetaan veroilmoitukseen. Älä syötä henkilötunnusta – sitä ei tarvita.',
   'menu.saveName': 'Tallenna nimi',
   'menu.saved': 'Tallennettu.',
-  'menu.import': 'Tuo varmuuskopio',
-  'menu.importAbout': 'varmuuskopion tuonti',
-  'menu.importInfo':
-    'Sovelluksen ensimmäinen versio tallensi kaiken yhteen selaimeen. Vie varmuuskopio sieltä (Asetukset → Vie varmuuskopio) ja tuo .json-tiedosto tänne, niin asunto, sen vuokrakirjanpito, kulut ja kuittikuvat siirtyvät mukana.',
-  'menu.importing': 'Tuodaan…',
-  'menu.imported': '“{name}” tuotiin uutena asuntona.',
-  'menu.importedPartial': '“{name}” tuotiin uutena asuntona, mutta {failed} kuittikuvan lähetys epäonnistui.',
-  'menu.importFailed': 'Tuonti epäonnistui: {message}',
   'menu.signOut': 'Kirjaudu ulos',
 
   // — notices —

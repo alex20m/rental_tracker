@@ -455,7 +455,6 @@ export const Icon = {
   ),
   stack: svg(<path d="m12 3 9 5-9 5-9-5zM3 13l9 5 9-5" />),
   download: svg(<path d="M12 3v12m0 0-4-4m4 4 4-4M4 20h16" />),
-  upload: svg(<path d="M12 15V3m0 0L8 7m4-4 4 4M4 20h16" />),
   signout: svg(<path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9" />),
   users: svg(
     <>

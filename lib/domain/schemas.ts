@@ -101,35 +101,3 @@ export const receiptSchema = z
   });
 
 export const profileSchema = z.object({ taxpayerName: text(200) }).strict();
-
-/** A whole apartment from a backup of the browser-only first version. */
-export const importSchema = z
-  .object({
-    settings: newApartmentSchema,
-    rents: z
-      .array(
-        z.object({
-          month,
-          status: z.enum(RENT_STATUSES),
-          amount: money,
-          receivedDate: z.union([z.literal(''), isoDate]),
-          note: text(500),
-        }),
-      )
-      .max(1200)
-      .refine((rs) => new Set(rs.map((r) => r.month)).size === rs.length, 'Each month may appear only once')
-      .refine((rs) => rs.every((r) => r.status !== 'paid' || r.receivedDate !== ''), 'A paid month needs a received date'),
-    costs: z
-      .array(
-        z.object({
-          id: z.uuid(),
-          date: isoDate,
-          category: z.enum(COST_CATEGORIES),
-          description: text(500),
-          amount: money,
-        }),
-      )
-      .max(5000)
-      .refine((cs) => new Set(cs.map((c) => c.id)).size === cs.length, 'Cost ids must be unique'),
-  })
-  .strict();
