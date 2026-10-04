@@ -3,10 +3,18 @@ import type { Page } from '@playwright/test';
 /** The app's own error message (Next's route announcer also has role="alert"). */
 export const alert = (page: Page) => page.locator('.alert[role=alert]');
 
-/** The drawer with every place in the app, opened with ☰ in the top bar (on a phone it is closed until then). */
+/**
+ * The drawer with every place in the app, opened with ☰ in the top bar (on a
+ * phone it is closed until then; on a desktop it is a permanent sidebar and
+ * there is no ☰ to press).
+ */
 export async function openDrawer(page: Page) {
-  await page.getByRole('button', { name: 'Menu', exact: true }).click();
-  return page.getByRole('navigation', { name: 'Sections' });
+  const toggle = page.getByRole('button', { name: 'Menu', exact: true });
+  const nav = page.getByRole('navigation', { name: 'Sections' });
+  // Whichever layout this is, one of the two shows up once the app has rendered.
+  await toggle.or(nav).first().waitFor();
+  if (await toggle.isVisible()) await toggle.click();
+  return nav;
 }
 
 /** To the portfolio, the page that lists every apartment. */

@@ -19,7 +19,7 @@ export const test = base.extend<{ api: FakeApi }>({
   api: async ({}, use) => {
     await use(new FakeApi());
   },
-  page: async ({ page, api }, use) => {
+  page: async ({ page, api }, use, testInfo) => {
     await api.install(page);
     const errors: string[] = [];
     page.on('pageerror', (e) => errors.push(e.message));
@@ -28,7 +28,7 @@ export const test = base.extend<{ api: FakeApi }>({
     await use(page);
 
     const coverage = await page.coverage.stopJSCoverage();
-    await new CoverageReport(coverageOptions).add(coverage);
+    await new CoverageReport(coverageOptions(testInfo.project.name)).add(coverage);
     expect(api.unhandled, 'requests the fake API does not implement').toEqual([]);
     expect(errors, 'uncaught errors in the page').toEqual([]);
   },

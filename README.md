@@ -204,7 +204,7 @@ migrations applied, so it needs no database or credentials.
 with Playwright, the API answered by an in-memory fake (`e2e/fakeApi.ts`). It
 **fails unless every module that runs in the browser is 100 % covered** —
 statements, branches, functions and lines; the report is in
-`coverage-e2e/index.html`, and the failure names the lines and branches still
+`coverage-e2e/<project>/index.html`. The suite runs as two Playwright projects, `phone` and `desktop`, and each must be 100 % covered on its own. The failure names the lines and branches still
 missing. Where Chromium is pre-installed elsewhere, point
 `PLAYWRIGHT_CHROMIUM_EXECUTABLE` at it.
 

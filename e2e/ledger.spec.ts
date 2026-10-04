@@ -422,7 +422,7 @@ test.describe('costs and receipts', () => {
     await page.goto('/');
     await section(page, 'Costs');
     await page.getByRole('button', { name: 'Add cost' }).click();
-    await page.getByRole('button', { name: 'About this category' }).click();
+    await openInfo(page, 'About this category');
 
     await expect(page.getByRole('note')).toHaveText('On the Finnish form: Hoitovastike. Deducted in the year it is paid.');
   });

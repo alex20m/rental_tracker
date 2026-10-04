@@ -23,7 +23,10 @@ test.describe('interface language', () => {
     await expect(page.locator('html')).toHaveAttribute('lang', 'sv');
 
     await page.reload();
-    await page.getByRole('button', { name: 'Meny', exact: true }).click();
+    const menu = page.getByRole('button', { name: 'Meny', exact: true });
+    const sidebar = page.getByRole('navigation', { name: 'Avsnitt' });
+    await menu.or(sidebar).first().waitFor();
+    if (await menu.isVisible()) await menu.click(); // a desktop has the sidebar open already
     await expect(page.getByRole('navigation').getByRole('button', { name: 'Hem', exact: true })).toBeVisible();
   });
 
