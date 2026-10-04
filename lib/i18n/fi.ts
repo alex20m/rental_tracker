@@ -58,6 +58,8 @@ export const fi: Record<MessageKey, string> = {
   'menu.deleteAccount': 'Poista tili',
   'menu.deleteAccountAbout': 'tilisi',
   'menu.deleteAccountInfo': 'Tämä poistaa tilisi ja asunnot, jotka omistat yksin, vuokrineen, kuluineen ja kuitteineen. Jaetut asunnot jäävät muille omistajille, jotka saavat myös osuutesi.',
+  'menu.deleting': 'Tiliäsi poistetaan',
+  'menu.deletingAbout': 'Tämä voi kestää muutaman sekunnin. Pidä tämä sivu auki.',
   'menu.deleteAccountConfirm': 'Poistetaanko tilisi ja kaikki tietosi pysyvästi? Tätä ei voi perua.',
 
   // — notices —
