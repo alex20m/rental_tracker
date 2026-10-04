@@ -210,6 +210,98 @@ test.describe('signing in', () => {
   });
 });
 
+test.describe('resetting a forgotten password', () => {
+  test.beforeEach(({ api }) => {
+    api.signedIn = false;
+    api.accounts.set('me@example.test', { password: 'old password', verified: true, userId: 'usr_me' });
+  });
+
+  const openForgot = async (page: import('@playwright/test').Page) => {
+    await page.goto('/sign-in');
+    await page.getByRole('button', { name: 'Forgot your password?' }).click();
+    await expect(page.getByRole('heading', { name: 'Reset your password' })).toBeVisible();
+  };
+  const requestCode = async (page: import('@playwright/test').Page) => {
+    await openForgot(page);
+    await page.getByLabel('Email', { exact: true }).fill('  me@example.test ');
+    await page.getByRole('button', { name: 'Send reset code' }).click();
+    await expect(page.getByText('We sent a code to me@example.test.')).toBeVisible();
+  };
+
+  test('emails a code, takes the code and a new password, and signs in with the new password', async ({ page, api }) => {
+    await requestCode(page);
+    expect(api.resetCodes).toEqual(['me@example.test']);
+    await expect(page.getByLabel('Email', { exact: true })).toHaveCount(0);
+
+    await fillCode(page, '123456');
+    await expect(page.getByLabel('New password')).toBeFocused();
+    await page.getByLabel('New password').fill('brand new password');
+    await page.getByRole('button', { name: 'Reset password' }).click();
+
+    await expect(page.getByRole('heading', { name: 'Sign in' })).toBeVisible();
+    await expect(page.getByText('Password changed. Sign in with your new password.')).toBeVisible();
+    expect(api.callsTo('POST /api/auth/email-otp/reset-password')[0]!.body).toMatchObject({
+      email: 'me@example.test',
+      otp: '123456',
+      password: 'brand new password',
+    });
+
+    await page.getByLabel('Email', { exact: true }).fill('me@example.test');
+    await page.getByLabel('Password').fill('old password');
+    await page.getByRole('button', { name: 'Sign in' }).click();
+    await expect(page.locator('.alert[role=alert]')).toHaveText('Invalid email or password');
+    await page.getByLabel('Password').fill('brand new password');
+    await page.getByRole('button', { name: 'Sign in' }).click();
+    await expect(page.getByRole('heading', { name: 'Add your first apartment' })).toBeVisible();
+  });
+
+  test('keeps the person on the code step with the reason when the code is wrong, and sends nothing for an incomplete one', async ({
+    page,
+    api,
+  }) => {
+    await requestCode(page);
+    await expect(page.getByRole('button', { name: 'Reset password' })).toBeDisabled();
+
+    await fillCode(page, '000000');
+    await page.getByLabel('New password').fill('brand new password');
+    await page.getByRole('button', { name: 'Reset password' }).click();
+    await expect(page.locator('.alert[role=alert]')).toHaveText('Invalid OTP');
+    await expect(page.getByRole('heading', { name: 'Reset your password' })).toBeVisible();
+    expect(api.accounts.get('me@example.test')!.password).toBe('old password');
+  });
+
+  test('refuses a new password shorter than eight characters before asking the service', async ({ page, api }) => {
+    await requestCode(page);
+    await fillCode(page, '123456');
+    await page.getByLabel('New password').fill('short');
+    await page.getByRole('button', { name: 'Reset password' }).click();
+
+    await expect(page.getByLabel('New password')).toHaveJSProperty('validity.tooShort', true);
+    expect(api.callsTo('POST /api/auth/email-otp/reset-password')).toHaveLength(0);
+  });
+
+  test('explains a failed code request and stays on the email form', async ({ page, api }) => {
+    api.failNext('POST', /request-password-reset$/, { status: 429, body: { message: 'Too many codes, wait a minute' } });
+    await openForgot(page);
+    await page.getByLabel('Email', { exact: true }).fill('me@example.test');
+    await page.getByRole('button', { name: 'Send reset code' }).click();
+
+    await expect(page.locator('.alert[role=alert]')).toHaveText('Too many codes, wait a minute');
+    await expect(page.getByLabel('Email', { exact: true })).toBeVisible();
+  });
+
+  test('sends a new code on request, and goes back a step at a time', async ({ page, api }) => {
+    await requestCode(page);
+    await page.getByRole('button', { name: 'Send a new code' }).click();
+    await expect.poll(() => api.resetCodes.length).toBe(2);
+
+    await page.getByRole('button', { name: 'Back' }).click();
+    await expect(page.getByLabel('Email', { exact: true })).toHaveValue('me@example.test');
+    await page.getByRole('button', { name: 'Back' }).click();
+    await expect(page.getByRole('heading', { name: 'Sign in' })).toBeVisible();
+  });
+});
+
 test.describe('the one-time code boxes', () => {
   test.beforeEach(({ api }) => {
     api.signedIn = false;

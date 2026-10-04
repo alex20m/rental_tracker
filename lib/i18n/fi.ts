@@ -517,4 +517,11 @@ export const fi: Record<MessageKey, string> = {
   'auth.errSignIn': 'Sisäänkirjautuminen epäonnistui.',
   'auth.errSignUp': 'Tilin luominen epäonnistui.',
   'auth.errCode': 'Koodi ei kelvannut.',
+  'auth.forgot': 'Unohditko salasanasi?',
+  'auth.resetTitle': 'Nollaa salasanasi',
+  'auth.resetLead': 'Anna sähköpostiosoitteesi, niin lähetämme koodin, jolla voit valita uuden salasanan.',
+  'auth.sendResetCode': 'Lähetä nollauskoodi',
+  'auth.newPassword': 'Uusi salasana',
+  'auth.resetPassword': 'Nollaa salasana',
+  'auth.passwordChanged': 'Salasana vaihdettu. Kirjaudu sisään uudella salasanallasi.',
 };

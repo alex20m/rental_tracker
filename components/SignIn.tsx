@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { isAuthError } from '@neondatabase/auth/next';
 import { authClient } from '@/lib/client/authClient';
@@ -8,7 +8,7 @@ import { useI18n } from '@/components/I18nProvider';
 import LanguagePicker from '@/components/LanguagePicker';
 import { ErrorNote, OtpInput } from '@/components/ui';
 
-type Mode = 'sign-in' | 'sign-up' | 'verify';
+type Mode = 'sign-in' | 'sign-up' | 'verify' | 'forgot' | 'reset';
 
 /**
  * Neon's client does not hand back Better Auth's `{ data, error }` on failure:
@@ -40,6 +40,8 @@ export default function SignIn() {
   const [error, setError] = useState('');
   const [info, setInfo] = useState(verifyEmail ? t('auth.pressSend') : '');
 
+  const newPasswordInput = useRef<HTMLInputElement>(null);
+
   const auth = authClient();
 
   const step = async (fn: () => Promise<void>) => {
@@ -57,6 +59,29 @@ export default function SignIn() {
     await auth.emailOtp.sendVerificationOtp({ email: email.trim(), type: 'email-verification' });
     setInfo(t(message, { email: email.trim() }));
   };
+
+  // A forgotten password is reset with an emailed code, like verification: a
+  // plain POST through the auth proxy, so nothing redirects.
+  const requestReset = async () => {
+    await auth.emailOtp.requestPasswordReset({ email: email.trim() });
+    setInfo(t('auth.codeSent', { email: email.trim() }));
+  };
+
+  const forgot = () =>
+    step(async () => {
+      await requestReset();
+      setPassword('');
+      setMode('reset');
+    });
+
+  const reset = () =>
+    step(async () => {
+      await auth.emailOtp.resetPassword({ email: email.trim(), otp: code, password });
+      setCode('');
+      setPassword('');
+      setMode('sign-in');
+      setInfo(t('auth.passwordChanged'));
+    });
 
   const enter = () => {
     router.replace('/');
@@ -103,21 +128,39 @@ export default function SignIn() {
       setInfo(t('auth.verified'));
     });
 
-  const title =
-    mode === 'sign-in' ? t('auth.signIn') : mode === 'sign-up' ? t('auth.createTitle') : t('auth.checkEmail');
+  const titles: Record<Mode, string> = {
+    'sign-in': t('auth.signIn'),
+    'sign-up': t('auth.createTitle'),
+    verify: t('auth.checkEmail'),
+    forgot: t('auth.resetTitle'),
+    reset: t('auth.resetTitle'),
+  };
+  const title = titles[mode];
+  const submitLabel: Record<Exclude<Mode, 'verify'>, string> = {
+    'sign-in': t('auth.signIn'),
+    'sign-up': t('auth.create'),
+    forgot: t('auth.sendResetCode'),
+    reset: t('auth.resetPassword'),
+  };
+  const askEmail = mode === 'sign-in' || mode === 'sign-up' || mode === 'forgot';
+  const askPassword = mode === 'sign-in' || mode === 'sign-up';
+  const askCode = mode === 'verify' || mode === 'reset';
 
   return (
     <div className="app auth">
       <div className="welcome">
         <h1>{title}</h1>
-        {mode !== 'verify' && <p className="lead">{t('auth.tagline')}</p>}
+        {(mode === 'sign-in' || mode === 'sign-up') && <p className="lead">{t('auth.tagline')}</p>}
+        {mode === 'forgot' && <p className="lead">{t('auth.resetLead')}</p>}
         <form
           onSubmit={(e) => {
             e.preventDefault();
             // No submit control renders in 'verify' mode (see the button
-            // below), so reaching here at all means 'sign-in' or 'sign-up'.
+            // below), so reaching here at all means one of the other four.
             if (mode === 'sign-in') void signIn();
-            else void signUp();
+            else if (mode === 'sign-up') void signUp();
+            else if (mode === 'forgot') void forgot();
+            else void reset();
           }}
         >
           {info && (
@@ -132,7 +175,7 @@ export default function SignIn() {
               <input id="name" autoComplete="name" required value={name} onChange={(e) => setName(e.target.value)} />
             </>
           )}
-          {mode !== 'verify' && (
+          {askEmail && (
             <>
               <label htmlFor="email">{t('auth.email')}</label>
               <input
@@ -145,7 +188,7 @@ export default function SignIn() {
               />
             </>
           )}
-          {mode !== 'verify' ? (
+          {askPassword && (
             <>
               <label htmlFor="password">{t('auth.password')}</label>
               <input
@@ -158,7 +201,8 @@ export default function SignIn() {
                 onChange={(e) => setPassword(e.target.value)}
               />
             </>
-          ) : (
+          )}
+          {askCode && (
             <>
               <label>{t('auth.code')}</label>
               <OtpInput
@@ -166,29 +210,68 @@ export default function SignIn() {
                 digitLabel={(n) => t('auth.codeDigit', { n })}
                 value={code}
                 onChange={setCode}
-                onComplete={(otp) => void verify(otp)}
+                onComplete={(otp) => (mode === 'verify' ? void verify(otp) : newPasswordInput.current?.focus())}
                 disabled={busy}
+              />
+            </>
+          )}
+          {mode === 'reset' && (
+            <>
+              <label htmlFor="new-password">{t('auth.newPassword')}</label>
+              <input
+                id="new-password"
+                ref={newPasswordInput}
+                type="password"
+                autoComplete="new-password"
+                required
+                minLength={8}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
               />
             </>
           )}
 
           <ErrorNote message={error} />
           {mode !== 'verify' && (
-            <button className="btn primary block" style={{ marginTop: 18 }} disabled={busy}>
-              {busy ? t('auth.wait') : mode === 'sign-in' ? t('auth.signIn') : t('auth.create')}
+            <button
+              className="btn primary block"
+              style={{ marginTop: 18 }}
+              disabled={busy || (mode === 'reset' && code.length < 6)}
+            >
+              {busy ? t('auth.wait') : submitLabel[mode]}
             </button>
           )}
 
           <div style={{ display: 'flex', gap: 18, marginTop: 16 }}>
             {mode === 'sign-in' && (
-              <button type="button" className="link" onClick={() => setMode('sign-up')}>
-                {t('auth.toSignUp')}
-              </button>
+              <>
+                <button type="button" className="link" onClick={() => setMode('sign-up')}>
+                  {t('auth.toSignUp')}
+                </button>
+                <button type="button" className="link" onClick={() => setMode('forgot')}>
+                  {t('auth.forgot')}
+                </button>
+              </>
             )}
             {mode === 'sign-up' && (
               <button type="button" className="link" onClick={() => setMode('sign-in')}>
                 {t('auth.toSignIn')}
               </button>
+            )}
+            {mode === 'forgot' && (
+              <button type="button" className="link" onClick={() => setMode('sign-in')}>
+                {t('common.back')}
+              </button>
+            )}
+            {mode === 'reset' && (
+              <>
+                <button type="button" className="link" disabled={busy} onClick={() => step(requestReset)}>
+                  {t('auth.sendCode')}
+                </button>
+                <button type="button" className="link" onClick={() => setMode('forgot')}>
+                  {t('common.back')}
+                </button>
+              </>
             )}
             {mode === 'verify' && (
               <>

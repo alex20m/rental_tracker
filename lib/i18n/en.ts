@@ -521,6 +521,13 @@ export const en = {
   'auth.errSignIn': 'Could not sign in.',
   'auth.errSignUp': 'Could not create the account.',
   'auth.errCode': 'That code did not work.',
+  'auth.forgot': 'Forgot your password?',
+  'auth.resetTitle': 'Reset your password',
+  'auth.resetLead': 'Enter your email and we will send you a code to choose a new password.',
+  'auth.sendResetCode': 'Send reset code',
+  'auth.newPassword': 'New password',
+  'auth.resetPassword': 'Reset password',
+  'auth.passwordChanged': 'Password changed. Sign in with your new password.',
 } as const;
 
 export type MessageKey = keyof typeof en;

@@ -36,6 +36,8 @@ export class FakeApi {
   /** Neon Auth accounts, by email. */
   accounts = new Map<string, Account>();
   sentCodes: string[] = [];
+  /** Emails a password-reset code was requested for. */
+  resetCodes: string[] = [];
   /** Every request the UI made that changes something: `METHOD /path`, with its body. */
   calls: { call: string; body: unknown }[] = [];
   unhandled: string[] = [];
@@ -297,6 +299,16 @@ export class FakeApi {
       if (account) account.verified = true;
       this.emailVerified = true;
       return json(route, { status: true, token: null, user: { id: ME.userId, email, emailVerified: true } });
+    }
+    if (endpoint === 'email-otp/request-password-reset' && method === 'POST') {
+      this.resetCodes.push(email);
+      return json(route, { success: true });
+    }
+    if (endpoint === 'email-otp/reset-password' && method === 'POST') {
+      if (b.otp !== '123456') return json(route, { code: 'INVALID_OTP', message: 'Invalid OTP' }, 400);
+      const account = this.accounts.get(email);
+      if (account) account.password = b.password!;
+      return json(route, { success: true });
     }
     this.unhandled.push(`${method} /api/auth/${endpoint}`);
     return json(route, { error: 'Not implemented in FakeApi' }, 501);
