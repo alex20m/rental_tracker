@@ -199,8 +199,20 @@ test.describe('home', () => {
     await expect(page.getByRole('button', { name: `Prepare the ${YEAR} declaration` })).toHaveCount(0);
   });
 
-  test('changes the year from a quiet list of the years that have data, and nothing else', async ({ page, api }) => {
+  test('lists only the current year while nothing is logged for an earlier one', async ({ page, api }) => {
     api.addApartment({ name: 'Flat' }, ledger());
+    await page.goto('/');
+
+    const year = page.getByLabel('Tax year');
+    await expect(year).toHaveValue(String(YEAR));
+    await expect(year.locator('option')).toHaveText([String(YEAR)]);
+  });
+
+  test('changes the year from a quiet list of the years that have data, and nothing else', async ({ page, api }) => {
+    api.addApartment({ name: 'Flat', useDepreciation: false }, {
+      rents: [...ledger().rents, { month: `${YEAR - 1}-06`, status: 'paid', amount: 500, receivedDate: `${YEAR - 1}-06-02`, note: '' }],
+      costs: ledger().costs,
+    });
     await page.goto('/');
 
     const year = page.getByLabel('Tax year');
@@ -208,7 +220,7 @@ test.describe('home', () => {
     await expect(year.locator('option')).toHaveText([String(YEAR), String(YEAR - 1)]);
     await year.selectOption(String(YEAR - 1));
     await expect(year).toHaveValue(String(YEAR - 1));
-    await expect(netIncome(page)).toHaveText('0,00 €');
+    await expect(netIncome(page)).toHaveText('500,00 €');
     await year.selectOption(String(YEAR));
     await expect(netIncome(page)).toHaveText('2 184,00 €');
   });
