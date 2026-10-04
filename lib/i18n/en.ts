@@ -28,6 +28,12 @@ export const en = {
   // — language —
   'language.label': 'Language',
 
+  // — theme —
+  'theme.label': 'Theme',
+  'theme.system': 'System',
+  'theme.light': 'Light',
+  'theme.dark': 'Dark',
+
   // — navigation —
   'nav.sections': 'Sections',
   'nav.home': 'Home',

@@ -6,10 +6,16 @@ const css = read('app/globals.css');
 const manifest = JSON.parse(read('public/manifest.webmanifest')) as { background_color: string; theme_color: string };
 const layout = read('app/layout.tsx');
 
-/** The value of a design token inside the first (light) or second (dark) :root block. */
+/** The body of the CSS rule that starts with `selector {`. */
+function rule(selector: string): string {
+  const start = css.indexOf(`${selector} {`);
+  if (start < 0) throw new Error(`no rule for ${selector}`);
+  return css.slice(start, css.indexOf('}', start));
+}
+
+/** The value of a design token in the light palette, or the dark one (what "Dark" forces). */
 function token(name: string, scheme: 'light' | 'dark'): string {
-  const blocks = css.split(':root {').slice(1).map((b) => b.slice(0, b.indexOf('}')));
-  const block = blocks[scheme === 'light' ? 0 : 1] ?? '';
+  const block = rule(scheme === 'light' ? ':root' : ":root[data-theme='dark']");
   const match = new RegExp(`--${name}:\\s*([^;]+);`).exec(block);
   if (!match) throw new Error(`--${name} is not defined for ${scheme}`);
   return (match[1] ?? '').trim();
@@ -31,6 +37,13 @@ function contrast(a: string, b: string): number {
 }
 
 describe('the Mono Ink theme', () => {
+  it('draws the same dark palette when the device is dark as when Dark is chosen', () => {
+    const tokens = (block: string) => block.match(/--[\w-]+:[^;]+;/g)?.map((t) => t.replace(/\s+/g, ' ')) ?? [];
+    const forced = tokens(rule(":root[data-theme='dark']"));
+    expect(forced.length).toBeGreaterThan(10);
+    expect(tokens(rule(":root:not([data-theme='light'])"))).toEqual(forced);
+  });
+
   it('has a light and a dark scheme that differ', () => {
     expect(token('bg', 'light')).not.toBe(token('bg', 'dark'));
     expect(luminance(token('bg', 'light'))).toBeGreaterThan(0.5);

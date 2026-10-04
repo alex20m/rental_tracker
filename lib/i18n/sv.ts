@@ -23,6 +23,12 @@ export const sv: Record<MessageKey, string> = {
   // — language —
   'language.label': 'Språk',
 
+  // — theme —
+  'theme.label': 'Tema',
+  'theme.system': 'System',
+  'theme.light': 'Ljust',
+  'theme.dark': 'Mörkt',
+
   // — navigation —
   'nav.sections': 'Avsnitt',
   'nav.home': 'Hem',

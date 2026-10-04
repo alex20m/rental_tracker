@@ -7,6 +7,7 @@ import { authClient } from '@/lib/client/authClient';
 import type { Account } from '@/components/RentalApp';
 import { useI18n } from '@/components/I18nProvider';
 import LanguagePicker from '@/components/LanguagePicker';
+import ThemePicker from '@/components/ThemePicker';
 import { Avatar, ErrorNote, Heading, Icon, Info } from '@/components/ui';
 
 /** Who you are, language, signing out, leaving. */
@@ -51,6 +52,11 @@ export default function AccountPanel({ account }: { account: Account }) {
       <section>
         <Heading>{t('language.label')}</Heading>
         <LanguagePicker />
+      </section>
+
+      <section>
+        <Heading>{t('theme.label')}</Heading>
+        <ThemePicker />
       </section>
 
       <button className="btn block" onClick={signOut}>
