@@ -519,4 +519,11 @@ export const sv: Record<MessageKey, string> = {
   'auth.errSignIn': 'Det gick inte att logga in.',
   'auth.errSignUp': 'Det gick inte att skapa kontot.',
   'auth.errCode': 'Koden fungerade inte.',
+  'auth.forgot': 'Har du glömt ditt lösenord?',
+  'auth.resetTitle': 'Återställ ditt lösenord',
+  'auth.resetLead': 'Ange din e-postadress så skickar vi en kod för att välja ett nytt lösenord.',
+  'auth.sendResetCode': 'Skicka återställningskod',
+  'auth.newPassword': 'Nytt lösenord',
+  'auth.resetPassword': 'Återställ lösenord',
+  'auth.passwordChanged': 'Lösenordet är ändrat. Logga in med ditt nya lösenord.',
 };
