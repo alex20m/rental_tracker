@@ -192,3 +192,23 @@ test would catch.
   run locally. If disabling the feature stops working on some later build,
   the feature may have been removed and made unconditional, and coverage
   will need reading before each navigation some other way.
+
+## One gate per viewport
+
+Run the suite as one Playwright project per layout (phone, desktop) and hold
+**each** project to 100 % on its own, with a separate coverage report per
+project. A single merged report lets the phone run fill the desktop's gaps (and
+the reverse), so it says nothing about whether each layout was exercised.
+
+Consequences worth knowing before you start:
+
+- Code behind a layout-only control (a ☰ that is hidden above a breakpoint)
+  cannot be reached from the other project at its default viewport. Give the
+  tests of that control an explicit `test.use({ viewport })` at the layout where
+  it exists, and add one test per layout asserting the other layout's
+  difference (sidebar visible, no ☰) rather than skipping anything.
+- Shared helpers must work in both layouts, and must **wait** for the layout to
+  render before choosing: `isVisible()` does not wait, so "click ☰ if visible"
+  silently skips the click on a slow render. Wait for `toggle.or(sidebar).first()`.
+- Verified against Playwright 1.x with `devices['Pixel 7']` and `devices['Desktop Chrome']`;
+  not verified for WebKit/Firefox projects.

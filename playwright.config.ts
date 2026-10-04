@@ -33,7 +33,11 @@ export default defineConfig({
       args: ['--no-proxy-server'],
     },
   },
-  projects: [{ name: 'phone', use: { ...devices['Pixel 7'], browserName: 'chromium' } }],
+  // Each project is held to 100 % coverage on its own (e2e/coverage.ts).
+  projects: [
+    { name: 'phone', use: { ...devices['Pixel 7'], browserName: 'chromium' } },
+    { name: 'desktop', use: { ...devices['Desktop Chrome'], browserName: 'chromium' } },
+  ],
   webServer: {
     command: `next start -p ${PORT}`,
     env: { E2E_COVERAGE: '1' },

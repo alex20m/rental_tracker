@@ -9,29 +9,40 @@
  * be at 100 % of statements, branches, functions and lines.
  */
 
-import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
-import { join, relative } from 'node:path';
-import type { CoverageReportOptions } from 'monocart-coverage-reports';
+import { existsSync, readFileSync, readdirSync, statSync } from "node:fs";
+import { join, relative } from "node:path";
+import type { CoverageReportOptions } from "monocart-coverage-reports";
 
-export const ROOT = join(__dirname, '..');
-const BROWSER_DIRS = ['components', 'app', 'lib/client'];
+export const ROOT = join(__dirname, "..");
+const BROWSER_DIRS = ["components", "app", "lib/client"];
 
-export const coverageOptions: CoverageReportOptions = {
-  name: 'End-to-end UI coverage',
-  outputDir: join(ROOT, 'coverage-e2e'),
-  reports: ['v8', 'console-details', 'json-summary'],
-  // Only our app's chunks; never the framework's runtime or third parties.
-  entryFilter: (entry) => entry.url.includes('/_next/static/'),
-  sourceFilter: (sourcePath) => browserModules().includes(normalize(sourcePath)),
-  sourcePath: (filePath) => normalize(filePath),
-  // `v8 ignore` comments would let a gap be declared covered. They do nothing here.
-  v8Ignore: false,
-};
+/** The Playwright projects (viewports) the gate holds to 100 % separately. */
+export const PROJECTS = ["phone", "desktop"] as const;
+
+/** One report per project, so what one viewport leaves unrun cannot be filled in by the other. */
+export function coverageOptions(project: string): CoverageReportOptions {
+  return {
+    name: `End-to-end UI coverage (${project})`,
+    outputDir: join(ROOT, "coverage-e2e", project),
+    reports: ["v8", "console-details", "json-summary"],
+    // Only our app's chunks; never the framework's runtime or third parties.
+    entryFilter: (entry) => entry.url.includes("/_next/static/"),
+    sourceFilter: (sourcePath) =>
+      browserModules().includes(normalize(sourcePath)),
+    sourcePath: (filePath) => normalize(filePath),
+    // `v8 ignore` comments would let a gap be declared covered. They do nothing here.
+    v8Ignore: false,
+  };
+}
 
 /** Source map paths arrive in bundler-specific shapes; reduce them to repo-relative paths. */
 export function normalize(sourcePath: string): string {
-  const cleaned = sourcePath.replace(/^(webpack|turbopack):\/\/[^/]*\//, '').replace(/^\[project\]\//, '');
-  const at = BROWSER_DIRS.map((d) => cleaned.indexOf(`${d}/`)).filter((i) => i >= 0);
+  const cleaned = sourcePath
+    .replace(/^(webpack|turbopack):\/\/[^/]*\//, "")
+    .replace(/^\[project\]\//, "");
+  const at = BROWSER_DIRS.map((d) => cleaned.indexOf(`${d}/`)).filter(
+    (i) => i >= 0,
+  );
   return at.length ? cleaned.slice(Math.min(...at)) : cleaned;
 }
 
@@ -46,7 +57,9 @@ export function browserModules(root = ROOT): string[] {
   if (!cached.has(root)) {
     const files = BROWSER_DIRS.flatMap((dir) => walk(join(root, dir)))
       .filter((file) => /\.(tsx?|jsx?)$/.test(file))
-      .filter((file) => /^\s*['"]use client['"]/.test(readFileSync(file, 'utf8')))
+      .filter((file) =>
+        /^\s*['"]use client['"]/.test(readFileSync(file, "utf8")),
+      )
       .map((file) => relative(root, file))
       .sort();
     cached.set(root, files);
@@ -62,10 +75,10 @@ function walk(dir: string): string[] {
   });
 }
 
-type Metrics = { pct: number | ''; covered: number; total: number };
+type Metrics = { pct: number | ""; covered: number; total: number };
 type FileResult = {
   sourcePath: string;
-  summary: Record<'statements' | 'branches' | 'functions' | 'lines', Metrics>;
+  summary: Record<"statements" | "branches" | "functions" | "lines", Metrics>;
   /** The original source, which branch offsets point into. */
   source?: string;
   data?: {
@@ -78,11 +91,11 @@ type FileResult = {
 
 /** Where each untaken branch starts, as line:column — a branch can be untaken on a line that otherwise ran. */
 function untakenBranches(file: FileResult): string[] {
-  const source = file.source ?? '';
+  const source = file.source ?? "";
   return (file.data?.branches ?? [])
     .filter((b) => b.count === 0)
     .map((b) => {
-      const before = source.slice(0, b.start).split('\n');
+      const before = source.slice(0, b.start).split("\n");
       return `${before.length}:${before[before.length - 1]!.length + 1}`;
     });
 }
@@ -91,7 +104,9 @@ function untakenBranches(file: FileResult): string[] {
 function gaps(file: FileResult): string {
   const lines = Object.entries(file.data?.lines ?? {});
   const never = lines.filter(([, hits]) => hits === 0).map(([n]) => Number(n));
-  const partly = lines.filter(([, hits]) => typeof hits === 'string').map(([n]) => Number(n));
+  const partly = lines
+    .filter(([, hits]) => typeof hits === "string")
+    .map(([n]) => Number(n));
   const ranges = (ns: number[]) =>
     ns
       .sort((x, y) => x - y)
@@ -102,15 +117,15 @@ function gaps(file: FileResult): string {
         return acc;
       }, [])
       .map(([x, y]) => (x === y ? `${x}` : `${x}-${y}`))
-      .join(', ');
+      .join(", ");
   const branches = untakenBranches(file);
   return [
-    never.length ? `lines ${ranges(never)}` : '',
-    partly.length ? `partly: ${ranges(partly)}` : '',
-    branches.length ? `branch not taken at ${branches.join(', ')}` : '',
+    never.length ? `lines ${ranges(never)}` : "",
+    partly.length ? `partly: ${ranges(partly)}` : "",
+    branches.length ? `branch not taken at ${branches.join(", ")}` : "",
   ]
     .filter(Boolean)
-    .join('; ');
+    .join("; ");
 }
 
 /** What falls short of 100 %, as lines a person can act on. Empty means the gate passes. */
@@ -123,12 +138,19 @@ export function shortfalls(files: FileResult[], required: string[]): string[] {
       problems.push(`${path}: never loaded by any end-to-end test`);
       continue;
     }
-    const short = (['statements', 'branches', 'functions', 'lines'] as const)
-      .filter((metric) => file.summary[metric].covered !== file.summary[metric].total)
-      .map((metric) => `${metric} ${file.summary[metric].covered}/${file.summary[metric].total}`);
+    const short = (["statements", "branches", "functions", "lines"] as const)
+      .filter(
+        (metric) => file.summary[metric].covered !== file.summary[metric].total,
+      )
+      .map(
+        (metric) =>
+          `${metric} ${file.summary[metric].covered}/${file.summary[metric].total}`,
+      );
     if (short.length) {
       const where = gaps(file);
-      problems.push(`${path}: ${short.join(', ')}${where ? ` — ${where}` : ''}`);
+      problems.push(
+        `${path}: ${short.join(", ")}${where ? ` — ${where}` : ""}`,
+      );
     }
   }
   return problems;

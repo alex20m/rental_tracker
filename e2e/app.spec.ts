@@ -279,7 +279,6 @@ test.describe('the portfolio', () => {
     await section(page, 'Rent');
 
     await openPortfolio(page);
-    await expect(page.getByRole('button', { name: 'Menu' })).toHaveAttribute('aria-expanded', 'false');
     await expect(page.getByRole('button', { name: /^First/ })).toContainText('You own 60 % · 2 owners · Kauppakatu 12 B 7, Vaasa');
     await expect(page.getByRole('button', { name: /^Second/ })).toContainText('Toinen katu 2');
     await page.getByRole('button', { name: /^Second/ }).click();
@@ -349,6 +348,9 @@ test.describe('the portfolio', () => {
 });
 
 test.describe('the navigation drawer', () => {
+  // The drawer and its ☰ exist below 960 px; from there up the nav is a permanent sidebar.
+  test.use({ viewport: { width: 400, height: 800 } });
+
   const toggle = (page: Page) => page.getByRole('button', { name: 'Menu', exact: true });
   const drawer = (page: Page) => page.getByRole('navigation', { name: 'Sections' });
 
@@ -397,6 +399,16 @@ test.describe('the navigation drawer', () => {
     await expect(page.getByRole('heading', { name: 'Months' })).toBeVisible();
   });
 
+  test('closes after the portfolio is picked, leaving ☰ collapsed', async ({ page, api }) => {
+    api.addApartment({ name: 'Flat' });
+    await page.goto('/');
+
+    await toggle(page).click();
+    await drawer(page).getByRole('button', { name: 'All apartments', exact: true }).click();
+    await expect(page.getByRole('button', { name: /^Flat/ })).toBeVisible();
+    await expect(toggle(page)).toHaveAttribute('aria-expanded', 'false');
+  });
+
   test('lists the apartment’s places under its name, and the portfolio and account apart from them', async ({ page, api }) => {
     api.addApartment({ name: 'Flat' });
     await page.goto('/');
@@ -427,6 +439,19 @@ test.describe('the navigation drawer', () => {
         const overflow = await button.evaluate((el) => el.scrollWidth - el.clientWidth);
         expect(overflow, await button.innerText()).toBeLessThanOrEqual(0);
       }
+    });
+  });
+
+  test.describe('on a laptop', () => {
+    test.use({ viewport: { width: 1280, height: 800 } });
+
+    test('keeps the sidebar open, with no ☰ to press', async ({ page, api }) => {
+      api.addApartment({ name: 'Flat' });
+      await page.goto('/');
+
+      await expect(drawer(page)).toBeVisible();
+      await expect(toggle(page)).toBeHidden();
+      await expect(drawer(page).getByRole('button', { name: 'Home', exact: true })).toHaveAttribute('aria-current', 'page');
     });
   });
 
