@@ -510,7 +510,7 @@ export const fi: Record<MessageKey, string> = {
   'auth.sendCode': 'Lähetä uusi koodi',
   'auth.pressSend': 'Paina “Lähetä uusi koodi” ja syötä sitten sähköpostin koodi.',
   'auth.codeSent': 'Lähetimme koodin osoitteeseen {email}.',
-  'auth.codeSentSignUp': 'Lähetimme koodin osoitteeseen {email}. Syötä se viimeistelläksesi tilin luomisen. Ei koodia? Sinulla voi jo olla tili: palaa takaisin ja kirjaudu sisään.',
+  'auth.codeSentSignUp': 'Lähetimme koodin osoitteeseen {email}. Eikö koodia tullut? Osoitteella voi jo olla tili. Palaa takaisin kirjautumaan tai nollaa salasanasi.',
   'auth.verified': 'Sähköposti vahvistettu. Kirjaudu sisään jatkaaksesi.',
   'auth.errGeneric': 'Jokin meni pieleen.',
   'auth.errSend': 'Koodin lähettäminen epäonnistui.',

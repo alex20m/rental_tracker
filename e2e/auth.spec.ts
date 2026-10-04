@@ -83,7 +83,7 @@ test.describe('signing in', () => {
     await page.getByLabel('Password').fill('correct horse');
     await page.getByRole('button', { name: 'Create account' }).click();
 
-    await expect(page.getByText('Enter it to finish creating your account.')).toBeVisible();
+    await expect(page.getByText('We sent a code to me@example.test.')).toBeVisible();
     api.signedIn = true; // the verification signs the new account in
     await fillCode(page, '123456');
     await expect(page.getByRole('heading', { name: 'Add your first apartment' })).toBeVisible();
@@ -98,10 +98,10 @@ test.describe('signing in', () => {
     await page.getByLabel('Password').fill('correct horse');
     await page.getByRole('button', { name: 'Create account' }).click();
 
-    await expect(page.getByText('Enter it to finish creating your account.')).toBeVisible();
+    await expect(page.getByText('We sent a code to me@example.test.')).toBeVisible();
     // Neon never reveals that an address is taken (it answers a repeat sign-up as if it were new),
     // so the one thing the page can do for someone who already has an account is say what to try.
-    await expect(page.getByText('No code? You may already have an account: go back and sign in.')).toBeVisible();
+    await expect(page.getByText("Didn't get one? That address may already have an account. Go back to sign in, or reset your password.")).toBeVisible();
     const requests = api.callsTo('POST /api/auth/email-otp/send-verification-otp');
     expect(requests).toHaveLength(1);
     expect(requests[0]!.body).toMatchObject({ email: 'me@example.test', type: 'email-verification' });
