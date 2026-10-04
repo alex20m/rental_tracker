@@ -72,9 +72,9 @@ export async function fillCode(page: Page, code: string) {
 }
 
 /**
- * Opens an ⓘ popover. At phone height an icon low on the page starts under
- * the floating bottom navigation; a person scrolls it clear before tapping,
- * where Playwright would scroll mid-click — and that scroll closes the popover.
+ * Opens an ⓘ popover. A person scrolls an icon into view before tapping it;
+ * Playwright would otherwise scroll mid-click when the icon sits under the
+ * sticky top bar or at the screen's edge — and that scroll closes the popover.
  */
 export async function openInfo(page: Page, name: string) {
   const about = page.getByRole('button', { name });
