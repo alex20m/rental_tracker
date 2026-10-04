@@ -400,7 +400,7 @@ describe('the home screen', () => {
       within(nav)
         .getAllByRole('button')
         .map((b) => b.textContent),
-    ).toEqual(['Home', 'Rent & costs', 'Tax', 'Apartment settings', 'All apartments', 'Account settings']);
+    ).toEqual(['Home', 'Rent & costs', 'Tax', 'Settings', 'All apartments', 'Account settings']);
   });
 
   it('shows at most three to-do items and counts the rest, leading to the Tax checklist', async () => {
@@ -471,9 +471,9 @@ describe('settings', () => {
   it('opens from the navigation and leaves through it', async () => {
     serve([view('a1', 'Alpha')]);
     render(<RentalApp />);
-    await user().click(await screen.findByRole('button', { name: 'Apartment settings' }));
+    await user().click(await screen.findByRole('button', { name: 'Settings' }));
     expect(await screen.findByRole('heading', { name: 'Apartment settings' })).toBeTruthy();
-    expect(screen.getByRole('button', { name: 'Apartment settings' }).getAttribute('aria-current')).toBe('page');
+    expect(screen.getByRole('button', { name: 'Settings' }).getAttribute('aria-current')).toBe('page');
 
     await user().click(screen.getByRole('button', { name: 'Home' }));
     expect(screen.getByRole('button', { name: 'Home' }).getAttribute('aria-current')).toBe('page');
@@ -482,7 +482,7 @@ describe('settings', () => {
   it('only offers to save once something has changed', async () => {
     serve([view('a1', 'Alpha')]);
     render(<RentalApp />);
-    await user().click(await screen.findByRole('button', { name: 'Apartment settings' }));
+    await user().click(await screen.findByRole('button', { name: 'Settings' }));
     await user().click(await screen.findByRole('button', { name: /^Property details/ }));
     await screen.findByRole('heading', { name: 'Property details' });
     expect(screen.queryByRole('button', { name: 'Save changes' })).toBeNull();
@@ -559,7 +559,7 @@ describe('the navigation drawer', () => {
 
     expect(nav().querySelector('.nav-group')!.textContent).toBe('Alpha');
     const order = [...nav().children].map((c) => c.getAttribute('role') ?? c.textContent);
-    expect(order.indexOf('separator')).toBeGreaterThan(order.indexOf('Apartment settings'));
+    expect(order.indexOf('separator')).toBeGreaterThan(order.indexOf('Settings'));
     expect(order.indexOf('separator')).toBeLessThan(order.indexOf('Account settings'));
   });
 
@@ -592,7 +592,7 @@ describe('account settings and apartment settings', () => {
     expect(screen.getByRole('button', { name: 'Sign out' })).toBeTruthy();
     expect(screen.queryByRole('button', { name: /^Owners/ })).toBeNull();
 
-    await user().click(screen.getByRole('button', { name: 'Apartment settings' }));
+    await user().click(screen.getByRole('button', { name: 'Settings' }));
     expect(screen.getByRole('heading', { name: 'Apartment settings' })).toBeTruthy();
     expect(screen.getByRole('button', { name: /^Owners/ })).toBeTruthy();
     expect(screen.queryByRole('button', { name: 'Sign out' })).toBeNull();
@@ -603,7 +603,7 @@ describe('account settings and apartment settings', () => {
     render(<RentalApp />);
     await user().click(await screen.findByRole('button', { name: 'Account settings' }));
     expect(screen.queryByLabelText('Tax year')).toBeNull();
-    await user().click(screen.getByRole('button', { name: 'Apartment settings' }));
+    await user().click(screen.getByRole('button', { name: 'Settings' }));
     expect(screen.queryByLabelText('Tax year')).toBeNull();
     await user().click(screen.getByRole('button', { name: 'Home' }));
     expect(screen.getByLabelText('Tax year')).toBeTruthy();
@@ -631,7 +631,7 @@ describe('settings topics', () => {
   it('lists the topics with a one-line summary of each', async () => {
     serve([coOwned()]);
     render(<RentalApp />);
-    await user().click(await screen.findByRole('button', { name: 'Apartment settings' }));
+    await user().click(await screen.findByRole('button', { name: 'Settings' }));
 
     expect(screen.getByRole('button', { name: /^Owners.*2 owners · you own 60 %/ })).toBeTruthy();
     expect(screen.getByRole('button', { name: /^Property details.*Alpha street 1/ })).toBeTruthy();
@@ -641,7 +641,7 @@ describe('settings topics', () => {
   it('keeps the uncommon choices off the details page, behind Advanced', async () => {
     serve([view('a1', 'Alpha')]);
     render(<RentalApp />);
-    await user().click(await screen.findByRole('button', { name: 'Apartment settings' }));
+    await user().click(await screen.findByRole('button', { name: 'Settings' }));
     expect(screen.getByRole('button', { name: /^Advanced.*Standard: a whole apartment in a housing company/ })).toBeTruthy();
     expect(screen.queryByRole('button', { name: /^Building depreciation/ })).toBeNull();
 
@@ -667,7 +667,7 @@ describe('settings topics', () => {
   it('opens one topic at a time and goes back to the list', async () => {
     serve([coOwned()]);
     render(<RentalApp />);
-    await user().click(await screen.findByRole('button', { name: 'Apartment settings' }));
+    await user().click(await screen.findByRole('button', { name: 'Settings' }));
     await user().click(screen.getByRole('button', { name: /^Owners/ }));
 
     expect(screen.getByRole('heading', { name: 'Owners' })).toBeTruthy();
@@ -682,7 +682,7 @@ describe('settings topics', () => {
   it('keeps an unsaved change while moving between topics, and still offers to save it', async () => {
     serve([coOwned()]);
     render(<RentalApp />);
-    await user().click(await screen.findByRole('button', { name: 'Apartment settings' }));
+    await user().click(await screen.findByRole('button', { name: 'Settings' }));
     await user().click(screen.getByRole('button', { name: /^Property details/ }));
     await user().type(screen.getByLabelText('Address'), ' B');
     await user().click(screen.getByRole('button', { name: 'Back to settings' }));

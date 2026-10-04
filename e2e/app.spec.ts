@@ -395,7 +395,7 @@ test.describe('the navigation drawer', () => {
       'Home',
       'Rent & costs',
       'Tax',
-      'Apartment settings',
+      'Settings',
       'All apartments',
       'Account settings',
     ]);
@@ -410,7 +410,7 @@ test.describe('the navigation drawer', () => {
       await page.goto('/');
 
       const buttons = page.locator('nav.nav').getByRole('button');
-      await expect(buttons.nth(3)).toHaveText('Lägenhetsinställningar');
+      await expect(buttons.nth(3)).toHaveText('Inställningar');
       for (const button of await buttons.all()) {
         const overflow = await button.evaluate((el) => el.scrollWidth - el.clientWidth);
         expect(overflow, await button.innerText()).toBeLessThanOrEqual(0);

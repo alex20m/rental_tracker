@@ -35,7 +35,7 @@ export async function section(page: Page, name: 'Home' | 'Rent' | 'Costs' | 'Tax
     await nav.getByRole('button', { name: 'Tax', exact: true }).click();
     await page.getByRole('radiogroup', { name: 'Tax view' }).getByRole('radio', { name: 'All years', exact: true }).click();
   } else {
-    await nav.getByRole('button', { name: name === 'Settings' ? 'Apartment settings' : name, exact: true }).click();
+    await nav.getByRole('button', { name: name, exact: true }).click();
   }
 }
 
