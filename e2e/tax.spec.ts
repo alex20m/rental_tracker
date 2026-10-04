@@ -43,7 +43,7 @@ test.describe('the tax page', () => {
     await section(page, 'Tax');
     await expect(page.getByText('Taxable rental income · ' + YEAR)).toBeVisible();
     await expect(page.getByText(`No costs logged for ${YEAR}.`)).toBeVisible();
-    await page.getByRole('button', { name: 'About rent months' }).click();
+    await openInfo(page, 'About rent months');
     await expect(page.getByRole('note')).toContainText(`3 paid, 1 vacant and 1 unpaid months logged for ${YEAR}`);
   });
 
