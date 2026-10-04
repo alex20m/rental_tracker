@@ -68,14 +68,15 @@ describe("the declaration's PDF", () => {
 
   it('names form 7K for a property and 7H for a housing-company flat, which has no building depreciation', async () => {
     const property = await textOf(buildPdf(apt, t, ownerShare(t, 25), 'Alice Aalto'));
-    expect(property).toContain('summary for tax form 7K / OmaVero');
-    expect(property).toContain('(Building depreciation \\(Rakennuksen poisto\\)) Tj');
+    expect(property).toContain('figures for tax form 7K / OmaVero');
+    // The depreciation table of the form: 4.5 is the year's depreciation (2 500 € of the apartment, a quarter of it).
+    expect(property).toMatch(/\(4\.5\) Tj[\s\S]*?\(625,00 EUR\) Tj/);
 
     const flat = { ...apt, settings: { ...apt.settings, propertyType: 'share' as const } };
     const tf = computeTax(flat, year, today);
     const pdf = await textOf(buildPdf(flat, tf, ownerShare(tf, 25), 'Alice Aalto'));
-    expect(pdf).toContain('summary for tax form 7H / OmaVero');
-    expect(pdf).not.toContain('Building depreciation');
+    expect(pdf).toContain('figures for tax form 7H / OmaVero');
+    expect(pdf).not.toContain('Verovuoden poisto');
     // 800 − 120, with nothing depreciated.
     expect(pdf).toContain('(680,00 EUR) Tj');
   });
@@ -96,11 +97,12 @@ describe("the declaration's PDF", () => {
     const pdf = await textOf(buildPdf(flat, tf, ownerShare(tf, 100), 'Alice Aalto'));
 
     expect(pdf).toContain('(Declared separately \\(not on the rental form\\)) Tj');
-    expect(pdf).toContain('(Total expenses on the form) Tj');
-    // Only the maintenance charge is on the form; interest is declared apart.
-    expect(pdf).toMatch(/\(Total expenses on the form\) Tj[\s\S]*?\(200,00 EUR\) Tj/);
-    expect(pdf).toMatch(/Basic improvements, this year's part[\s\S]*?\(300,00 EUR\) Tj/);
-    expect(pdf).toMatch(/Furniture & appliances, this year's part[\s\S]*?\(500,00 EUR\) Tj/);
+    // Only the maintenance charge is in 2.2; interest is declared apart.
+    expect(pdf).toMatch(/\(2\.2\) Tj[\s\S]*?\(Maintenance charges and water charges\) Tj[\s\S]*?\(200,00 EUR\) Tj/);
+    // 2.5 is the improvement's tenth and the sofa's quarter, with the parts under it.
+    expect(pdf).toMatch(/\(2\.5\) Tj[\s\S]*?\(800,00 EUR\) Tj/);
+    expect(pdf).toMatch(/of which Basic improvements, this year's part[\s\S]*?\(300,00 EUR\) Tj/);
+    expect(pdf).toMatch(/of which Furniture & appliances, this year's part[\s\S]*?\(500,00 EUR\) Tj/);
     expect(pdf).toContain('(Not deductible: Financing charge \\(Rahoitusvastike\\)) Tj');
     // 800 − 200 − 400 interest − 300 − 500 = −600.
     expect(pdf).toContain('(-600,00 EUR) Tj');

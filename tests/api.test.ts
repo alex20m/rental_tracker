@@ -305,6 +305,36 @@ describe('the ledger through the API', () => {
     expect([tooLong.status, fraction.status, ok.status]).toEqual([400, 400, 201]);
   });
 
+  it('refuses settings the rules do not allow, and accepts the ones they do', async () => {
+    const id = await createApartment(alice);
+    signIn(alice);
+    const patch = (body: unknown) => apartment.PATCH(req('PATCH', body), ctx({ id }));
+
+    const refused = await Promise.all([
+      patch({ letSharePct: 0 }),
+      patch({ letSharePct: 100.5 }),
+      patch({ furnishing: 'rented' }),
+      patch({ roomClass: 'huge' }),
+      patch({ buildingKind: 'castle' }),
+      patch({ depreciationFromYear: 1999 }),
+      patch({ depreciationFromYear: 2025.5 }),
+      patch({ purchaseCosts: -1 }),
+      patch({ belowMarketRent: 'yes' }),
+    ]);
+    const accepted = await patch({
+      letSharePct: 62.5,
+      furnishing: 'flat',
+      roomClass: 'studio',
+      buildingKind: 'commercial',
+      depreciationFromYear: 2025,
+      purchaseCosts: 6000.5,
+      belowMarketRent: true,
+    });
+
+    expect(refused.map((r) => r.status)).toEqual([400, 400, 400, 400, 400, 400, 400, 400, 400]);
+    expect(accepted.status).toBe(200);
+  });
+
   it('refuses a property type it does not know', async () => {
     const id = await createApartment(alice);
     signIn(alice);

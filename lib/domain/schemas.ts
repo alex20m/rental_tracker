@@ -5,7 +5,16 @@
  */
 
 import { z } from 'zod';
-import { COST_CATEGORIES, PROPERTY_TYPES, RENT_STATUSES, defaultSettings } from '@/lib/domain/types';
+import {
+  BUILDING_KINDS,
+  COST_CATEGORIES,
+  FURNISHINGS,
+  PROPERTY_TYPES,
+  RENT_STATUSES,
+  ROOM_CLASSES,
+  defaultSettings,
+} from '@/lib/domain/types';
+import { RULES } from '@/lib/domain/taxRules';
 
 const isRealDate = (s: string) => {
   const d = new Date(`${s}T00:00:00Z`);
@@ -47,11 +56,19 @@ export const settingsSchema = z.object({
   financingChargeDeductible: z.boolean(),
   purchaseDate: z.union([z.literal(''), isoDate]),
   purchasePrice: money,
+  purchaseCosts: money,
   buildingSharePct: percent,
+  buildingKind: z.enum(BUILDING_KINDS),
   depreciationRate: percent,
   depreciationPrior: money,
+  /** 0 = from the first rent logged; otherwise a tax year. */
+  depreciationFromYear: z.union([z.literal(0), z.number().int().min(2000).max(2100)]),
   useDepreciation: z.boolean(),
   monthlyRent: money,
+  furnishing: z.enum(FURNISHINGS),
+  roomClass: z.enum(ROOM_CLASSES),
+  belowMarketRent: z.boolean(),
+  letSharePct: percent.refine((n) => n > 0, 'Something must be let'),
 });
 
 /** Creating an apartment: anything left out takes the default. */
@@ -81,8 +98,18 @@ export const costSchema = z
     category: z.enum(COST_CATEGORIES),
     description: text(500),
     amount: money.refine((n) => n > 0, 'Amount must be more than zero'),
-    /** Left out, a cost is spread over the legal maximum of ten years where spreading applies. */
-    spreadYears: z.number().int().min(1).max(10).optional(),
+    /**
+     * Left out, a cost is spread over the legal maximum where spreading applies.
+     * Any year count up to the longest the rules ever allow is stored; the rules
+     * of the cost's year narrow it when it is used (and the migration's own
+     * check holds the number to 1–10: widen it if the law ever does).
+     */
+    spreadYears: z
+      .number()
+      .int()
+      .min(1)
+      .max(Math.max(...RULES.map(([, r]) => r.improvement.maxYears)))
+      .optional(),
   })
   .strict();
 
