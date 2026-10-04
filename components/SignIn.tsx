@@ -53,9 +53,9 @@ export default function SignIn() {
     setBusy(false);
   };
 
-  const sendCode = async () => {
+  const sendCode = async (message: 'auth.codeSent' | 'auth.codeSentSignUp' = 'auth.codeSent') => {
     await auth.emailOtp.sendVerificationOtp({ email: email.trim(), type: 'email-verification' });
-    setInfo(t('auth.codeSent', { email: email.trim() }));
+    setInfo(t(message, { email: email.trim() }));
   };
 
   const enter = () => {
@@ -81,9 +81,12 @@ export default function SignIn() {
       if (!name.trim()) throw new Error(t('auth.nameRequired'));
       const { data } = await auth.signUp.email({ name: name.trim(), email: email.trim(), password });
       if (data?.token) return enter();
-      // Verification required before the first sign-in; the code is sent on sign-up.
+      // Verification is required before the first sign-in. The code is asked for
+      // here rather than left to Neon's send-on-sign-up: with the email webhook
+      // on, that path neither sends nor calls the webhook. Switching to the code
+      // step first means a failed request still lands where "Send a new code" is.
       setMode('verify');
-      setInfo(t('auth.codeSentSignUp', { email: email.trim() }));
+      return sendCode('auth.codeSentSignUp');
     });
 
   const verify = (otp: string) =>

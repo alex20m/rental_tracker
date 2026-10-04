@@ -90,6 +90,36 @@ test.describe('signing in', () => {
     expect(api.callsTo('POST /api/auth/sign-up/email')[0]!.body).toMatchObject({ name: 'Me Myself', email: 'me@example.test' });
   });
 
+  test('asks for the sign-up code itself, once, because Neon does not send it when the email webhook is on', async ({ page, api }) => {
+    await page.goto('/sign-in');
+    await page.getByRole('button', { name: 'New here? Create an account' }).click();
+    await page.getByLabel('Name').fill('Me Myself');
+    await page.getByLabel('Email', { exact: true }).fill('me@example.test');
+    await page.getByLabel('Password').fill('correct horse');
+    await page.getByRole('button', { name: 'Create account' }).click();
+
+    await expect(page.getByText('Enter it to finish creating your account.')).toBeVisible();
+    const requests = api.callsTo('POST /api/auth/email-otp/send-verification-otp');
+    expect(requests).toHaveLength(1);
+    expect(requests[0]!.body).toMatchObject({ email: 'me@example.test', type: 'email-verification' });
+    expect(api.sentCodes).toEqual(['me@example.test']);
+  });
+
+  test('lands on the code step with the reason when the sign-up code cannot be sent, so it can be sent again', async ({ page, api }) => {
+    api.failNext('POST', /send-verification-otp$/, { status: 502, body: { message: 'Unable to send the code' } });
+    await page.goto('/sign-in');
+    await page.getByRole('button', { name: 'New here? Create an account' }).click();
+    await page.getByLabel('Name').fill('Me Myself');
+    await page.getByLabel('Email', { exact: true }).fill('me@example.test');
+    await page.getByLabel('Password').fill('correct horse');
+    await page.getByRole('button', { name: 'Create account' }).click();
+
+    await expect(page.getByRole('heading', { name: 'Check your email' })).toBeVisible();
+    await expect(page.locator('.alert[role=alert]')).toHaveText('Unable to send the code');
+    await page.getByRole('button', { name: 'Send a new code' }).click();
+    await expect.poll(() => api.sentCodes.length).toBe(1);
+  });
+
   test('goes straight in after sign-up when the project does not require verification', async ({ page, api }) => {
     api.failNext('POST', /sign-up\/email$/, { status: 200, body: { token: 'tok', user: { id: 'usr_me' } } });
     await page.goto('/sign-in');
