@@ -49,10 +49,7 @@ export default function Portfolio({ items, details, year, account, onOpen, onCre
           </div>
           <div className="stat">
             <div className="v">{eurWhole(total.deductibleCosts + total.depreciation)}</div>
-            <div className="l">
-              {t('home.deductions')}
-              <Info about={t('home.deductionsAbout')}>{t('portfolio.deductionsInfo')}</Info>
-            </div>
+            <div className="l">{t('home.deductions')}</div>
           </div>
           <div className="stat">
             <div className="v">{eurWhole(total.estimatedTax)}</div>
@@ -66,7 +63,7 @@ export default function Portfolio({ items, details, year, account, onOpen, onCre
 
       <section>
         <Heading>{t('portfolio.apartments')}</Heading>
-        <ul className="list">
+        <ul className="list card">
           {items.map((i) => {
             const s = shares.find((x) => x.item.id === i.id)?.share;
             return (
@@ -82,7 +79,10 @@ export default function Portfolio({ items, details, year, account, onOpen, onCre
                     </div>
                   </div>
                   {s && (
-                    <div className={'strong num ' + (s.netIncome < 0 ? 'neg' : '')} title={t('portfolio.netTitle', { year })}>
+                    <div
+                      className={'strong num ' + (s.netIncome < 0 ? 'neg' : '')}
+                      title={t('portfolio.netTitle', { year })}
+                    >
                       {eur(s.netIncome)}
                     </div>
                   )}
@@ -97,13 +97,9 @@ export default function Portfolio({ items, details, year, account, onOpen, onCre
             <AddApartment autoFocus onCreated={onCreated} />
           </div>
         ) : (
-          <button
-            className="row-btn"
-            style={{ borderBottom: 0, color: 'var(--brand)', fontWeight: 600 }}
-            onClick={() => setAdding(true)}
-          >
+          <button className="btn quiet block" style={{ marginTop: 12 }} onClick={() => setAdding(true)}>
             {Icon.plus}
-            <div className="main">{t('nav.newApartment')}</div>
+            {t('nav.newApartment')}
           </button>
         )}
       </section>

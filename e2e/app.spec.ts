@@ -118,6 +118,13 @@ test.describe('home', () => {
     await expect(page.getByText('2.4 %', { exact: true })).toBeVisible();
   });
 
+  test('shows dashes for occupancy and yield while only a cost is logged and no price is known', async ({ page, api }) => {
+    api.addApartment({ name: 'Flat', purchasePrice: 0 }, { costs: [ledger().costs[0]!] });
+    await page.goto('/');
+
+    await expect(page.locator('.insights .v')).toHaveText(['—', '—']);
+  });
+
   test('lists what is left to do, each item leading to where it is fixed', async ({ page, api }) => {
     coOwned(api);
     api.emailVerified = true;
@@ -136,6 +143,16 @@ test.describe('home', () => {
     }
   });
 
+  test('lists three to-do items and counts the rest, leading to the Tax checklist', async ({ page, api }) => {
+    coOwned(api); // months, receipts and an invitation to check: three. Missing price makes four.
+    api.apartments.forEach((a) => (a.settings.purchasePrice = 0));
+    await page.goto('/');
+
+    await expect(page.locator('.todo .dot')).toHaveCount(3);
+    await page.getByRole('button', { name: '1 more to check' }).click();
+    await expect(page.getByRole('heading', { name: 'Before you file' })).toBeVisible();
+  });
+
   test('says when an apartment is ready to declare', async ({ page, api }) => {
     const rents = Array.from({ length: 12 }, (_, i) => ({
       month: m(i + 1),
@@ -150,6 +167,8 @@ test.describe('home', () => {
 
     await expect(page.getByText(`Ready for the ${YEAR} declaration`)).toBeVisible();
     await expect(page.getByRole('heading', { name: 'To do' })).toHaveCount(0);
+    await page.getByRole('button', { name: `Prepare the ${YEAR} declaration` }).click();
+    await expect(page.getByRole('heading', { name: 'Before you file' })).toBeVisible();
   });
 
   test('lists the most recent activity first, each row leading to its log', async ({ page, api }) => {
@@ -157,14 +176,13 @@ test.describe('home', () => {
     await page.goto('/');
 
     const rows = page.locator('section').filter({ hasText: 'Recent' }).locator('li');
-    await expect(rows).toHaveCount(5);
+    await expect(rows).toHaveCount(3);
     // April's vacancy is newest; a month with no rent shows a dash, not "+0,00 €".
     await expect(rows.nth(0)).toContainText(`Vacant April ${YEAR}`);
     await expect(rows.nth(0)).toContainText('—');
     await expect(rows.nth(1)).toContainText('Rahoitusvastike');
     await expect(rows.nth(1)).toContainText('−80,00 €');
     await expect(rows.nth(2)).toContainText('+800,00 €');
-    await expect(rows.nth(3)).toContainText('Insurance');
 
     await rows.nth(1).click();
     await expect(page.getByRole('button', { name: 'Add cost' })).toBeVisible();
@@ -173,13 +191,12 @@ test.describe('home', () => {
     await expect(page.getByRole('heading', { name: 'Months' })).toBeVisible();
   });
 
-  test('describes the year in the chart, and leads to the declaration', async ({ page, api }) => {
+  test('describes the year in the chart, and holds back the declaration while there is still something to fix', async ({ page, api }) => {
     api.addApartment({ name: 'Flat' }, ledger());
     await page.goto('/');
 
     await expect(page.getByRole('img', { name: `Rent received 2 400,00 € and costs 216,00 € in ${YEAR}, by month` })).toBeVisible();
-    await page.getByRole('button', { name: `Prepare the ${YEAR} declaration` }).click();
-    await expect(page.getByRole('heading', { name: 'Before you file' })).toBeVisible();
+    await expect(page.getByRole('button', { name: `Prepare the ${YEAR} declaration` })).toHaveCount(0);
   });
 
   test('steps through the years that have data, and no further', async ({ page, api }) => {

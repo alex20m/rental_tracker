@@ -162,7 +162,11 @@ test.describe('the tax page', () => {
     // Paid last year, so this is its second of ten parts.
     await expect(kv('Basic improvements, this year’s part')).toContainText('300,00 €');
     await expect(kv('Furniture & appliances, this year’s part')).toContainText('500,00 €');
-    await page.getByRole('button', { name: 'About Basic improvements, this year’s part' }).click();
+    // Scroll the icon clear of the bottom bar first, as a person would: Playwright would otherwise scroll
+    // mid-click, and that scroll rightly closes the popover.
+    const about = page.getByRole('button', { name: 'About Basic improvements, this year’s part' });
+    await about.evaluate((el) => el.scrollIntoView({ block: 'center' }));
+    await about.click();
     await expect(page.getByRole('note')).toContainText('equal parts');
     await page.keyboard.press('Escape');
     // 400 + 300 + 500

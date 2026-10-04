@@ -90,7 +90,9 @@ const user = () => userEvent.setup();
 /** Rent and Costs share the "Rent & costs" tab: open it, then pick one with its switch. */
 async function openLedger(which: 'Rent' | 'Costs') {
   await user().click(await screen.findByRole('button', { name: 'Rent & costs' }));
-  await user().click(within(screen.getByRole('radiogroup', { name: 'Rent or costs' })).getByRole('radio', { name: which }));
+  await user().click(
+    within(screen.getByRole('radiogroup', { name: 'Rent or costs' })).getByRole('radio', { name: which }),
+  );
 }
 
 beforeEach(() => {
@@ -389,6 +391,63 @@ describe('the home screen', () => {
     expect(jun.textContent).not.toMatch(/\+|0,00/);
   });
 
+  it('offers four places in the bottom navigation, with history inside Tax rather than a tab of its own', async () => {
+    serve([view('a1', 'Alpha')]);
+    render(<RentalApp />);
+    const nav = await screen.findByRole('navigation', { name: 'Sections' });
+    expect(
+      within(nav)
+        .getAllByRole('button')
+        .map((b) => b.textContent),
+    ).toEqual(['Home', 'Rent & costs', 'Tax', 'Settings']);
+  });
+
+  it('shows at most three to-do items and counts the rest, leading to the Tax checklist', async () => {
+    const cost = (id: string): CostEntry => ({
+      id,
+      date: '2026-03-12',
+      category: 'repairs',
+      description: '',
+      amount: 50,
+      hasReceipt: false,
+    });
+    serve([
+      view('a1', 'Alpha', {
+        settings: { ...defaultSettings, name: 'Alpha', purchasePrice: 0 },
+        rents: [paid('2026-01')],
+        costs: [cost('c1')],
+        invites: [{ id: 'i1', email: 'x@example.test', sharePct: 10 }],
+      }),
+    ]);
+    render(<RentalApp />);
+
+    // Four things are wrong (price, months, receipts, invite): three are listed.
+    await screen.findByRole('button', { name: /5 months not logged yet/ });
+    expect(document.querySelectorAll('.todo .dot')).toHaveLength(3);
+    await user().click(screen.getByRole('button', { name: '1 more to check' }));
+    expect(screen.getByRole('button', { name: 'Tax' }).getAttribute('aria-current')).toBe('page');
+    expect(screen.getByRole('heading', { name: 'Before you file' })).toBeTruthy();
+  });
+
+  it('only offers the declaration from Home once nothing is left to fix', async () => {
+    const months = Array.from({ length: 12 }, (_, i) => paid(`2026-${String(i + 1).padStart(2, '0')}`));
+    serve([view('a1', 'Alpha', { rents: months })]);
+    render(<RentalApp />);
+
+    await user().click(await screen.findByRole('button', { name: 'Prepare the 2026 declaration' }));
+    expect(screen.getByRole('heading', { name: 'Before you file' })).toBeTruthy();
+  });
+
+  it('keeps Home to a hero and a way to start while nothing is logged this year', async () => {
+    serve([view('a1', 'Alpha', { rents: [] })]);
+    render(<RentalApp />);
+
+    await screen.findByText('Nothing logged yet.');
+    expect(screen.queryByRole('img', { name: /by month/ })).toBeNull();
+    expect(screen.queryByText('Occupancy')).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Prepare the 2026 declaration' })).toBeNull();
+  });
+
   it('marks the active section in the bottom navigation', async () => {
     serve([view('a1', 'Alpha')]);
     render(<RentalApp />);
@@ -423,7 +482,8 @@ describe('settings', () => {
     serve([view('a1', 'Alpha')]);
     render(<RentalApp />);
     await user().click(await screen.findByRole('button', { name: 'Settings' }));
-    await screen.findByRole('heading', { name: 'Settings' });
+    await user().click(await screen.findByRole('button', { name: /^Property details/ }));
+    await screen.findByRole('heading', { name: 'Property details' });
     expect(screen.queryByRole('button', { name: 'Save changes' })).toBeNull();
 
     await user().type(screen.getByLabelText('Address'), 'x');
@@ -431,11 +491,69 @@ describe('settings', () => {
   });
 });
 
+describe('settings topics', () => {
+  const coOwned = () =>
+    view('a1', 'Alpha', {
+      owners: [
+        { userId: 'u1', email: 'me@example.test', sharePct: 60 },
+        { userId: 'u2', email: 'bob@example.test', sharePct: 40 },
+      ],
+      mySharePct: 60,
+      settings: {
+        ...defaultSettings,
+        name: 'Alpha',
+        address: 'Alpha street 1',
+        useDepreciation: true,
+        depreciationRate: 2.5,
+        propertyType: 'property',
+      },
+    });
+
+  it('lists the topics with a one-line summary of each', async () => {
+    serve([coOwned()]);
+    render(<RentalApp />);
+    await user().click(await screen.findByRole('button', { name: 'Settings' }));
+
+    expect(screen.getByRole('button', { name: /^Owners.*2 owners · you own 60 %/ })).toBeTruthy();
+    expect(screen.getByRole('button', { name: /^Property details.*Alpha street 1/ })).toBeTruthy();
+    expect(screen.getByRole('button', { name: /^Building depreciation.*On · 2.5 % a year/ })).toBeTruthy();
+  });
+
+  it('opens one topic at a time and goes back to the list', async () => {
+    serve([coOwned()]);
+    render(<RentalApp />);
+    await user().click(await screen.findByRole('button', { name: 'Settings' }));
+    await user().click(screen.getByRole('button', { name: /^Owners/ }));
+
+    expect(screen.getByRole('heading', { name: 'Owners' })).toBeTruthy();
+    expect(screen.getByText('bob@example.test')).toBeTruthy();
+    expect(screen.queryByLabelText('Address')).toBeNull();
+
+    await user().click(screen.getByRole('button', { name: 'Back to settings' }));
+    expect(screen.getByRole('heading', { name: 'Settings' })).toBeTruthy();
+    expect(screen.queryByText('bob@example.test')).toBeNull();
+  });
+
+  it('keeps an unsaved change while moving between topics, and still offers to save it', async () => {
+    serve([coOwned()]);
+    render(<RentalApp />);
+    await user().click(await screen.findByRole('button', { name: 'Settings' }));
+    await user().click(screen.getByRole('button', { name: /^Property details/ }));
+    await user().type(screen.getByLabelText('Address'), ' B');
+    await user().click(screen.getByRole('button', { name: 'Back to settings' }));
+
+    expect(screen.getByRole('button', { name: 'Save changes' })).toBeTruthy();
+    await user().click(screen.getByRole('button', { name: /^Property details/ }));
+    expect((screen.getByLabelText('Address') as HTMLInputElement).value).toBe('Alpha street 1 B');
+  });
+});
+
 describe('history', () => {
   it('lists this year and every earlier year with data, newest first, skipping years with nothing logged', async () => {
     serve([view('a1', 'Alpha', { rents: [paid('2024-03', 500), paid('2026-01', 700)] })]);
     render(<RentalApp />);
-    await user().click(await screen.findByRole('button', { name: 'History' }));
+    await user().click(await screen.findByRole('button', { name: 'Tax' }));
+    await user().click(await screen.findByRole('radio', { name: 'All years' }));
 
     const years = screen.getAllByRole('listitem').map((li) => li.textContent ?? '');
     expect(years).toHaveLength(2);
@@ -449,7 +567,8 @@ describe('history', () => {
   it('opens a year’s tax summary when the year is tapped', async () => {
     serve([view('a1', 'Alpha', { rents: [paid('2024-03', 500)] })]);
     render(<RentalApp />);
-    await user().click(await screen.findByRole('button', { name: 'History' }));
+    await user().click(await screen.findByRole('button', { name: 'Tax' }));
+    await user().click(await screen.findByRole('radio', { name: 'All years' }));
     await user().click(screen.getByRole('button', { name: /^2024/ }));
 
     expect(screen.getByRole('button', { name: 'Tax' }).getAttribute('aria-current')).toBe('page');
@@ -459,7 +578,8 @@ describe('history', () => {
   it('says earlier years will appear once there is data for them', async () => {
     serve([view('a1', 'Alpha')]);
     render(<RentalApp />);
-    await user().click(await screen.findByRole('button', { name: 'History' }));
+    await user().click(await screen.findByRole('button', { name: 'Tax' }));
+    await user().click(await screen.findByRole('radio', { name: 'All years' }));
     expect(screen.getByText(/Earlier years appear here/)).toBeTruthy();
   });
 });

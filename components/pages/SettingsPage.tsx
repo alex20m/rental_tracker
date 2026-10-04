@@ -1,12 +1,13 @@
 'use client';
 
 import { useState } from 'react';
+import type { ReactNode } from 'react';
 import type { ApartmentSettings, ApartmentView } from '@/lib/domain/types';
 import { PROPERTY_TYPES } from '@/lib/domain/types';
 import { api } from '@/lib/client/api';
 import { computeDepreciation, eur, pct } from '@/lib/domain/tax';
 import { isWholeApartment, shareTotal } from '@/lib/domain/shares';
-import { Avatar, ErrorNote, Heading, Icon, Info, Label, Sheet, Switch } from '@/components/ui';
+import { Avatar, ErrorNote, Icon, Info, Label, Sheet, Switch } from '@/components/ui';
 import type { Account } from '@/components/RentalApp';
 import { useI18n } from '@/components/I18nProvider';
 
@@ -18,18 +19,116 @@ type Props = {
   onGone: () => Promise<void>;
 };
 
-/** Everything adjustable about this one apartment: its owners, details and depreciation. */
+type View = 'owners' | 'details' | 'depreciation';
+
+/**
+ * Everything adjustable about this one apartment, as a short list: each row
+ * opens one topic on its own, so nothing is a wall of fields. Edits to the
+ * details and depreciation are kept while moving between topics and saved
+ * together from one bar.
+ */
 export default function SettingsPage({ apt, account, onChanged, onGone }: Props) {
   const { t } = useI18n();
+  const [view, setView] = useState<View | null>(null);
+  const [draft, setDraft] = useState<ApartmentSettings>(apt.settings);
+  const set = <K extends keyof ApartmentSettings>(k: K, v: ApartmentSettings[K]) => setDraft({ ...draft, [k]: v });
+
+  const back = () => setView(null);
+  const saved = apt.settings;
+  const alone = apt.owners.length === 1;
+
+  if (view === 'owners') {
+    return (
+      <>
+        <SubPage
+          title={t('settings.owners')}
+          onBack={back}
+          info={<Info about={t('settings.ownersAbout')}>{t('settings.ownersInfo')}</Info>}
+        />
+        <Owners key={`owners-${apt.id}`} apt={apt} account={account} onChanged={onChanged} onGone={onGone} />
+      </>
+    );
+  }
+  if (view === 'details' || view === 'depreciation') {
+    return (
+      <>
+        {view === 'details' ? (
+          <SubPage title={t('settings.details')} onBack={back} />
+        ) : (
+          <SubPage
+            title={t('settings.depreciation')}
+            onBack={back}
+            info={<Info about={t('settings.depreciationAbout')}>{t('settings.depreciationInfo')}</Info>}
+          />
+        )}
+        {view === 'details' ? <DetailsFields s={draft} set={set} /> : <DepreciationFields s={draft} set={set} />}
+        <SaveBar apt={apt} draft={draft} onDiscard={() => setDraft(saved)} onChanged={onChanged} />
+      </>
+    );
+  }
+
+  const owners = alone
+    ? t('settings.ownersSolo')
+    : t('settings.ownersShared', {
+        n: apt.owners.length + apt.invites.length,
+        pct: pct(apt.mySharePct),
+      });
+  const depreciation =
+    saved.propertyType === 'share'
+      ? t('settings.depreciationNA')
+      : saved.useDepreciation
+        ? t('settings.depreciationOn', { rate: saved.depreciationRate })
+        : t('settings.depreciationOff');
+
   return (
     <>
       <div className="pagehead">
         <h1>{t('settings.title')}</h1>
       </div>
-      <Owners key={`owners-${apt.id}`} apt={apt} account={account} onChanged={onChanged} onGone={onGone} />
-      <PropertyForm key={`settings-${apt.id}`} apt={apt} onChanged={onChanged} />
+      <div className="card">
+        <ul className="list">
+          {(
+            [
+              ['owners', Icon.users, t('settings.owners'), owners],
+              [
+                'details',
+                Icon.building,
+                t('settings.details'),
+                saved.address || t(`settings.type.${saved.propertyType}`),
+              ],
+              ['depreciation', Icon.stack, t('settings.depreciation'), depreciation],
+            ] as const
+          ).map(([id, icon, title, summary]) => (
+            <li key={id}>
+              <button className="row-btn" onClick={() => setView(id)}>
+                {icon}
+                <div className="main">
+                  <div className="t">{title}</div>
+                  <div className="s">{summary}</div>
+                </div>
+                {Icon.right}
+              </button>
+            </li>
+          ))}
+        </ul>
+      </div>
       <DangerZone apt={apt} account={account} onGone={onGone} />
+      <SaveBar apt={apt} draft={draft} onDiscard={() => setDraft(saved)} onChanged={onChanged} />
     </>
+  );
+}
+
+/** A topic's header: a way back to the list, its title, and optionally an explanation. */
+function SubPage({ title, onBack, info }: { title: string; onBack: () => void; info?: ReactNode }) {
+  const { t } = useI18n();
+  return (
+    <div className="pagehead">
+      <button className="iconbtn" aria-label={t('settings.back')} onClick={onBack}>
+        {Icon.left}
+      </button>
+      <h1>{title}</h1>
+      {info}
+    </div>
   );
 }
 
@@ -90,30 +189,28 @@ function Owners({ apt, account, onChanged, onGone }: Props) {
   const saveShares = () =>
     run(async () => {
       await api.setShares(apt.id, {
-        owners: apt.owners.map((o) => ({ userId: o.userId, sharePct: Number(draft[`owner:${o.userId}`]) })),
-        invites: apt.invites.map((i) => ({ id: i.id, sharePct: Number(draft[`invite:${i.id}`]) })),
+        owners: apt.owners.map((o) => ({
+          userId: o.userId,
+          sharePct: Number(draft[`owner:${o.userId}`]),
+        })),
+        invites: apt.invites.map((i) => ({
+          id: i.id,
+          sharePct: Number(draft[`invite:${i.id}`]),
+        })),
       });
       setEditing(false);
     });
 
   return (
     <section>
-      <Heading
-        info={
-          <Info about={t('settings.ownersAbout')}>{t('settings.ownersInfo')}</Info>
-        }
-        action={
-          !editing &&
-          rows.length > 1 && (
-            <button className="link" onClick={startEditing}>
-              {t('settings.editShares')}
-            </button>
-          )
-        }
-      >
-        {t('settings.owners')}
-      </Heading>
-      <ul className="list">
+      {!editing && rows.length > 1 && (
+        <div className="heading end">
+          <button className="link" onClick={startEditing}>
+            {t('settings.editShares')}
+          </button>
+        </div>
+      )}
+      <ul className="list card">
         {rows.map((r) => (
           <li key={r.key} className="row owner">
             <Avatar text={r.label} />
@@ -215,16 +312,12 @@ function Owners({ apt, account, onChanged, onGone }: Props) {
           >
             {t('settings.leave')}
           </button>
-          {me.sharePct !== 0 && (
-            <Info about={t('settings.leavingAbout')}>{t('settings.leavingInfo')}</Info>
-          )}
+          {me.sharePct !== 0 && <Info about={t('settings.leavingAbout')}>{t('settings.leavingInfo')}</Info>}
         </div>
       )}
       <ErrorNote message={error} />
 
-      {inviting && (
-        <InviteSheet apt={apt} me={me.sharePct} onClose={() => setInviting(false)} onChanged={onChanged} />
-      )}
+      {inviting && <InviteSheet apt={apt} me={me.sharePct} onClose={() => setInviting(false)} onChanged={onChanged} />}
     </section>
   );
 }
@@ -272,9 +365,7 @@ function InviteSheet({
         />
         <Label
           htmlFor="invite-share"
-          info={
-            <Info about={t('settings.theirShareAbout')}>{t('settings.theirShareInfo', { pct: pct(me) })}</Info>
-          }
+          info={<Info about={t('settings.theirShareAbout')}>{t('settings.theirShareInfo', { pct: pct(me) })}</Info>}
         >
           {t('settings.theirShare')}
         </Label>
@@ -300,187 +391,186 @@ function InviteSheet({
   );
 }
 
-function PropertyForm({ apt, onChanged }: { apt: ApartmentView; onChanged: () => Promise<void> }) {
+type FieldsProps = {
+  s: ApartmentSettings;
+  set: <K extends keyof ApartmentSettings>(k: K, v: ApartmentSettings[K]) => void;
+};
+
+const numberField = (set: FieldsProps['set'], k: keyof ApartmentSettings) => (e: React.ChangeEvent<HTMLInputElement>) =>
+  set(k, (Number(e.target.value) || 0) as never);
+const textField = (set: FieldsProps['set'], k: keyof ApartmentSettings) => (e: React.ChangeEvent<HTMLInputElement>) =>
+  set(k, e.target.value as never);
+
+function DetailsFields({ s, set }: FieldsProps) {
   const { t } = useI18n();
-  const [s, setS] = useState<ApartmentSettings>(apt.settings);
+  const num = (k: keyof ApartmentSettings) => numberField(set, k);
+  const text = (k: keyof ApartmentSettings) => textField(set, k);
+  return (
+    <section>
+      <label htmlFor="s-name" style={{ marginTop: 6 }}>
+        {t('settings.name')}
+      </label>
+      <input id="s-name" value={s.name} onChange={text('name')} />
+      <label htmlFor="s-address">{t('settings.address')}</label>
+      <input id="s-address" value={s.address} onChange={text('address')} />
+      <Label htmlFor="s-company" info={<Info about={t('settings.companyAbout')}>{t('settings.companyInfo')}</Info>}>
+        {t('settings.company')}
+      </Label>
+      <input id="s-company" value={s.housingCompany} onChange={text('housingCompany')} />
+      <Label id="s-type" info={<Info about={t('settings.propertyTypeAbout')}>{t('settings.propertyTypeInfo')}</Info>}>
+        {t('settings.propertyType')}
+      </Label>
+      <div className="chips" role="radiogroup" aria-labelledby="s-type">
+        {PROPERTY_TYPES.map((k) => (
+          <button
+            key={k}
+            type="button"
+            role="radio"
+            aria-checked={s.propertyType === k}
+            className="choice"
+            onClick={() => set('propertyType', k)}
+          >
+            {t(`settings.type.${k}`)}
+          </button>
+        ))}
+      </div>
+      {s.propertyType === 'share' && (
+        <>
+          <Label info={<Info about={t('settings.financingAbout')}>{t('settings.financingInfo')}</Info>}>
+            {t('cat.financing_charge.label')}
+          </Label>
+          <Switch checked={s.financingChargeDeductible} onChange={(v) => set('financingChargeDeductible', v)}>
+            {t('settings.financingDeductible')}
+          </Switch>
+        </>
+      )}
+      <div className="cols">
+        <div>
+          <label htmlFor="s-date">{t('settings.purchaseDate')}</label>
+          <input id="s-date" type="date" value={s.purchaseDate} onChange={text('purchaseDate')} />
+        </div>
+        <div>
+          <Label
+            htmlFor="s-price"
+            info={<Info about={t('settings.purchasePriceAbout')}>{t('settings.purchasePriceInfo')}</Info>}
+          >
+            {t('settings.purchasePrice')}
+          </Label>
+          <input
+            id="s-price"
+            type="number"
+            inputMode="decimal"
+            value={s.purchasePrice || ''}
+            onChange={num('purchasePrice')}
+          />
+        </div>
+      </div>
+      <Label
+        htmlFor="s-rent"
+        info={<Info about={t('settings.monthlyRentAbout')}>{t('settings.monthlyRentInfo')}</Info>}
+      >
+        {t('settings.monthlyRent')}
+      </Label>
+      <input id="s-rent" type="number" inputMode="decimal" value={s.monthlyRent || ''} onChange={num('monthlyRent')} />
+    </section>
+  );
+}
+
+function DepreciationFields({ s, set }: FieldsProps) {
+  const { t } = useI18n();
+  const num = (k: keyof ApartmentSettings) => numberField(set, k);
+  return (
+    <section>
+      {s.propertyType === 'share' ? (
+        <p className="msg">{t('settings.noBuildingDepreciation')}</p>
+      ) : (
+        <Switch checked={s.useDepreciation} onChange={(v) => set('useDepreciation', v)}>
+          {t('settings.useDepreciation')}
+        </Switch>
+      )}
+      {s.propertyType === 'property' && s.useDepreciation && (
+        <>
+          <div className="cols">
+            <div>
+              <Label
+                htmlFor="s-share"
+                info={<Info about={t('settings.buildingShareAbout')}>{t('settings.buildingShareInfo')}</Info>}
+              >
+                {t('settings.buildingShare')}
+              </Label>
+              <input
+                id="s-share"
+                type="number"
+                inputMode="decimal"
+                value={s.buildingSharePct}
+                onChange={num('buildingSharePct')}
+              />
+            </div>
+            <div>
+              <label htmlFor="s-rate">{t('settings.rate')}</label>
+              <input
+                id="s-rate"
+                type="number"
+                inputMode="decimal"
+                step="0.1"
+                value={s.depreciationRate}
+                onChange={num('depreciationRate')}
+              />
+            </div>
+          </div>
+          <Label htmlFor="s-prior" info={<Info about={t('settings.priorAbout')}>{t('settings.priorInfo')}</Info>}>
+            {t('settings.prior')}
+          </Label>
+          <input
+            id="s-prior"
+            type="number"
+            inputMode="decimal"
+            value={s.depreciationPrior || ''}
+            onChange={num('depreciationPrior')}
+          />
+          <div className="kv" style={{ marginTop: 8, borderBottom: 0 }}>
+            <span>
+              {t('settings.thisYear')}
+              <Info about={t('settings.thisYearAbout')}>{t('settings.thisYearInfo')}</Info>
+            </span>
+            <b className="num">{eur(computeDepreciation({ settings: s }))}</b>
+          </div>
+        </>
+      )}
+    </section>
+  );
+}
+
+/** Appears the moment something differs from what is saved, wherever in Settings you are. */
+function SaveBar({
+  apt,
+  draft,
+  onDiscard,
+  onChanged,
+}: {
+  apt: ApartmentView;
+  draft: ApartmentSettings;
+  onDiscard: () => void;
+  onChanged: () => Promise<void>;
+}) {
+  const { t } = useI18n();
   const { busy, error, run } = useAction(onChanged);
-  const dirty = JSON.stringify(s) !== JSON.stringify(apt.settings);
-
-  const set = <K extends keyof ApartmentSettings>(k: K, v: ApartmentSettings[K]) => setS({ ...s, [k]: v });
-  const num = (k: keyof ApartmentSettings) => (e: React.ChangeEvent<HTMLInputElement>) =>
-    set(k, (Number(e.target.value) || 0) as never);
-  const text = (k: keyof ApartmentSettings) => (e: React.ChangeEvent<HTMLInputElement>) =>
-    set(k, e.target.value as never);
-
-  const save = () => run(() => api.updateSettings(apt.id, s));
-
+  const dirty = JSON.stringify(draft) !== JSON.stringify(apt.settings);
   return (
     <>
-      <section>
-        <Heading>{t('settings.details')}</Heading>
-        <label htmlFor="s-name" style={{ marginTop: 6 }}>
-          {t('settings.name')}
-        </label>
-        <input id="s-name" value={s.name} onChange={text('name')} />
-        <label htmlFor="s-address">{t('settings.address')}</label>
-        <input id="s-address" value={s.address} onChange={text('address')} />
-        <Label
-          htmlFor="s-company"
-          info={<Info about={t('settings.companyAbout')}>{t('settings.companyInfo')}</Info>}
-        >
-          {t('settings.company')}
-        </Label>
-        <input id="s-company" value={s.housingCompany} onChange={text('housingCompany')} />
-        <Label
-          id="s-type"
-          info={<Info about={t('settings.propertyTypeAbout')}>{t('settings.propertyTypeInfo')}</Info>}
-        >
-          {t('settings.propertyType')}
-        </Label>
-        <div className="chips" role="radiogroup" aria-labelledby="s-type">
-          {PROPERTY_TYPES.map((k) => (
-            <button
-              key={k}
-              type="button"
-              role="radio"
-              aria-checked={s.propertyType === k}
-              className="choice"
-              onClick={() => set('propertyType', k)}
-            >
-              {t(`settings.type.${k}`)}
-            </button>
-          ))}
-        </div>
-        {s.propertyType === 'share' && (
-          <>
-            <Label info={<Info about={t('settings.financingAbout')}>{t('settings.financingInfo')}</Info>}>
-              {t('cat.financing_charge.label')}
-            </Label>
-            <Switch checked={s.financingChargeDeductible} onChange={(v) => set('financingChargeDeductible', v)}>
-              {t('settings.financingDeductible')}
-            </Switch>
-          </>
-        )}
-        <div className="cols">
-          <div>
-            <label htmlFor="s-date">{t('settings.purchaseDate')}</label>
-            <input id="s-date" type="date" value={s.purchaseDate} onChange={text('purchaseDate')} />
-          </div>
-          <div>
-            <Label
-              htmlFor="s-price"
-              info={
-                <Info about={t('settings.purchasePriceAbout')}>{t('settings.purchasePriceInfo')}</Info>
-              }
-            >
-              {t('settings.purchasePrice')}
-            </Label>
-            <input
-              id="s-price"
-              type="number"
-              inputMode="decimal"
-              value={s.purchasePrice || ''}
-              onChange={num('purchasePrice')}
-            />
-          </div>
-        </div>
-        <Label
-          htmlFor="s-rent"
-          info={<Info about={t('settings.monthlyRentAbout')}>{t('settings.monthlyRentInfo')}</Info>}
-        >
-          {t('settings.monthlyRent')}
-        </Label>
-        <input
-          id="s-rent"
-          type="number"
-          inputMode="decimal"
-          value={s.monthlyRent || ''}
-          onChange={num('monthlyRent')}
-        />
-      </section>
-
-      <section>
-        <Heading
-          info={
-            <Info about={t('settings.depreciationAbout')}>{t('settings.depreciationInfo')}</Info>
-          }
-        >
-          {t('settings.depreciation')}
-        </Heading>
-        {s.propertyType === 'share' ? (
-          <p className="msg">{t('settings.noBuildingDepreciation')}</p>
-        ) : (
-          <Switch checked={s.useDepreciation} onChange={(v) => set('useDepreciation', v)}>
-            {t('settings.useDepreciation')}
-          </Switch>
-        )}
-        {s.propertyType === 'property' && s.useDepreciation && (
-          <>
-            <div className="cols">
-              <div>
-                <Label
-                  htmlFor="s-share"
-                  info={
-                    <Info about={t('settings.buildingShareAbout')}>{t('settings.buildingShareInfo')}</Info>
-                  }
-                >
-                  {t('settings.buildingShare')}
-                </Label>
-                <input
-                  id="s-share"
-                  type="number"
-                  inputMode="decimal"
-                  value={s.buildingSharePct}
-                  onChange={num('buildingSharePct')}
-                />
-              </div>
-              <div>
-                <label htmlFor="s-rate">{t('settings.rate')}</label>
-                <input
-                  id="s-rate"
-                  type="number"
-                  inputMode="decimal"
-                  step="0.1"
-                  value={s.depreciationRate}
-                  onChange={num('depreciationRate')}
-                />
-              </div>
-            </div>
-            <Label
-              htmlFor="s-prior"
-              info={
-                <Info about={t('settings.priorAbout')}>{t('settings.priorInfo')}</Info>
-              }
-            >
-              {t('settings.prior')}
-            </Label>
-            <input
-              id="s-prior"
-              type="number"
-              inputMode="decimal"
-              value={s.depreciationPrior || ''}
-              onChange={num('depreciationPrior')}
-            />
-            <div className="kv" style={{ marginTop: 8, borderBottom: 0 }}>
-              <span>
-                {t('settings.thisYear')}
-                <Info about={t('settings.thisYearAbout')}>{t('settings.thisYearInfo')}</Info>
-              </span>
-              <b className="num">{eur(computeDepreciation({ settings: s }))}</b>
-            </div>
-          </>
-        )}
-      </section>
-
       <ErrorNote message={error} />
       {dirty && <div style={{ height: 64 }} />}
       {dirty && (
         <div className="savebar">
           <div>
-            <button className="btn" onClick={() => setS(apt.settings)} disabled={busy}>
+            <button className="btn" onClick={onDiscard} disabled={busy}>
               {t('settings.discard')}
             </button>
-            <button className="btn primary" onClick={save} disabled={busy || !s.name.trim()}>
+            <button
+              className="btn primary"
+              onClick={() => run(() => api.updateSettings(apt.id, draft))}
+              disabled={busy || !draft.name.trim()}
+            >
               {busy ? t('common.saving') : t('settings.saveChanges')}
             </button>
           </div>

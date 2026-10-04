@@ -22,12 +22,14 @@ export type Go = (to: Destination) => void;
 /** Whose figures to show for an apartment owned by several people. */
 export type Scope = 'mine' | 'whole';
 
-/** The bottom navigation. Rent and costs share one tab; a switch at its top tells them apart. */
+/**
+ * The bottom navigation: four places. Rent and costs share one tab, and so do
+ * this year's tax and all years; a switch at the top of each tells them apart.
+ */
 const SECTIONS = [
   { id: 'home', icon: Icon.home },
   { id: 'ledger', icon: Icon.rent },
   { id: 'tax', icon: Icon.tax },
-  { id: 'history', icon: Icon.history },
   { id: 'settings', icon: Icon.gear },
 ] as const;
 
@@ -49,7 +51,11 @@ function recallSelected(): string | null {
   }
 }
 
-type Snapshot = { account: Account; items: PortfolioItem[]; details: Record<string, ApartmentView> };
+type Snapshot = {
+  account: Account;
+  items: PortfolioItem[];
+  details: Record<string, ApartmentView>;
+};
 
 async function fetchSnapshot(): Promise<Snapshot> {
   const [me, list] = await Promise.all([api.me(), api.portfolio()]);
@@ -66,10 +72,16 @@ async function fetchSnapshot(): Promise<Snapshot> {
   };
 }
 
-export type Account = { userId: string; name: string; email: string; emailVerified: boolean };
+export type Account = {
+  userId: string;
+  name: string;
+  email: string;
+  emailVerified: boolean;
+};
 
 type SheetName = 'menu' | null;
 type LedgerView = 'rent' | 'costs';
+type TaxView = 'tax' | 'history';
 
 export default function RentalApp() {
   const { t } = useI18n();
@@ -179,9 +191,7 @@ export default function RentalApp() {
     </button>
   );
 
-  const menuSheet = sheet === 'menu' && (
-    <MenuSheet account={account} onClose={() => setSheet(null)} />
-  );
+  const menuSheet = sheet === 'menu' && <MenuSheet account={account} onClose={() => setSheet(null)} />;
 
   // Nothing to show yet: one field, one button. The menu sheet is a sibling of
   // the layout, at the same place in both branches, so it stays mounted when
@@ -278,6 +288,17 @@ export default function RentalApp() {
           )}
           {apt && tab === 'rent' && <RentLog apt={apt} year={year} onChanged={reloadSelected} />}
           {apt && tab === 'costs' && <Costs apt={apt} year={year} onChanged={reloadSelected} />}
+          {apt && (tab === 'tax' || tab === 'history') && (
+            <Segmented<TaxView>
+              label={t('tax.view')}
+              value={tab}
+              onChange={setTab}
+              options={[
+                { value: 'tax', label: t('tax.thisYear') },
+                { value: 'history', label: t('tax.allYears') },
+              ]}
+            />
+          )}
           {apt && tab === 'tax' && (
             <Tax apt={apt} year={year} taxpayerName={account.name} scope={scope} onScope={setScope} go={go} />
           )}
@@ -313,7 +334,12 @@ export default function RentalApp() {
             <div className="nav-brand">{t('app.name')}</div>
             <div className="nav-inner">
               {SECTIONS.map((s) => {
-                const current = s.id === 'ledger' ? tab === 'rent' || tab === 'costs' : tab === s.id;
+                const current =
+                  s.id === 'ledger'
+                    ? tab === 'rent' || tab === 'costs'
+                    : s.id === 'tax'
+                      ? tab === 'tax' || tab === 'history'
+                      : tab === s.id;
                 return (
                   <button
                     key={s.id}

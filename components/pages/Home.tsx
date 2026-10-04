@@ -10,7 +10,18 @@ import ScopeToggle from '@/components/ScopeToggle';
 import { VerifyNotice } from '@/components/Notices';
 import { Heading, Icon, Info, Money } from '@/components/ui';
 
-type Props = { apt: ApartmentView; year: number; account: Account; scope: Scope; onScope: (s: Scope) => void; go: Go };
+/** Home is a glance, not a report: a few items, with the rest one tap away. */
+const TODO_SHOWN = 3;
+const RECENT_SHOWN = 3;
+
+type Props = {
+  apt: ApartmentView;
+  year: number;
+  account: Account;
+  scope: Scope;
+  onScope: (s: Scope) => void;
+  go: Go;
+};
 
 export default function Home({ apt, year, account, scope, onScope, go }: Props) {
   const i18n = useI18n();
@@ -49,9 +60,12 @@ export default function Home({ apt, year, account, scope, onScope, go }: Props) 
       key: 'r' + r.month,
       to: 'rent' as const,
       date: r.receivedDate || r.month + '-01',
-      title: t(r.status === 'paid' ? 'home.recentRent' : r.status === 'vacant' ? 'home.recentVacant' : 'home.recentUnpaid', {
-        month: monthTitle(r.month, lang),
-      }),
+      title: t(
+        r.status === 'paid' ? 'home.recentRent' : r.status === 'vacant' ? 'home.recentVacant' : 'home.recentUnpaid',
+        {
+          month: monthTitle(r.month, lang),
+        },
+      ),
       amt: r.amount,
       // Vacant and unpaid months bring in nothing: show a dash, not "+0,00 €".
       sign: r.status === 'paid' ? 1 : 0,
@@ -66,7 +80,7 @@ export default function Home({ apt, year, account, scope, onScope, go }: Props) 
     })),
   ]
     .sort((a, b) => b.date.localeCompare(a.date))
-    .slice(0, 5);
+    .slice(0, RECENT_SHOWN);
 
   return (
     <>
@@ -88,17 +102,16 @@ export default function Home({ apt, year, account, scope, onScope, go }: Props) 
           </div>
           <div className="stat">
             <div className="v">{eurWhole(f.deductibleCosts + f.depreciation)}</div>
-            <div className="l">
-              {t('home.deductions')}
-              <Info about={t('home.deductionsAbout')}>{t('home.deductionsInfo')}</Info>
-            </div>
+            <div className="l">{t('home.deductions')}</div>
           </div>
           <div className="stat">
             <div className="v">{eurWhole(f.estimatedTax)}</div>
             <div className="l">
               {t('home.estTax')}
               <Info about={t('home.estTaxAbout')}>
-                {t('home.estTaxInfo', { onYourShare: shared && scope === 'mine' ? t('home.onYourShare') : '' })}
+                {t('home.estTaxInfo', {
+                  onYourShare: shared && scope === 'mine' ? t('home.onYourShare') : '',
+                })}
               </Info>
             </div>
           </div>
@@ -109,91 +122,112 @@ export default function Home({ apt, year, account, scope, onScope, go }: Props) 
         <section>
           <Heading>{t('home.todo')}</Heading>
           <div className="card todo">
-            {todo.map((i) => (
+            {todo.slice(0, TODO_SHOWN).map((i) => (
               <button key={i.id} className="row-btn" onClick={() => go(i.to)}>
                 <span className="dot">{Icon.alert}</span>
                 <span className="main">{i.text}</span>
                 {Icon.right}
               </button>
             ))}
+            {todo.length > TODO_SHOWN && (
+              <button className="row-btn" onClick={() => go('tax')}>
+                <span className="main dim">{t('home.moreTodo', { n: todo.length - TODO_SHOWN })}</span>
+                {Icon.right}
+              </button>
+            )}
           </div>
         </section>
       ) : (
         hasData && (
-          <div className="allset">
-            {Icon.check} {t('home.allSet', { year })}
-          </div>
+          <section className="card ready">
+            <div className="allset">
+              {Icon.check} {t('home.allSet', { year })}
+            </div>
+            <button className="btn primary block" onClick={() => go('tax')}>
+              {t('home.prepare', { year })}
+            </button>
+          </section>
         )
       )}
 
-      <section>
-        <Heading>{t('home.byMonth')}</Heading>
-        <div
-          className="bars"
-          role="img"
-          aria-label={t('home.chartLabel', {
-            rent: eur(rentByMonth.reduce((a, b) => a + b, 0)),
-            costs: eur(costByMonth.reduce((a, b) => a + b, 0)),
-            year,
-          })}
-        >
-          {monthsShort(lang).map((m, i) => (
-            <div className={'col' + (i === currentMonth ? ' now' : '')} key={m}>
-              <div className="pair">
-                <div
-                  className="bar"
-                  style={{ height: `${(rentByMonth[i]! / max) * 100}%` }}
-                  title={t('home.barRent', { month: m, amount: eur(rentByMonth[i]!) })}
-                />
-                <div
-                  className="bar cost"
-                  style={{ height: `${(costByMonth[i]! / max) * 100}%` }}
-                  title={t('home.barCosts', { month: m, amount: eur(costByMonth[i]!) })}
-                />
-              </div>
-              <div className="lbl">{m[0]}</div>
+      {hasData && (
+        <>
+          <section>
+            <Heading>{t('home.byMonth')}</Heading>
+            <div
+              className="bars"
+              role="img"
+              aria-label={t('home.chartLabel', {
+                rent: eur(rentByMonth.reduce((a, b) => a + b, 0)),
+                costs: eur(costByMonth.reduce((a, b) => a + b, 0)),
+                year,
+              })}
+            >
+              {monthsShort(lang).map((m, i) => (
+                <div className={'col' + (i === currentMonth ? ' now' : '')} key={m}>
+                  <div className="pair">
+                    <div
+                      className="bar"
+                      style={{ height: `${(rentByMonth[i]! / max) * 100}%` }}
+                      title={t('home.barRent', {
+                        month: m,
+                        amount: eur(rentByMonth[i]!),
+                      })}
+                    />
+                    <div
+                      className="bar cost"
+                      style={{ height: `${(costByMonth[i]! / max) * 100}%` }}
+                      title={t('home.barCosts', {
+                        month: m,
+                        amount: eur(costByMonth[i]!),
+                      })}
+                    />
+                  </div>
+                  <div className="lbl">{m[0]}</div>
+                </div>
+              ))}
             </div>
-          ))}
-        </div>
-        <div className="legend">
-          <span>
-            <i />
-            {t('common.rent')}
-          </span>
-          <span>
-            <i className="cost" />
-            {t('common.costs')}
-          </span>
-        </div>
-      </section>
+            <div className="legend">
+              <span>
+                <i />
+                {t('common.rent')}
+              </span>
+              <span>
+                <i className="cost" />
+                {t('common.costs')}
+              </span>
+            </div>
+          </section>
 
-      <section className="stats two" style={{ marginTop: 0 }}>
-        <div className="stat">
-          <div className="v">{occupancy === null ? '—' : occupancy + ' %'}</div>
-          <div className="l">
-            {t('home.occupancy')}
-            <Info about={t('home.occupancyAbout')}>
-              {t('home.occupancyInfo', {
-                paid: tax.paidMonths,
-                vacant: tax.vacantMonths,
-                unpaid: tax.unpaidMonths ? t('home.occupancyUnpaid', { n: tax.unpaidMonths }) : '',
-              })}
-            </Info>
-          </div>
-        </div>
-        <div className="stat">
-          <div className="v">{grossYield === null ? '—' : grossYield.toFixed(1) + ' %'}</div>
-          <div className="l">
-            {t('home.yield')}
-            <Info about={t('home.yieldAbout')}>
-              {t('home.yieldInfo', {
-                net: netYield !== null ? t('home.yieldNet', { n: netYield.toFixed(1) }) : '',
-                addPrice: price <= 0 ? t('home.yieldAddPrice') : '',
-              })}
-            </Info>
-          </div>
-        </div>
-      </section>
+          <section className="stats two card insights">
+            <div className="stat">
+              <div className="v">{occupancy === null ? '—' : occupancy + ' %'}</div>
+              <div className="l">
+                {t('home.occupancy')}
+                <Info about={t('home.occupancyAbout')}>
+                  {t('home.occupancyInfo', {
+                    paid: tax.paidMonths,
+                    vacant: tax.vacantMonths,
+                    unpaid: tax.unpaidMonths ? t('home.occupancyUnpaid', { n: tax.unpaidMonths }) : '',
+                  })}
+                </Info>
+              </div>
+            </div>
+            <div className="stat">
+              <div className="v">{grossYield === null ? '—' : grossYield.toFixed(1) + ' %'}</div>
+              <div className="l">
+                {t('home.yield')}
+                <Info about={t('home.yieldAbout')}>
+                  {t('home.yieldInfo', {
+                    net: netYield !== null ? t('home.yieldNet', { n: netYield.toFixed(1) }) : '',
+                    addPrice: price <= 0 ? t('home.yieldAddPrice') : '',
+                  })}
+                </Info>
+              </div>
+            </div>
+          </section>
+        </>
+      )}
 
       <section>
         <Heading>{t('home.recent')}</Heading>
@@ -205,7 +239,7 @@ export default function Home({ apt, year, account, scope, onScope, go }: Props) 
             </button>
           </div>
         ) : (
-          <ul className="list">
+          <ul className="list card">
             {recent.map((r) => (
               <li key={r.key}>
                 <button className="row-btn" onClick={() => go(r.to)}>
@@ -227,10 +261,6 @@ export default function Home({ apt, year, account, scope, onScope, go }: Props) 
           </ul>
         )}
       </section>
-
-      <button className="btn quiet block" onClick={() => go('tax')}>
-        {t('home.prepare', { year })}
-      </button>
     </>
   );
 }

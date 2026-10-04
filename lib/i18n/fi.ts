@@ -33,7 +33,6 @@ export const fi: Record<MessageKey, string> = {
   'nav.tax': 'Vero',
   'nav.menu': 'Valikko',
   'nav.ledger': 'Vuokrat ja kulut',
-  'nav.history': 'Historia',
   'nav.settings': 'Asetukset',
   'ledger.view': 'Vuokrat tai kulut',
   'nav.allApartments': 'Kaikki asunnot',
@@ -72,15 +71,13 @@ export const fi: Record<MessageKey, string> = {
   'home.netAbout': 'nettotulo',
   'home.netInfo': 'Saadut vuokrat vähennettynä vähennyskelpoisilla kuluilla ja poistoilla – summa, josta sinua verotetaan.',
   'home.deductions': 'Vähennykset',
-  'home.deductionsAbout': 'vähennykset',
-  'home.deductionsInfo':
-    'Vähennyskelpoiset kulut ja poistot. Kuluja, jotka eivät ole vähennyskelpoisia, ei lasketa mukaan.',
   'home.estTax': 'Arvioitu vero',
   'home.estTaxAbout': 'veroarvio',
   'home.estTaxInfo':
     '30 % pääomatuloista 30 000 euroon asti, 34 % sen ylittävältä osalta{onYourShare}. Karkea arvio – muut pääomatulot eivät ole mukana.',
   'home.onYourShare': ', osuudestasi',
   'home.todo': 'Tehtävät',
+  'home.moreTodo': '{n} muuta tarkistettavaa',
   'home.allSet': 'Valmis vuoden {year} veroilmoitukseen',
   'home.byMonth': 'Vuokrat ja kulut kuukausittain',
   'home.chartLabel': 'Saadut vuokrat {rent} ja kulut {costs} vuonna {year}, kuukausittain',
@@ -107,7 +104,6 @@ export const fi: Record<MessageKey, string> = {
   'portfolio.net': 'Nettotulosi, kaikki asunnot · {year}',
   'portfolio.netInfo':
     'Osuutesi saaduista vuokrista vähennettynä osuudellasi vähennyskelpoisista kuluista ja poistoista, laskettuna yhteen kaikista asunnoistasi.',
-  'portfolio.deductionsInfo': 'Vähennyskelpoiset kulut ja poistot.',
   'portfolio.estTaxInfo':
     '30 % pääomatuloista 30 000 euroon asti, 34 % sen ylittävältä osalta – arvioitu kaikista asunnoistasi yhdessä, koska verokanta riippuu kokonaissummasta. Muut pääomatulot eivät ole mukana.',
   'portfolio.apartments': 'Asunnot',
@@ -247,7 +243,9 @@ export const fi: Record<MessageKey, string> = {
   'check.invites.todo.other': '{n} kutsuttua omistajaa ei ole vielä liittynyt – tarkista, että osuudet ovat lopulliset',
 
   // — history —
-  'history.title': 'Historia',
+  'tax.view': 'Verotusnäkymä',
+  'tax.thisYear': 'Tämä vuosi',
+  'tax.allYears': 'Kaikki vuodet',
   'history.allYears': 'Nettotulo, kaikki vuodet',
   'history.allYearsAbout': 'kaikki vuodet',
   'history.allYearsInfo': 'Kaikkien kirjaamiesi vuosien vuokratulojen nettotulo yhteensä. Tappiolliset vuodet lasketaan negatiivisina.',
@@ -287,7 +285,13 @@ export const fi: Record<MessageKey, string> = {
   'settings.sharePlaceholder': 'esim. 50',
   'settings.sharing': 'Jaetaan…',
   'settings.shareApartment': 'Jaa asunto',
-  'settings.details': 'Tiedot',
+  'settings.details': 'Kohteen tiedot',
+  'settings.back': 'Takaisin asetuksiin',
+  'settings.ownersSolo': 'Vain sinä',
+  'settings.ownersShared': '{n} omistajaa · omistat {pct}',
+  'settings.depreciationNA': 'Ei käytössä asunto-osakkeelle',
+  'settings.depreciationOn': 'Käytössä · {rate} % vuodessa',
+  'settings.depreciationOff': 'Pois käytöstä',
   'settings.name': 'Nimi',
   'settings.address': 'Osoite',
   'settings.company': 'Taloyhtiö',
