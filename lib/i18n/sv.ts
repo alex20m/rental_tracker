@@ -512,7 +512,7 @@ export const sv: Record<MessageKey, string> = {
   'auth.sendCode': 'Skicka en ny kod',
   'auth.pressSend': 'Tryck på “Skicka en ny kod” och ange sedan koden från e-postmeddelandet.',
   'auth.codeSent': 'Vi skickade en kod till {email}.',
-  'auth.codeSentSignUp': 'Vi skickade en kod till {email}. Ange den för att slutföra skapandet av ditt konto. Ingen kod? Du kanske redan har ett konto: gå tillbaka och logga in.',
+  'auth.codeSentSignUp': 'Vi skickade en kod till {email}. Fick du ingen? Den adressen kan redan ha ett konto. Gå tillbaka för att logga in eller återställ ditt lösenord.',
   'auth.verified': 'E-postadressen är verifierad. Logga in för att fortsätta.',
   'auth.errGeneric': 'Något gick fel.',
   'auth.errSend': 'Det gick inte att skicka en kod.',
