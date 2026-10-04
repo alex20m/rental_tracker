@@ -28,7 +28,7 @@ test.describe('the tax page', () => {
 
   test('ticks off what is done and links each open item to where it is fixed', async ({ page, api }) => {
     api.addApartment(
-      { name: 'Flat', purchasePrice: 10 },
+      { name: 'Flat' },
       { rents: [...ledger().rents, { month: m(5), status: 'unpaid', amount: 0, receivedDate: '', note: '' }] },
     );
     await page.clock.setFixedTime(new Date(`${YEAR}-05-20T12:00:00`));
@@ -36,7 +36,7 @@ test.describe('the tax page', () => {
     await section(page, 'Tax');
 
     const list = page.locator('.todo');
-    await expect(list.locator('.done')).toHaveText(['Purchase price set', 'Every month logged', 'Every cost has a receipt']);
+    await expect(list.locator('.done')).toHaveText(['Every month logged', 'Every cost has a receipt']);
     await list.getByRole('button', { name: '1 month unpaid — not counted as income' }).click();
     await expect(page.getByRole('heading', { name: 'Months' })).toBeVisible();
 
@@ -45,6 +45,23 @@ test.describe('the tax page', () => {
     await expect(page.getByText(`No costs logged for ${YEAR}.`)).toBeVisible();
     await openInfo(page, 'About rent months');
     await expect(page.getByRole('note')).toContainText(`3 paid, 1 vacant and 1 unpaid months logged for ${YEAR}`);
+  });
+
+  test('asks for the purchase price only of a depreciated property, and sends it to Advanced', async ({ page, api }) => {
+    api.addApartment({ name: 'House', propertyType: 'property', useDepreciation: true }, { rents: ledger().rents });
+    await page.goto('/');
+    await section(page, 'Tax');
+
+    const price = page.locator('.todo').getByRole('button', { name: 'Add the purchase price (for the building depreciation)' });
+    await price.click();
+    await expect(page.getByRole('heading', { name: 'Apartment settings', exact: true })).toBeVisible();
+    await page.getByRole('button', { name: /^Advanced/ }).click();
+    await page.getByLabel('Purchase price (€)').fill('90000');
+    await page.getByRole('button', { name: 'Save changes' }).click();
+    await expect(page.getByRole('button', { name: 'Save changes' })).toHaveCount(0);
+
+    await section(page, 'Tax');
+    await expect(page.locator('.todo .done').first()).toHaveText('Purchase price set');
   });
 
   test('downloads the declaration package with the PDF, the ledger and the receipts', async ({ page, api }) => {
@@ -136,7 +153,6 @@ test.describe('the tax page', () => {
     const zip = await JSZip.loadAsync(readFileSync(await download.path()));
     const text = Buffer.from(await zip.file(`vuokratulot-ja-menot-${YEAR}.pdf`)!.async('uint8array')).toString('latin1');
     expect(text).toContain('page 2/2');
-    expect(text).toContain('2019-03-01 for 150 000,00 EUR');
     expect(text).toContain('The apartment has 1 owner and 1 pending.');
     expect(await zip.file(`ledger-${YEAR}.csv`)!.async('string')).toContain(`"${m(1)}-02","rent","paid","Rent for ${YEAR - 1}-12"`);
   });
@@ -175,8 +191,9 @@ test.describe('the tax page', () => {
 
     const [pdf] = await Promise.all([page.waitForEvent('download'), page.getByRole('button', { name: 'PDF summary only' }).click()]);
     const text = readFileSync(await pdf.path()).toString('latin1');
-    expect(text).toContain('figures for tax form 7H / OmaVero');
-    expect(text).toContain('Declared separately');
+    expect(text).toContain('what to enter in MyTax');
+    expect(text).toContain('4 · Other deductions: Interest on debts');
+    expect(text).toMatch(/Loan interest \\\(your portion\\\)\) Tj[\s\S]*?\(400,00 EUR\) Tj/);
     expect(text).toContain('Basic improvements deducted over several years');
     expect(text).toContain('Balcony glazing');
     expect(text).toContain('Inventory of furniture and appliances');
@@ -311,7 +328,7 @@ test.describe('the tax page', () => {
     expect(text).toContain('(Share of the home that is let) Tj');
     expect(text).toContain('Furnished flat, flat-rate deduction');
     // 60 % of 5 000 € and 180 € of flat rate against 2 400 € of rent.
-    expect(text).toMatch(/Reduce the rows above by\) Tj[\s\S]*?\(780,00 EUR\) Tj/);
+    expect(text).toMatch(/Reduce the fields above by\) Tj[\s\S]*?\(780,00 EUR\) Tj/);
   });
 
   test('tells in the PDF about the deficit credit under a loss', async ({ page, api }) => {

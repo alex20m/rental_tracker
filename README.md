@@ -93,6 +93,14 @@ The rules follow vero.fi. Each apartment is either a **housing-company flat**
 (osakehuoneisto, form 7H — the default) or a **property of one's own**
 (kiinteistö, form 7K).
 
+The app is built for the standard case: one person letting out a whole flat in a
+housing company. Everything that case does not need is under **Advanced** in the
+apartment's settings: the kind of property, only part of the home let, a rent
+below the usual, the flat-rate furniture deduction, building depreciation and the
+purchase price and date (a flat's price is never depreciated; it only gives the
+yield on Home, and the checklist asks for it only for a depreciated property). The
+list of settings says which of those are in use, so none is on without showing.
+
 - Rent counts in the year it was **received** (cash basis).
 - Deducted in the year paid: maintenance and water charges, annual repairs
   (vuosikorjaukset), insurance, letting agent fees and ads, travel, owner-paid
@@ -139,19 +147,26 @@ The rules follow vero.fi. Each apartment is either a **housing-company flat**
 
 ### The declaration PDF
 
-The PDF is laid out like **form 7H** or **form 7K**: the same row numbers
-(2.1–2.5, or 2 and 3.1–3.5 with the depreciation tables 4.1–4.6), the form's own
-Finnish row names beneath each, and your share of each amount — so the numbers
-can be copied straight onto the form or into the matching OmaVero fields (OmaVero
-has no numbered forms). Under row 2.5 / 3.2 it lists what the amount is made of.
-It also gives the period the flat was let, the schedule of improvements being
-deducted over several years, and the inventory of furniture the law asks for. It
-stays in English with the Finnish names of the form's rows.
+For a flat in a housing company the PDF follows **the screens of OmaVero** (MyTax,
+MinSkatt) in order, in the language the app is in (English, Swedish or Finnish):
+the way to the form (*Pre-filled tax return → Other income → Rental income → Add a
+new rental income*), the flat, the fields of *Rental income and expenses* by the
+names OmaVero gives them, *Other deductions → Interest on debts*, and *Preview and
+send* — each with your share of the amount to type in. The names of two fields
+(rent received, annual repairs) are not published by Vero, so the PDF says they
+may read a little differently on screen. After the steps, on a page of its own,
+come the owner's papers: the income by month, what was not deducted, the result
+and tax estimate, the schedule of improvements being deducted over several years,
+and the inventory of furniture the law asks for.
+
+A property of one's own (Advanced) is laid out like **form 7K** instead: the same
+row numbers (2 and 3.1–3.5 with the depreciation tables 4.1–4.6) and the form's own
+Finnish row names beneath each. That PDF stays in English.
 
 ## Important
 
 - This does **not** file anything with Vero; there is no public submission API.
-  Copy the figures into OmaVero or attach the PDF.
+  Type the figures into OmaVero; the PDF is not uploaded anywhere.
 - The rules are a simplified model. Not modelled: estates (dödsbo), tax
   partnerships (a jointly owned farm or forest), rental from abroad, short-term
   and sporadic rental of one's own home, a housing company that books only part

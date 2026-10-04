@@ -9,6 +9,7 @@ import { computeDepreciation, depreciationStartYear, eur, pct } from '@/lib/doma
 import { rulesFor } from '@/lib/domain/taxRules';
 import { ruleParams } from '@/lib/ui/ruleParams';
 import { isWholeApartment, shareTotal } from '@/lib/domain/shares';
+import { advancedChoices } from '@/lib/ui/advancedChoices';
 import { Avatar, ErrorNote, Heading, Icon, Info, Label, Sheet, Switch } from '@/components/ui';
 import type { Account } from '@/components/RentalApp';
 import { useI18n } from '@/components/I18nProvider';
@@ -23,16 +24,17 @@ type Props = {
   onGone: () => Promise<void>;
 };
 
-type View = 'owners' | 'details' | 'depreciation';
+type View = 'owners' | 'details' | 'advanced';
 
 /**
  * Everything adjustable about this one apartment, as a short list: each row
- * opens one topic on its own, so nothing is a wall of fields. Edits to the
- * details and depreciation are kept while moving between topics and saved
- * together from one bar.
+ * opens one topic on its own, so nothing is a wall of fields. What only a few
+ * landlords need — a property of one's own, part of the home let, building
+ * depreciation — is behind "Advanced". Edits to the details and the advanced
+ * settings are kept while moving between topics and saved together from one bar.
  */
 export default function SettingsPage({ apt, year, account, onChanged, onGone }: Props) {
-  const { t, lang } = useI18n();
+  const { t } = useI18n();
   const [view, setView] = useState<View | null>(null);
   const [draft, setDraft] = useState<ApartmentSettings>(apt.settings);
   // Functional, so two changes made in one handler (a kind of building and its rate) both stick.
@@ -54,26 +56,22 @@ export default function SettingsPage({ apt, year, account, onChanged, onGone }: 
       </>
     );
   }
-  if (view === 'details' || view === 'depreciation') {
+  if (view === 'details' || view === 'advanced') {
     return (
       <>
         {view === 'details' ? (
           <SubPage title={t('settings.details')} onBack={back} />
         ) : (
           <SubPage
-            title={t('settings.depreciation')}
+            title={t('settings.advanced')}
             onBack={back}
-            info={
-              <Info about={t('settings.depreciationAbout')}>
-                {t('settings.depreciationInfo', ruleParams(year, lang))}
-              </Info>
-            }
+            info={<Info about={t('settings.advancedAbout')}>{t('settings.advancedInfo')}</Info>}
           />
         )}
         {view === 'details' ? (
-          <DetailsFields s={draft} set={set} year={year} />
+          <DetailsFields s={draft} set={set} />
         ) : (
-          <DepreciationFields s={draft} set={set} year={year} apt={apt} />
+          <AdvancedFields s={draft} set={set} year={year} apt={apt} />
         )}
         <SaveBar apt={apt} draft={draft} onDiscard={() => setDraft(saved)} onChanged={onChanged} />
       </>
@@ -86,12 +84,8 @@ export default function SettingsPage({ apt, year, account, onChanged, onGone }: 
         n: apt.owners.length + apt.invites.length,
         pct: pct(apt.mySharePct),
       });
-  const depreciation =
-    saved.propertyType === 'share'
-      ? t('settings.depreciationNA')
-      : saved.useDepreciation
-        ? t('settings.depreciationOn', { rate: saved.depreciationRate })
-        : t('settings.depreciationOff');
+  const choices = advancedChoices(saved);
+  const advanced = choices.length ? choices.map(([key, params]) => t(key, params)).join(' · ') : t('settings.advancedStandard');
 
   return (
     <>
@@ -109,7 +103,7 @@ export default function SettingsPage({ apt, year, account, onChanged, onGone }: 
                 t('settings.details'),
                 saved.address || t(`settings.type.${saved.propertyType}`),
               ],
-              ['depreciation', Icon.stack, t('settings.depreciation'), depreciation],
+              ['advanced', Icon.stack, t('settings.advanced'), advanced],
             ] as const
           ).map(([id, icon, title, summary]) => (
             <li key={id}>
@@ -415,9 +409,8 @@ const numberField = (set: FieldsProps['set'], k: keyof ApartmentSettings) => (e:
 const textField = (set: FieldsProps['set'], k: keyof ApartmentSettings) => (e: React.ChangeEvent<HTMLInputElement>) =>
   set(k, e.target.value as never);
 
-function DetailsFields({ s, set, year }: FieldsProps) {
-  const { t, lang } = useI18n();
-  const params = ruleParams(year, lang);
+function DetailsFields({ s, set }: Omit<FieldsProps, 'year'>) {
+  const { t } = useI18n();
   const num = (k: keyof ApartmentSettings) => numberField(set, k);
   const text = (k: keyof ApartmentSettings) => textField(set, k);
   return (
@@ -433,6 +426,43 @@ function DetailsFields({ s, set, year }: FieldsProps) {
           {t('settings.company')}
         </Label>
         <input id="s-company" value={s.housingCompany} onChange={text('housingCompany')} />
+        {s.propertyType === 'share' && (
+          <>
+            <Label info={<Info about={t('settings.financingAbout')}>{t('settings.financingInfo')}</Info>}>
+              {t('cat.financing_charge.label')}
+            </Label>
+            <Switch checked={s.financingChargeDeductible} onChange={(v) => set('financingChargeDeductible', v)}>
+              {t('settings.financingDeductible')}
+            </Switch>
+          </>
+        )}
+        <Label
+          htmlFor="s-rent"
+          info={<Info about={t('settings.monthlyRentAbout')}>{t('settings.monthlyRentInfo')}</Info>}
+        >
+          {t('settings.monthlyRent')}
+        </Label>
+        <input
+          id="s-rent"
+          type="number"
+          inputMode="decimal"
+          value={s.monthlyRent || ''}
+          onChange={num('monthlyRent')}
+        />
+      </section>
+
+    </>
+  );
+}
+
+function AdvancedFields({ s, set, year, apt }: FieldsProps & { apt: ApartmentView }) {
+  const { t, lang } = useI18n();
+  const num = (k: keyof ApartmentSettings) => numberField(set, k);
+  const text = (k: keyof ApartmentSettings) => textField(set, k);
+  const params = ruleParams(year, lang);
+  return (
+    <>
+      <section>
         <Label id="s-type" info={<Info about={t('settings.propertyTypeAbout')}>{t('settings.propertyTypeInfo')}</Info>}>
           {t('settings.propertyType')}
         </Label>
@@ -450,17 +480,10 @@ function DetailsFields({ s, set, year }: FieldsProps) {
             </button>
           ))}
         </div>
-        {s.propertyType === 'share' && (
-          <>
-            <Label info={<Info about={t('settings.financingAbout')}>{t('settings.financingInfo')}</Info>}>
-              {t('cat.financing_charge.label')}
-            </Label>
-            <Switch checked={s.financingChargeDeductible} onChange={(v) => set('financingChargeDeductible', v)}>
-              {t('settings.financingDeductible')}
-            </Switch>
-          </>
-        )}
-        <div className="cols">
+      </section>
+
+      <section>
+        <div className="cols" style={{ marginTop: 0 }}>
           <div>
             <label htmlFor="s-date">{t('settings.purchaseDate')}</label>
             <input id="s-date" type="date" value={s.purchaseDate} onChange={text('purchaseDate')} />
@@ -481,19 +504,6 @@ function DetailsFields({ s, set, year }: FieldsProps) {
             />
           </div>
         </div>
-        <Label
-          htmlFor="s-rent"
-          info={<Info about={t('settings.monthlyRentAbout')}>{t('settings.monthlyRentInfo')}</Info>}
-        >
-          {t('settings.monthlyRent')}
-        </Label>
-        <input
-          id="s-rent"
-          type="number"
-          inputMode="decimal"
-          value={s.monthlyRent || ''}
-          onChange={num('monthlyRent')}
-        />
       </section>
 
       <section>
@@ -561,6 +571,8 @@ function DetailsFields({ s, set, year }: FieldsProps) {
           </>
         )}
       </section>
+
+      <DepreciationFields s={s} set={set} year={year} apt={apt} />
     </>
   );
 }
@@ -572,6 +584,9 @@ function DepreciationFields({ s, set, year, apt }: FieldsProps & { apt: Apartmen
   const params = ruleParams(year, lang);
   return (
     <section>
+      <Heading info={<Info about={t('settings.depreciationAbout')}>{t('settings.depreciationInfo', params)}</Info>}>
+        {t('settings.depreciation')}
+      </Heading>
       {s.propertyType === 'share' ? (
         <p className="msg">{t('settings.noBuildingDepreciation')}</p>
       ) : (

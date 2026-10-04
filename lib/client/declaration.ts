@@ -8,6 +8,7 @@ import { computeTax, ownerShare } from '@/lib/domain/tax';
 import type { OwnerShare, TaxResult } from '@/lib/domain/tax';
 import { declarationModel } from '@/lib/domain/declarationModel';
 import { fetchReceipt } from '@/lib/client/api';
+import type { Translator } from '@/lib/i18n';
 
 /**
  * jsPDF's built-in fonts only cover WinAnsi. Finnish number formatting writes a
@@ -20,16 +21,16 @@ export const pdfSafe = (s: string) => s.replace(/\u2212/g, '-').replace(/[\u00a0
 // The built-in fonts can't render the € glyph reliably either, so amounts use "EUR".
 const money = (n: number) =>
   pdfSafe(new Intl.NumberFormat('fi-FI', { minimumFractionDigits: 2, maximumFractionDigits: 2 }).format(n) + ' EUR');
-const pctText = (n: number) => pdfSafe(new Intl.NumberFormat('fi-FI', { maximumFractionDigits: 2 }).format(n) + ' %');
 
 /**
- * The declaration for one owner of one apartment, laid out like Finnish form
- * 7H or 7K: the numbered rows with the amounts to enter. Co-owners each declare
- * their own part, so when the apartment is shared the income and result also
+ * The declaration for one owner of one apartment: for a flat in a housing
+ * company the screens of OmaVero in order with the amounts to type into each
+ * field, for a property of one's own the numbered rows of form 7K. Co-owners
+ * each declare their own part, so when the apartment is shared the records also
  * show the apartment's total beside the owner's share — the column to file.
  * What it says is decided in `declarationModel`; this only draws it.
  */
-export function buildPdf(apt: ApartmentView, t: TaxResult, share: OwnerShare, taxpayerName: string): Blob {
+export function buildPdf(apt: ApartmentView, t: TaxResult, share: OwnerShare, taxpayerName: string, tr: Translator): Blob {
   const doc = new jsPDF({ unit: 'mm', format: 'a4' });
   /** Every string reaches the page through here, so none can carry a glyph the font lacks. */
   const put = (text: string | string[], x: number, y: number, options?: { align: 'right' }) =>
@@ -50,7 +51,7 @@ export function buildPdf(apt: ApartmentView, t: TaxResult, share: OwnerShare, ta
   const ink = (bold: boolean, size = 10) => doc.setFont('helvetica', bold ? 'bold' : 'normal').setFontSize(size).setTextColor(30, 41, 59);
   const grey = (size: number) => doc.setFont('helvetica', 'normal').setFontSize(size).setTextColor(100, 116, 139);
 
-  for (const b of declarationModel(apt, t, share, taxpayerName)) {
+  for (const b of declarationModel(apt, t, share, taxpayerName, tr)) {
     switch (b.type) {
       case 'h1':
         doc.setFont('helvetica', 'bold').setFontSize(18).setTextColor(15, 118, 110);
@@ -63,14 +64,18 @@ export function buildPdf(apt: ApartmentView, t: TaxResult, share: OwnerShare, ta
         y += 6;
         break;
       case 'h2':
+        if (b.newPage) {
+          doc.addPage();
+          y = 20;
+        }
         ensure(14);
         y += 4;
         doc.setFont('helvetica', 'bold').setFontSize(12).setTextColor(30, 41, 59);
         put(b.text, L, y);
-        if (b.columns && shared) {
+        if (b.columns) {
           grey(8.5);
-          put('Apartment total', MID, y, { align: 'right' });
-          put(`Your share ${pctText(share.sharePct)}`, R, y, { align: 'right' });
+          put(b.columns.total, MID, y, { align: 'right' });
+          put(b.columns.mine, R, y, { align: 'right' });
         }
         y += 2;
         doc.setDrawColor(203, 213, 225).line(L, y, R, y);
@@ -95,6 +100,13 @@ export function buildPdf(apt: ApartmentView, t: TaxResult, share: OwnerShare, ta
         put(money(b.mine), R, y, { align: 'right' });
         y += 6;
         break;
+      case 'field':
+        ensure(8);
+        ink(!!b.bold);
+        put(b.label, L, y);
+        put(money(b.value), R, y, { align: 'right' });
+        y += 6;
+        break;
       case 'form':
         ensure(12);
         ink(!!b.bold);
@@ -109,14 +121,14 @@ export function buildPdf(apt: ApartmentView, t: TaxResult, share: OwnerShare, ta
       case 'part':
         ensure(5.5);
         grey(8.5);
-        put(`of which ${b.label}`, L + 11, y);
+        put(b.label, L + 11, y);
         put(money(b.value), R, y, { align: 'right' });
         y += 5;
         break;
       case 'small': {
+        grey(8.5); // the width is measured in the size it is drawn in
         const lines = doc.splitTextToSize(b.text, R - L) as string[];
         ensure(lines.length * 4.5 + 2);
-        grey(8.5);
         put(lines, L, y);
         y += lines.length * 4.5 + 2;
         break;
@@ -128,7 +140,7 @@ export function buildPdf(apt: ApartmentView, t: TaxResult, share: OwnerShare, ta
   for (let p = 1; p <= pages; p++) {
     doc.setPage(p);
     doc.setFont('helvetica', 'normal').setFontSize(8).setTextColor(148, 163, 184);
-    put(`Generated ${new Date().toISOString().slice(0, 10)} by Rental Tracker — page ${p}/${pages}`, L, 290);
+    put(tr.t('pdf.footer', { date: new Date().toISOString().slice(0, 10), page: p, pages }), L, 290);
   }
   return doc.output('blob');
 }
@@ -160,11 +172,11 @@ export function buildCsv(apt: ApartmentView, year: number, sharePct: number, rec
 }
 
 /** Zip: declaration PDF + ledger CSV + JSON summary + all receipt images for the year. */
-export async function buildPackage(apt: ApartmentView, year: number, taxpayerName: string): Promise<Blob> {
+export async function buildPackage(apt: ApartmentView, year: number, taxpayerName: string, tr: Translator): Promise<Blob> {
   const t = computeTax(apt, year);
   const share = ownerShare(t, apt.mySharePct);
   const zip = new JSZip();
-  zip.file(`vuokratulot-ja-menot-${year}.pdf`, buildPdf(apt, t, share, taxpayerName));
+  zip.file(`vuokratulot-ja-menot-${year}.pdf`, buildPdf(apt, t, share, taxpayerName, tr));
 
   const names = new Map<string, string>();
   const folder = zip.folder('receipts')!;

@@ -37,11 +37,24 @@ describe('the declaration checklist', () => {
     expect(items.length).toBeGreaterThan(0);
   });
 
-  it('sends a missing purchase price to the apartment settings', () => {
-    const apt = apartment({ settings: { ...defaultSettings, name: 'Flat' } });
-    const price = byId(check(apt))['price']!;
+  const depreciated = { ...defaultSettings, name: 'House', propertyType: 'property' as const, useDepreciation: true };
+
+  it('sends a missing purchase price to the apartment settings when a property is depreciated, which is what needs it', () => {
+    const price = byId(check(apartment({ settings: depreciated })))['price']!;
     expect(price.ok).toBe(false);
     expect(price.to).toBe('settings');
+    expect(byId(check(apartment({ settings: { ...depreciated, purchasePrice: 90000 } })))['price']!.ok).toBe(true);
+  });
+
+  it('does not ask for a purchase price of a flat in a housing company, which is never depreciated', () => {
+    const apt = apartment({ settings: { ...defaultSettings, name: 'Flat', purchasePrice: 0 } });
+    expect(check(apt).map((i) => i.id)).not.toContain('price');
+    expect(check(apt).filter((i) => !i.ok)).toEqual([]);
+  });
+
+  it('does not ask for a purchase price of a property whose building is not depreciated', () => {
+    const apt = apartment({ settings: { ...depreciated, useDepreciation: false } });
+    expect(check(apt).map((i) => i.id)).not.toContain('price');
   });
 
   it('counts months not logged yet and sends them to the rent log', () => {
