@@ -317,6 +317,7 @@ export default function RentalApp() {
           {apt && tab === 'settings' && (
             <SettingsPage
               apt={apt}
+              year={year}
               account={account}
               onChanged={reloadSelected}
               onGone={async () => {

@@ -3,10 +3,11 @@
 import { useState } from 'react';
 import type { ApartmentView } from '@/lib/domain/types';
 import { CATEGORIES } from '@/lib/domain/types';
-import { computeTax, eur, ownerShare } from '@/lib/domain/tax';
+import { computeTax, deductionsOf, eur, ownerShare } from '@/lib/domain/tax';
 import { buildChecklist } from '@/lib/domain/checklist';
 import { buildPackage, buildPdf } from '@/lib/client/declaration';
 import { download } from '@/lib/client/api';
+import { ruleParams } from '@/lib/ui/ruleParams';
 import { useI18n } from '@/components/I18nProvider';
 import type { Go, Scope } from '@/components/RentalApp';
 import ScopeToggle from '@/components/ScopeToggle';
@@ -23,7 +24,8 @@ type Props = {
 
 export default function Tax({ apt, year, taxpayerName, scope, onScope, go }: Props) {
   const i18n = useI18n();
-  const { t } = i18n;
+  const { t, lang } = i18n;
+  const params = { ...ruleParams(year, lang), year };
   const tax = computeTax(apt, year);
   const mine = ownerShare(tax, apt.mySharePct);
   const shared = apt.mySharePct !== 100;
@@ -60,8 +62,17 @@ export default function Tax({ apt, year, taxpayerName, scope, onScope, go }: Pro
           <b className="num" style={{ margin: '0 2px', color: 'var(--text)' }}>
             {eur(f.estimatedTax)}
           </b>
-          <Info about={t('home.estTaxAbout')}>{t('tax.estimateInfo')}</Info>
+          <Info about={t('home.estTaxAbout')}>{t('tax.estimateInfo', params)}</Info>
         </div>
+        {f.deficitCredit > 0 && (
+          <div className="label" style={{ marginTop: 4 }}>
+            {t('tax.credit')}{' '}
+            <b className="num" style={{ margin: '0 2px', color: 'var(--text)' }}>
+              {eur(f.deficitCredit)}
+            </b>
+            <Info about={t('tax.creditAbout')}>{t('tax.creditInfo', params)}</Info>
+          </div>
+        )}
       </section>
 
       <section>
@@ -125,7 +136,7 @@ export default function Tax({ apt, year, taxpayerName, scope, onScope, go }: Pro
                     </span>
                   )}
                   <Info about={label}>
-                    {t('costs.categoryInfo', { fi: l.fi })} {t(`cat.${l.category}.hint`)}
+                    {t('costs.categoryInfo', { fi: l.fi })} {t(`cat.${l.category}.hint`, params)}
                   </Info>
                 </span>
                 <span className="num">{eur(l.amount)}</span>
@@ -136,14 +147,23 @@ export default function Tax({ apt, year, taxpayerName, scope, onScope, go }: Pro
             <div className="kv" key={d.kind}>
               <span>
                 {t(`tax.depr.${d.kind}`)}
-                <Info about={t(`tax.depr.${d.kind}`)}>{t(`tax.depr.${d.kind}Info`)}</Info>
+                <Info about={t(`tax.depr.${d.kind}`)}>{t(`tax.depr.${d.kind}Info`, params)}</Info>
               </span>
               <span className="num">{eur(d.amount)}</span>
             </div>
           ))}
+          {f.limitAdjustment > 0 && (
+            <div className="kv">
+              <span>
+                {t('tax.limited')}
+                <Info about={t('tax.limited')}>{t('tax.limitedInfo')}</Info>
+              </span>
+              <span className="num">{eur(-f.limitAdjustment)}</span>
+            </div>
+          )}
           <div className="kv sum">
             <span>{t('tax.deductibleTotal')}</span>
-            <span className="num">{eur(f.deductibleCosts + f.depreciation)}</span>
+            <span className="num">{eur(deductionsOf(f))}</span>
           </div>
         </div>
       </section>

@@ -50,8 +50,8 @@ the bottom navigation, four places and nothing hidden behind other buttons:
   **Rent | Costs** switch at the top. *Rent*: tap a month to log it: paid
   (amount and received date are pre-filled), vacant, or unpaid. *Costs*: the
   **+** button adds a cost: amount, a category chip, optional description, date
-  and receipt photo (camera or gallery). A basic improvement also asks how many
-  years to spread it over.
+  and receipt photo (camera or gallery). A basic improvement of a flat also asks
+  how many years to spread it over, and a trip by car asks for the kilometres.
 - **Tax** – a **This year | All years** switch at the top. *This year*: the
   figures by Finnish form category for your share (or the whole apartment), a
   checklist of anything to fix before filing — each item takes you to where it
@@ -60,8 +60,10 @@ the bottom navigation, four places and nothing hidden behind other buttons:
   years; tap a year to open its tax summary.
 - **Settings** – a short list of topics, each opening on its own with a ‹ back:
   *Owners* (shares, inviting co-owners, leaving), *Property details* (flat or
-  property, how the financing charge is booked, price, usual rent) and
-  *Building depreciation* (poisto, for a property). Changes to the last two are
+  property, how the financing charge is booked, price, usual rent, how much of
+  the home is let and whether the rent is below the usual, the furniture
+  deduction: actual cost or flat rate) and *Building depreciation* (poisto, for
+  a property: kind of building, purchase costs, where the count starts). Changes to the last two are
   kept while you move between topics and saved from one bar. Deleting the
   apartment is at the bottom of the list.
 
@@ -73,40 +75,87 @@ text: tap one to read it, tap anywhere else (or press Escape) to dismiss it.
 
 ## Tax logic (`lib/domain/tax.ts`)
 
-- Rent counts in the year it was **received** (cash basis).
-The rules follow vero.fi's guidance on deductions from rental income. Each
-apartment is either a **housing-company flat** (osakehuoneisto, form 7H — the
-default) or a **property of one's own** (kiinteistö, form 7K).
+Every number the law or the Tax Administration sets — the rates, limits, amounts
+per month and per kilometre — is in **one file, `lib/domain/taxRules.ts`**, by
+tax year. Nothing else writes one out: the calculations, the screens, the
+explanations behind the ⓘ icons and the PDF all read them from there. A new
+year's rules are one new entry in that file; where each figure comes from, and
+when it was last checked against vero.fi, Verohallinto's detailed guidance and
+Finlex, is in
+[`docs/finnish-rental-tax-rules.md`](docs/finnish-rental-tax-rules.md), and the
+`update-tax-rules` skill is the checklist for doing it.
 
+The rules follow vero.fi. Each apartment is either a **housing-company flat**
+(osakehuoneisto, form 7H — the default) or a **property of one's own**
+(kiinteistö, form 7K).
+
+- Rent counts in the year it was **received** (cash basis).
 - Deducted in the year paid: maintenance and water charges, annual repairs
   (vuosikorjaukset), insurance, letting agent fees and ads, travel, owner-paid
   utilities, property tax, other.
 - **Financing charge** (rahoitusvastike): deductible only if the housing company
   books it as income (a per-apartment setting, off by default). A funded charge
   is not deductible — it adds to the acquisition cost.
-- **Basic improvement** (perusparannus): deducted in equal parts over 10 years
-  from the year paid, or over fewer (1–10, chosen per cost) if it lasts less.
+- **Basic improvement** (perusparannus) of a **flat**: deducted in equal parts
+  from the year paid, over as many years as it lasts (3–10, chosen per cost). Of a
+  **property's building**: added to the building's cost and depreciated with it,
+  not spread.
 - **Furniture & appliances**: up to 1 200 €, or lasting under 3 years, deducted
-  at once; dearer items at 25 % of the remaining value a year.
+  at once; dearer items at 25 % of the remaining value a year, and the whole
+  remainder once 1 200 € or less is left. Alternatively a furnished flat takes
+  the **flat rate** per month it was let (40 € for a studio or one room, 60 €
+  for a larger flat), which covers all furniture.
+- **Travel** by one's own car: enter the kilometres and the amount is worked out
+  at the rate of the year (0.27 €/km; the higher figure quoted for 2026 is what
+  an employer may pay tax-free, not a landlord's deduction).
 - **Loan interest** lowers the net income but is declared with the interest
   deductions in OmaVero, not on the rental form; the PDF lists it separately.
-- **Building depreciation**: only for a property of one's own — reducing
-  balance (default 4 %, the maximum for a residential building) on the
-  building's part of the purchase price, less depreciation already taken. The
-  price of a housing-company flat is never depreciated.
+- **Building depreciation**: only for a property of one's own — the highest
+  rate for the kind of building (4 % residential or office, 7 % shop, warehouse,
+  factory, workshop; any lower rate may be claimed) on what is left of the
+  building's cost: its part of the price and purchase costs plus improvements,
+  less what was deducted before. It goes down year by year from the first year
+  counted (the year of the first rent logged unless set). The price of a
+  housing-company flat is never depreciated.
+- **Rent below the usual** (per apartment): costs and depreciation together may
+  not exceed the rent, no loss arises, and loan interest is not deductible.
+- **Only part of the home let** (per apartment, a percentage): the costs of the
+  whole home — charges, insurance, utilities, property tax, interest and
+  depreciation — count by that share; repairs, furniture, travel and agent fees
+  count in full.
+- A **rental loss** shows the **deficit credit** (alijäämähyvitys): 30 % of the
+  deficit, at most 1 400 € (more with minor children), taken off the tax on
+  earned income. It is the most it can be — other capital income and the tax
+  there is to take it from also matter.
 - Each owner's figures are the apartment's figures × their ownership %, rounded
   to the cent line by line.
 - Estimated tax: 30 % up to 30 000 €, 34 % above (capital income only), on your
-  share; in **All apartments**, on the total of all your shares.
+  share; in **All apartments**, on the total of all your shares. The same rates
+  apply to an owner who lives abroad; the 35 % source tax is on wages, not rent.
+
+### The declaration PDF
+
+The PDF is laid out like **form 7H** or **form 7K**: the same row numbers
+(2.1–2.5, or 2 and 3.1–3.5 with the depreciation tables 4.1–4.6), the form's own
+Finnish row names beneath each, and your share of each amount — so the numbers
+can be copied straight onto the form or into the matching OmaVero fields (OmaVero
+has no numbered forms). Under row 2.5 / 3.2 it lists what the amount is made of.
+It also gives the period the flat was let, the schedule of improvements being
+deducted over several years, and the inventory of furniture the law asks for. It
+stays in English with the Finnish names of the form's rows.
 
 ## Important
 
 - This does **not** file anything with Vero; there is no public submission API.
   Copy the figures into OmaVero or attach the PDF.
-- The rules are a simplified model. Not modelled: below-market rent (for
-  example to a relative, where deductions cannot exceed the rent), partly
-  private use, and a rental from abroad. Verify categories, depreciation and
-  rates on vero.fi (or with an accountant) before filing.
+- The rules are a simplified model. Not modelled: estates (dödsbo), tax
+  partnerships (a jointly owned farm or forest), rental from abroad, short-term
+  and sporadic rental of one's own home, a housing company that books only part
+  of a financing charge as income (log only that part), and the deficit credit's
+  dependence on your other capital income and on how much tax there is to take it
+  from. Verify categories, depreciation and rates on vero.fi (or with an
+  accountant) before filing; the rules and the places they are still uncertain
+  are in `docs/finnish-rental-tax-rules.md`.
 - No personal identity number is stored or needed.
 
 ## Running it
@@ -148,12 +197,13 @@ app/                     Next.js App Router: pages and API routes
   api/auth/[...path]/    Neon Auth's endpoints, proxied
 components/              the client UI (one client app + the sign-in page)
 lib/i18n/                the English, Swedish and Finnish strings
-lib/domain/              pure logic: types, tax, shares, request schemas
+lib/domain/              pure logic: types, tax, the rules by year (taxRules.ts), form figures, request schemas
 lib/portfolio.ts         every query; access is decided by apartment_owners in SQL
 lib/auth.ts              the auth seam — Neon Auth once configured, anonymous before
 lib/client/              browser-only: API client, PDF/zip generation
 db/migrations/           numbered .sql files, applied during the deploy's build
 tests/                   behaviour, against PGlite; plus the pipeline's own shape
 e2e/                     Playwright: the UI in a real browser, gated at 100 % coverage
+docs/                    the verified Finnish rental income rules and their sources
 AGENTS.md, .claude/      the workflow rules and skills agents follow here
 ```
