@@ -402,6 +402,22 @@ test.describe('the navigation drawer', () => {
     await expect(drawer(page).getByRole('separator')).toHaveCount(1);
   });
 
+  test.describe('in Swedish on a laptop', () => {
+    test.use({ locale: 'sv-SE', viewport: { width: 1280, height: 800 } });
+
+    test('keeps every label inside the bubble of its sidebar button', async ({ page, api }) => {
+      api.addApartment({ name: 'Flat' });
+      await page.goto('/');
+
+      const buttons = page.locator('nav.nav').getByRole('button');
+      await expect(buttons.nth(3)).toHaveText('Lägenhetsinställningar');
+      for (const button of await buttons.all()) {
+        const overflow = await button.evaluate((el) => el.scrollWidth - el.clientWidth);
+        expect(overflow, await button.innerText()).toBeLessThanOrEqual(0);
+      }
+    });
+  });
+
   test('offers only the account before the first apartment exists', async ({ page }) => {
     await page.goto('/');
     await expect(page.getByRole('heading', { name: 'Add your first apartment' })).toBeVisible();
