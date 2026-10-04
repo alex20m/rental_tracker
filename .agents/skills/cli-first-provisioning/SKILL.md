@@ -615,6 +615,15 @@ Four separate things control that, each reached differently:
   code itself right after `signUp.email` (sign-in of an unverified account
   already does). That also makes the flow identical with the webhook on or off.
 
+**Sign-up never says an address is taken.** With verification required, signing
+up again with an existing email returns the same 200 and `token: null` as a new
+one, with a made-up user (new `createdAt`, `role: null`), so the form cannot
+show "account already exists" — that is deliberate protection against probing
+for who has an account, and the fake user's quirks are not a contract to
+detect it by. What the UI can honestly do is say, on the code step, that
+someone who gets no code may already have an account and should go back and
+sign in. (Checked against the live service, October 2026.)
+
 How to tell which link is broken without Neon-side logs: subscribe temporarily
 to the blocking `user.before_create` event as well and sign up once. A request
 reaching your route proves the URL is reachable and DNS-pinning is not in the
