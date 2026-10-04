@@ -78,6 +78,17 @@ export async function fillCode(page: Page, code: string) {
  */
 export async function openInfo(page: Page, name: string) {
   const about = page.getByRole('button', { name });
-  await about.evaluate((el) => el.scrollIntoView({ block: 'center' }));
+  // Wait until the icon has stopped moving: a scroll event that lands after the tap closes the popover.
+  await about.evaluate(async (el) => {
+    el.scrollIntoView({ block: 'center' });
+    let still = 0;
+    let top = el.getBoundingClientRect().top;
+    while (still < 3) {
+      await new Promise((resolve) => requestAnimationFrame(resolve));
+      const now = el.getBoundingClientRect().top;
+      still = now === top ? still + 1 : 0;
+      top = now;
+    }
+  });
   await about.click();
 }

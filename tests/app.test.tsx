@@ -196,8 +196,16 @@ describe('moving between apartments', () => {
     expect(screen.getByRole('region', { name: 'Account' })).toBeTruthy();
   });
 
-  it('changes the tax year from a quiet list of the years that have data', async () => {
+  it('lists only the current year while nothing is logged for an earlier one', async () => {
     serve([view('a1', 'Alpha')]);
+    render(<RentalApp />);
+    await screen.findByRole('heading', { name: 'Alpha' });
+    const year = screen.getByLabelText('Tax year') as HTMLSelectElement;
+    expect([...year.options].map((o) => o.value)).toEqual(['2026']);
+  });
+
+  it('changes the tax year from a quiet list of the years that have data', async () => {
+    serve([view('a1', 'Alpha', { rents: [paid('2025-11'), ...view('a1', 'Alpha').rents] })]);
     render(<RentalApp />);
     await screen.findByRole('heading', { name: 'Alpha' });
     const year = screen.getByLabelText('Tax year') as HTMLSelectElement;
@@ -206,7 +214,7 @@ describe('moving between apartments', () => {
 
     await user().selectOptions(year, '2025');
     expect(year.value).toBe('2025');
-    expect(screen.getByTestId('net-income').textContent).toMatch(/0,00/);
+    expect(screen.getByTestId('net-income').textContent).toMatch(/700,00/);
   });
 });
 

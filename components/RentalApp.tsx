@@ -147,7 +147,7 @@ export default function RentalApp() {
   const apt = selectedId ? details[selectedId] : undefined;
 
   const years = useMemo(() => {
-    const set = new Set<number>([thisYear, thisYear - 1]);
+    const set = new Set<number>([thisYear]);
     for (const a of Object.values(details)) {
       a.rents.forEach((r) => set.add(Number(r.month.slice(0, 4))));
       a.costs.forEach((c) => set.add(Number(c.date.slice(0, 4))));
