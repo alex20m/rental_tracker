@@ -1,36 +1,17 @@
-"use client";
+'use client';
 
-import { useState } from "react";
-import type { ReactNode } from "react";
-import type { ApartmentSettings, ApartmentView } from "@/lib/domain/types";
-import {
-  BUILDING_KINDS,
-  FURNISHINGS,
-  PROPERTY_TYPES,
-  ROOM_CLASSES,
-} from "@/lib/domain/types";
-import { api } from "@/lib/client/api";
-import {
-  computeDepreciation,
-  depreciationStartYear,
-  eur,
-  pct,
-} from "@/lib/domain/tax";
-import { rulesFor } from "@/lib/domain/taxRules";
-import { ruleParams } from "@/lib/ui/ruleParams";
-import { isWholeApartment, shareTotal } from "@/lib/domain/shares";
-import {
-  Avatar,
-  ErrorNote,
-  Heading,
-  Icon,
-  Info,
-  Label,
-  Sheet,
-  Switch,
-} from "@/components/ui";
-import type { Account } from "@/components/RentalApp";
-import { useI18n } from "@/components/I18nProvider";
+import { useState } from 'react';
+import type { ReactNode } from 'react';
+import type { ApartmentSettings, ApartmentView } from '@/lib/domain/types';
+import { BUILDING_KINDS, FURNISHINGS, PROPERTY_TYPES, ROOM_CLASSES } from '@/lib/domain/types';
+import { api } from '@/lib/client/api';
+import { computeDepreciation, depreciationStartYear, eur, pct } from '@/lib/domain/tax';
+import { rulesFor } from '@/lib/domain/taxRules';
+import { ruleParams } from '@/lib/ui/ruleParams';
+import { isWholeApartment, shareTotal } from '@/lib/domain/shares';
+import { Avatar, ErrorNote, Heading, Icon, Info, Label, Sheet, Switch } from '@/components/ui';
+import type { Account } from '@/components/RentalApp';
+import { useI18n } from '@/components/I18nProvider';
 
 type Props = {
   apt: ApartmentView;
@@ -42,7 +23,7 @@ type Props = {
   onGone: () => Promise<void>;
 };
 
-type View = "owners" | "details" | "depreciation";
+type View = 'owners' | 'details' | 'depreciation';
 
 /**
  * Everything adjustable about this one apartment, as a short list: each row
@@ -50,113 +31,85 @@ type View = "owners" | "details" | "depreciation";
  * details and depreciation are kept while moving between topics and saved
  * together from one bar.
  */
-export default function SettingsPage({
-  apt,
-  year,
-  account,
-  onChanged,
-  onGone,
-}: Props) {
+export default function SettingsPage({ apt, year, account, onChanged, onGone }: Props) {
   const { t, lang } = useI18n();
   const [view, setView] = useState<View | null>(null);
   const [draft, setDraft] = useState<ApartmentSettings>(apt.settings);
-  const set = <K extends keyof ApartmentSettings>(
-    k: K,
-    v: ApartmentSettings[K],
-  ) => setDraft({ ...draft, [k]: v });
+  // Functional, so two changes made in one handler (a kind of building and its rate) both stick.
+  const set = <K extends keyof ApartmentSettings>(k: K, v: ApartmentSettings[K]) => setDraft((d) => ({ ...d, [k]: v }));
 
   const back = () => setView(null);
   const saved = apt.settings;
   const alone = apt.owners.length === 1;
 
-  if (view === "owners") {
+  if (view === 'owners') {
     return (
       <>
         <SubPage
-          title={t("settings.owners")}
+          title={t('settings.owners')}
           onBack={back}
-          info={
-            <Info about={t("settings.ownersAbout")}>
-              {t("settings.ownersInfo")}
-            </Info>
-          }
+          info={<Info about={t('settings.ownersAbout')}>{t('settings.ownersInfo')}</Info>}
         />
-        <Owners
-          key={`owners-${apt.id}`}
-          apt={apt}
-          account={account}
-          onChanged={onChanged}
-          onGone={onGone}
-        />
+        <Owners key={`owners-${apt.id}`} apt={apt} account={account} onChanged={onChanged} onGone={onGone} />
       </>
     );
   }
-  if (view === "details" || view === "depreciation") {
+  if (view === 'details' || view === 'depreciation') {
     return (
       <>
-        {view === "details" ? (
-          <SubPage title={t("settings.details")} onBack={back} />
+        {view === 'details' ? (
+          <SubPage title={t('settings.details')} onBack={back} />
         ) : (
           <SubPage
-            title={t("settings.depreciation")}
+            title={t('settings.depreciation')}
             onBack={back}
             info={
-              <Info about={t("settings.depreciationAbout")}>
-                {t("settings.depreciationInfo", ruleParams(year, lang))}
+              <Info about={t('settings.depreciationAbout')}>
+                {t('settings.depreciationInfo', ruleParams(year, lang))}
               </Info>
             }
           />
         )}
-        {view === "details" ? (
+        {view === 'details' ? (
           <DetailsFields s={draft} set={set} year={year} />
         ) : (
           <DepreciationFields s={draft} set={set} year={year} apt={apt} />
         )}
-        <SaveBar
-          apt={apt}
-          draft={draft}
-          onDiscard={() => setDraft(saved)}
-          onChanged={onChanged}
-        />
+        <SaveBar apt={apt} draft={draft} onDiscard={() => setDraft(saved)} onChanged={onChanged} />
       </>
     );
   }
 
   const owners = alone
-    ? t("settings.ownersSolo")
-    : t("settings.ownersShared", {
+    ? t('settings.ownersSolo')
+    : t('settings.ownersShared', {
         n: apt.owners.length + apt.invites.length,
         pct: pct(apt.mySharePct),
       });
   const depreciation =
-    saved.propertyType === "share"
-      ? t("settings.depreciationNA")
+    saved.propertyType === 'share'
+      ? t('settings.depreciationNA')
       : saved.useDepreciation
-        ? t("settings.depreciationOn", { rate: saved.depreciationRate })
-        : t("settings.depreciationOff");
+        ? t('settings.depreciationOn', { rate: saved.depreciationRate })
+        : t('settings.depreciationOff');
 
   return (
     <>
       <div className="pagehead">
-        <h1>{t("settings.title")}</h1>
+        <h1>{t('settings.title')}</h1>
       </div>
       <div className="card">
         <ul className="list">
           {(
             [
-              ["owners", Icon.users, t("settings.owners"), owners],
+              ['owners', Icon.users, t('settings.owners'), owners],
               [
-                "details",
+                'details',
                 Icon.building,
-                t("settings.details"),
+                t('settings.details'),
                 saved.address || t(`settings.type.${saved.propertyType}`),
               ],
-              [
-                "depreciation",
-                Icon.stack,
-                t("settings.depreciation"),
-                depreciation,
-              ],
+              ['depreciation', Icon.stack, t('settings.depreciation'), depreciation],
             ] as const
           ).map(([id, icon, title, summary]) => (
             <li key={id}>
@@ -173,34 +126,17 @@ export default function SettingsPage({
         </ul>
       </div>
       <DangerZone apt={apt} account={account} onGone={onGone} />
-      <SaveBar
-        apt={apt}
-        draft={draft}
-        onDiscard={() => setDraft(saved)}
-        onChanged={onChanged}
-      />
+      <SaveBar apt={apt} draft={draft} onDiscard={() => setDraft(saved)} onChanged={onChanged} />
     </>
   );
 }
 
 /** A topic's header: a way back to the list, its title, and optionally an explanation. */
-function SubPage({
-  title,
-  onBack,
-  info,
-}: {
-  title: string;
-  onBack: () => void;
-  info?: ReactNode;
-}) {
+function SubPage({ title, onBack, info }: { title: string; onBack: () => void; info?: ReactNode }) {
   const { t } = useI18n();
   return (
     <div className="pagehead">
-      <button
-        className="iconbtn"
-        aria-label={t("settings.back")}
-        onClick={onBack}
-      >
+      <button className="iconbtn" aria-label={t('settings.back')} onClick={onBack}>
         {Icon.left}
       </button>
       <h1>{title}</h1>
@@ -211,10 +147,10 @@ function SubPage({
 
 function useAction(onDone: () => Promise<void>) {
   const [busy, setBusy] = useState(false);
-  const [error, setError] = useState("");
+  const [error, setError] = useState('');
   const run = async (action: () => Promise<unknown>) => {
     setBusy(true);
-    setError("");
+    setError('');
     try {
       await action();
       await onDone();
@@ -283,7 +219,7 @@ function Owners({ apt, account, onChanged, onGone }: Omit<Props, 'year'>) {
       {!editing && rows.length > 1 && (
         <div className="heading end">
           <button className="link" onClick={startEditing}>
-            {t("settings.editShares")}
+            {t('settings.editShares')}
           </button>
         </div>
       )}
@@ -296,24 +232,22 @@ function Owners({ apt, account, onChanged, onGone }: Omit<Props, 'year'>) {
                 {r.label}
                 {r.owner && r.owner === me && (
                   <span className="chip" style={{ marginLeft: 6 }}>
-                    {t("settings.you")}
+                    {t('settings.you')}
                   </span>
                 )}
                 {r.invite && (
                   <>
                     <span className="chip warn" style={{ marginLeft: 6 }}>
-                      {t("settings.invited")}
+                      {t('settings.invited')}
                     </span>
-                    <Info about={t("settings.invitesAbout")}>
-                      {t("settings.invitesInfo")}
-                    </Info>
+                    <Info about={t('settings.invitesAbout')}>{t('settings.invitesInfo')}</Info>
                   </>
                 )}
               </div>
             </div>
             {editing ? (
               <input
-                aria-label={t("settings.shareFor", { who: r.label })}
+                aria-label={t('settings.shareFor', { who: r.label })}
                 className="pct-input"
                 type="number"
                 inputMode="decimal"
@@ -321,9 +255,7 @@ function Owners({ apt, account, onChanged, onGone }: Omit<Props, 'year'>) {
                 min="0"
                 max="100"
                 value={draft[r.key]!}
-                onChange={(e) =>
-                  setDraft({ ...draft, [r.key]: e.target.value })
-                }
+                onChange={(e) => setDraft({ ...draft, [r.key]: e.target.value })}
               />
             ) : (
               <span className="pct">{pct(r.sharePct)}</span>
@@ -332,65 +264,47 @@ function Owners({ apt, account, onChanged, onGone }: Omit<Props, 'year'>) {
               <button
                 className="btn danger small"
                 disabled={busy}
-                onClick={() =>
-                  run(() => api.revokeInvite(apt.id, r.invite!.id))
-                }
+                onClick={() => run(() => api.revokeInvite(apt.id, r.invite!.id))}
               >
-                {t("settings.withdraw")}
+                {t('settings.withdraw')}
               </button>
             )}
-            {!editing &&
-              r.owner &&
-              r.owner !== me &&
-              r.owner.sharePct === 0 && (
-                <button
-                  className="btn danger small"
-                  disabled={busy}
-                  onClick={() =>
-                    run(() => api.removeOwner(apt.id, r.owner!.userId))
-                  }
-                >
-                  {t("common.remove")}
-                </button>
-              )}
+            {!editing && r.owner && r.owner !== me && r.owner.sharePct === 0 && (
+              <button
+                className="btn danger small"
+                disabled={busy}
+                onClick={() => run(() => api.removeOwner(apt.id, r.owner!.userId))}
+              >
+                {t('common.remove')}
+              </button>
+            )}
           </li>
         ))}
       </ul>
 
       {editing ? (
         <>
-          <p
-            className={"msg " + (isWholeApartment(draftValues) ? "" : "neg")}
-            style={{ marginTop: 10 }}
-          >
-            {t("settings.total", { pct: pct(total) })}
-            {isWholeApartment(draftValues) ? "" : t("settings.mustBe100")}
+          <p className={'msg ' + (isWholeApartment(draftValues) ? '' : 'neg')} style={{ marginTop: 10 }}>
+            {t('settings.total', { pct: pct(total) })}
+            {isWholeApartment(draftValues) ? '' : t('settings.mustBe100')}
           </p>
           <div className="sheet-foot">
-            <button
-              className="btn"
-              onClick={() => setEditing(false)}
-              disabled={busy}
-            >
-              {t("common.cancel")}
+            <button className="btn" onClick={() => setEditing(false)} disabled={busy}>
+              {t('common.cancel')}
             </button>
-            <button
-              className="btn primary"
-              onClick={saveShares}
-              disabled={busy || !isWholeApartment(draftValues)}
-            >
-              {t("settings.saveShares")}
+            <button className="btn primary" onClick={saveShares} disabled={busy || !isWholeApartment(draftValues)}>
+              {t('settings.saveShares')}
             </button>
           </div>
         </>
       ) : (
         <button
           className="row-btn"
-          style={{ borderBottom: 0, color: "var(--brand)", fontWeight: 600 }}
+          style={{ borderBottom: 0, color: 'var(--brand)', fontWeight: 600 }}
           onClick={() => setInviting(true)}
         >
           {Icon.plus}
-          <div className="main">{t("settings.invite")}</div>
+          <div className="main">{t('settings.invite')}</div>
         </button>
       )}
 
@@ -401,9 +315,7 @@ function Owners({ apt, account, onChanged, onGone }: Omit<Props, 'year'>) {
             disabled={busy || me.sharePct !== 0}
             style={me.sharePct !== 0 ? { opacity: 0.5 } : undefined}
             onClick={() => {
-              if (
-                confirm(t("settings.leaveConfirm", { name: apt.settings.name }))
-              ) {
+              if (confirm(t('settings.leaveConfirm', { name: apt.settings.name }))) {
                 void run(async () => {
                   await api.removeOwner(apt.id, me.userId);
                   await onGone();
@@ -411,25 +323,14 @@ function Owners({ apt, account, onChanged, onGone }: Omit<Props, 'year'>) {
               }
             }}
           >
-            {t("settings.leave")}
+            {t('settings.leave')}
           </button>
-          {me.sharePct !== 0 && (
-            <Info about={t("settings.leavingAbout")}>
-              {t("settings.leavingInfo")}
-            </Info>
-          )}
+          {me.sharePct !== 0 && <Info about={t('settings.leavingAbout')}>{t('settings.leavingInfo')}</Info>}
         </div>
       )}
       <ErrorNote message={error} />
 
-      {inviting && (
-        <InviteSheet
-          apt={apt}
-          me={me.sharePct}
-          onClose={() => setInviting(false)}
-          onChanged={onChanged}
-        />
-      )}
+      {inviting && <InviteSheet apt={apt} me={me.sharePct} onClose={() => setInviting(false)} onChanged={onChanged} />}
     </section>
   );
 }
@@ -446,8 +347,8 @@ function InviteSheet({
   onChanged: () => Promise<void>;
 }) {
   const { t } = useI18n();
-  const [email, setEmail] = useState("");
-  const [share, setShare] = useState("");
+  const [email, setEmail] = useState('');
+  const [share, setShare] = useState('');
   const { busy, error, run } = useAction(onChanged);
 
   const send = () =>
@@ -457,7 +358,7 @@ function InviteSheet({
     });
 
   return (
-    <Sheet title={t("settings.invite")} onClose={onClose}>
+    <Sheet title={t('settings.invite')} onClose={onClose}>
       <form
         onSubmit={(e) => {
           e.preventDefault();
@@ -465,7 +366,7 @@ function InviteSheet({
         }}
       >
         <label htmlFor="invite-email" style={{ marginTop: 6 }}>
-          {t("settings.theirEmail")}
+          {t('settings.theirEmail')}
         </label>
         <input
           id="invite-email"
@@ -477,13 +378,9 @@ function InviteSheet({
         />
         <Label
           htmlFor="invite-share"
-          info={
-            <Info about={t("settings.theirShareAbout")}>
-              {t("settings.theirShareInfo", { pct: pct(me) })}
-            </Info>
-          }
+          info={<Info about={t('settings.theirShareAbout')}>{t('settings.theirShareInfo', { pct: pct(me) })}</Info>}
         >
-          {t("settings.theirShare")}
+          {t('settings.theirShare')}
         </Label>
         <input
           id="invite-share"
@@ -492,17 +389,14 @@ function InviteSheet({
           step="0.01"
           min="0.01"
           max={me}
-          placeholder={t("settings.sharePlaceholder")}
+          placeholder={t('settings.sharePlaceholder')}
           value={share}
           onChange={(e) => setShare(e.target.value)}
         />
         <ErrorNote message={error} />
         <div className="sheet-foot">
-          <button
-            className="btn primary"
-            disabled={busy || !email.trim() || !(Number(share) > 0)}
-          >
-            {busy ? t("settings.sharing") : t("settings.shareApartment")}
+          <button className="btn primary" disabled={busy || !email.trim() || !(Number(share) > 0)}>
+            {busy ? t('settings.sharing') : t('settings.shareApartment')}
           </button>
         </div>
       </form>
@@ -512,21 +406,14 @@ function InviteSheet({
 
 type FieldsProps = {
   s: ApartmentSettings;
-  set: <K extends keyof ApartmentSettings>(
-    k: K,
-    v: ApartmentSettings[K],
-  ) => void;
+  set: <K extends keyof ApartmentSettings>(k: K, v: ApartmentSettings[K]) => void;
   year: number;
 };
 
-const numberField =
-  (set: FieldsProps["set"], k: keyof ApartmentSettings) =>
-  (e: React.ChangeEvent<HTMLInputElement>) =>
-    set(k, (Number(e.target.value) || 0) as never);
-const textField =
-  (set: FieldsProps["set"], k: keyof ApartmentSettings) =>
-  (e: React.ChangeEvent<HTMLInputElement>) =>
-    set(k, e.target.value as never);
+const numberField = (set: FieldsProps['set'], k: keyof ApartmentSettings) => (e: React.ChangeEvent<HTMLInputElement>) =>
+  set(k, (Number(e.target.value) || 0) as never);
+const textField = (set: FieldsProps['set'], k: keyof ApartmentSettings) => (e: React.ChangeEvent<HTMLInputElement>) =>
+  set(k, e.target.value as never);
 
 function DetailsFields({ s, set, year }: FieldsProps) {
   const { t, lang } = useI18n();
@@ -537,35 +424,17 @@ function DetailsFields({ s, set, year }: FieldsProps) {
     <>
       <section>
         <label htmlFor="s-name" style={{ marginTop: 6 }}>
-          {t("settings.name")}
+          {t('settings.name')}
         </label>
-        <input id="s-name" value={s.name} onChange={text("name")} />
-        <label htmlFor="s-address">{t("settings.address")}</label>
-        <input id="s-address" value={s.address} onChange={text("address")} />
-        <Label
-          htmlFor="s-company"
-          info={
-            <Info about={t("settings.companyAbout")}>
-              {t("settings.companyInfo")}
-            </Info>
-          }
-        >
-          {t("settings.company")}
+        <input id="s-name" value={s.name} onChange={text('name')} />
+        <label htmlFor="s-address">{t('settings.address')}</label>
+        <input id="s-address" value={s.address} onChange={text('address')} />
+        <Label htmlFor="s-company" info={<Info about={t('settings.companyAbout')}>{t('settings.companyInfo')}</Info>}>
+          {t('settings.company')}
         </Label>
-        <input
-          id="s-company"
-          value={s.housingCompany}
-          onChange={text("housingCompany")}
-        />
-        <Label
-          id="s-type"
-          info={
-            <Info about={t("settings.propertyTypeAbout")}>
-              {t("settings.propertyTypeInfo")}
-            </Info>
-          }
-        >
-          {t("settings.propertyType")}
+        <input id="s-company" value={s.housingCompany} onChange={text('housingCompany')} />
+        <Label id="s-type" info={<Info about={t('settings.propertyTypeAbout')}>{t('settings.propertyTypeInfo')}</Info>}>
+          {t('settings.propertyType')}
         </Label>
         <div className="chips" role="radiogroup" aria-labelledby="s-type">
           {PROPERTY_TYPES.map((k) => (
@@ -575,99 +444,67 @@ function DetailsFields({ s, set, year }: FieldsProps) {
               role="radio"
               aria-checked={s.propertyType === k}
               className="choice"
-              onClick={() => set("propertyType", k)}
+              onClick={() => set('propertyType', k)}
             >
               {t(`settings.type.${k}`)}
             </button>
           ))}
         </div>
-        {s.propertyType === "share" && (
+        {s.propertyType === 'share' && (
           <>
-            <Label
-              info={
-                <Info about={t("settings.financingAbout")}>
-                  {t("settings.financingInfo")}
-                </Info>
-              }
-            >
-              {t("cat.financing_charge.label")}
+            <Label info={<Info about={t('settings.financingAbout')}>{t('settings.financingInfo')}</Info>}>
+              {t('cat.financing_charge.label')}
             </Label>
-            <Switch
-              checked={s.financingChargeDeductible}
-              onChange={(v) => set("financingChargeDeductible", v)}
-            >
-              {t("settings.financingDeductible")}
+            <Switch checked={s.financingChargeDeductible} onChange={(v) => set('financingChargeDeductible', v)}>
+              {t('settings.financingDeductible')}
             </Switch>
           </>
         )}
         <div className="cols">
           <div>
-            <label htmlFor="s-date">{t("settings.purchaseDate")}</label>
-            <input
-              id="s-date"
-              type="date"
-              value={s.purchaseDate}
-              onChange={text("purchaseDate")}
-            />
+            <label htmlFor="s-date">{t('settings.purchaseDate')}</label>
+            <input id="s-date" type="date" value={s.purchaseDate} onChange={text('purchaseDate')} />
           </div>
           <div>
             <Label
               htmlFor="s-price"
-              info={
-                <Info about={t("settings.purchasePriceAbout")}>
-                  {t("settings.purchasePriceInfo")}
-                </Info>
-              }
+              info={<Info about={t('settings.purchasePriceAbout')}>{t('settings.purchasePriceInfo')}</Info>}
             >
-              {t("settings.purchasePrice")}
+              {t('settings.purchasePrice')}
             </Label>
             <input
               id="s-price"
               type="number"
               inputMode="decimal"
-              value={s.purchasePrice || ""}
-              onChange={num("purchasePrice")}
+              value={s.purchasePrice || ''}
+              onChange={num('purchasePrice')}
             />
           </div>
         </div>
         <Label
           htmlFor="s-rent"
-          info={
-            <Info about={t("settings.monthlyRentAbout")}>
-              {t("settings.monthlyRentInfo")}
-            </Info>
-          }
+          info={<Info about={t('settings.monthlyRentAbout')}>{t('settings.monthlyRentInfo')}</Info>}
         >
-          {t("settings.monthlyRent")}
+          {t('settings.monthlyRent')}
         </Label>
         <input
           id="s-rent"
           type="number"
           inputMode="decimal"
-          value={s.monthlyRent || ""}
-          onChange={num("monthlyRent")}
+          value={s.monthlyRent || ''}
+          onChange={num('monthlyRent')}
         />
       </section>
 
       <section>
-        <Heading
-          info={
-            <Info about={t("settings.lettingAbout")}>
-              {t("settings.lettingInfo")}
-            </Info>
-          }
-        >
-          {t("settings.letting")}
+        <Heading info={<Info about={t('settings.lettingAbout')}>{t('settings.lettingInfo')}</Info>}>
+          {t('settings.letting')}
         </Heading>
         <Label
           htmlFor="s-let-share"
-          info={
-            <Info about={t("settings.letShareAbout")}>
-              {t("settings.letShareInfo")}
-            </Info>
-          }
+          info={<Info about={t('settings.letShareAbout')}>{t('settings.letShareInfo')}</Info>}
         >
-          {t("settings.letShare")}
+          {t('settings.letShare')}
         </Label>
         <input
           id="s-let-share"
@@ -675,29 +512,20 @@ function DetailsFields({ s, set, year }: FieldsProps) {
           inputMode="decimal"
           min="1"
           max="100"
-          value={s.letSharePct || ""}
-          onChange={num("letSharePct")}
+          value={s.letSharePct || ''}
+          onChange={num('letSharePct')}
         />
         <div style={{ marginTop: 12 }}>
-          <Switch
-            checked={s.belowMarketRent}
-            onChange={(v) => set("belowMarketRent", v)}
-          >
-            {t("settings.belowMarket")}
+          <Switch checked={s.belowMarketRent} onChange={(v) => set('belowMarketRent', v)}>
+            {t('settings.belowMarket')}
           </Switch>
-          <Info about={t("settings.belowMarketAbout")}>
-            {t("settings.belowMarketInfo")}
-          </Info>
+          <Info about={t('settings.belowMarketAbout')}>{t('settings.belowMarketInfo')}</Info>
         </div>
         <Label
           id="s-furnishing"
-          info={
-            <Info about={t("settings.furnishingAbout")}>
-              {t("settings.furnishingInfo", params)}
-            </Info>
-          }
+          info={<Info about={t('settings.furnishingAbout')}>{t('settings.furnishingInfo', params)}</Info>}
         >
-          {t("settings.furnishing")}
+          {t('settings.furnishing')}
         </Label>
         <div className="chips" role="radiogroup" aria-labelledby="s-furnishing">
           {FURNISHINGS.map((k) => (
@@ -707,20 +535,16 @@ function DetailsFields({ s, set, year }: FieldsProps) {
               role="radio"
               aria-checked={s.furnishing === k}
               className="choice"
-              onClick={() => set("furnishing", k)}
+              onClick={() => set('furnishing', k)}
             >
               {t(`settings.furnishing.${k}`)}
             </button>
           ))}
         </div>
-        {s.furnishing === "flat" && (
+        {s.furnishing === 'flat' && (
           <>
-            <Label id="s-room-class">{t("settings.roomClass")}</Label>
-            <div
-              className="chips"
-              role="radiogroup"
-              aria-labelledby="s-room-class"
-            >
+            <Label id="s-room-class">{t('settings.roomClass')}</Label>
+            <div className="chips" role="radiogroup" aria-labelledby="s-room-class">
               {ROOM_CLASSES.map((k) => (
                 <button
                   key={k}
@@ -728,7 +552,7 @@ function DetailsFields({ s, set, year }: FieldsProps) {
                   role="radio"
                   aria-checked={s.roomClass === k}
                   className="choice"
-                  onClick={() => set("roomClass", k)}
+                  onClick={() => set('roomClass', k)}
                 >
                   {t(`settings.roomClass.${k}`)}
                 </button>
@@ -741,39 +565,27 @@ function DetailsFields({ s, set, year }: FieldsProps) {
   );
 }
 
-function DepreciationFields({
-  s,
-  set,
-  year,
-  apt,
-}: FieldsProps & { apt: ApartmentView }) {
+function DepreciationFields({ s, set, year, apt }: FieldsProps & { apt: ApartmentView }) {
   const { t, lang } = useI18n();
   const num = (k: keyof ApartmentSettings) => numberField(set, k);
   const rules = rulesFor(year);
   const params = ruleParams(year, lang);
   return (
     <section>
-      {s.propertyType === "share" ? (
-        <p className="msg">{t("settings.noBuildingDepreciation")}</p>
+      {s.propertyType === 'share' ? (
+        <p className="msg">{t('settings.noBuildingDepreciation')}</p>
       ) : (
-        <Switch
-          checked={s.useDepreciation}
-          onChange={(v) => set("useDepreciation", v)}
-        >
-          {t("settings.useDepreciation")}
+        <Switch checked={s.useDepreciation} onChange={(v) => set('useDepreciation', v)}>
+          {t('settings.useDepreciation')}
         </Switch>
       )}
-      {s.propertyType === "property" && s.useDepreciation && (
+      {s.propertyType === 'property' && s.useDepreciation && (
         <>
           <Label
             id="s-kind"
-            info={
-              <Info about={t("settings.buildingKindAbout")}>
-                {t("settings.buildingKindInfo", params)}
-              </Info>
-            }
+            info={<Info about={t('settings.buildingKindAbout')}>{t('settings.buildingKindInfo', params)}</Info>}
           >
-            {t("settings.buildingKind")}
+            {t('settings.buildingKind')}
           </Label>
           <div className="chips" role="radiogroup" aria-labelledby="s-kind">
             {BUILDING_KINDS.map((k) => (
@@ -784,8 +596,8 @@ function DepreciationFields({
                 aria-checked={s.buildingKind === k}
                 className="choice"
                 onClick={() => {
-                  set("buildingKind", k);
-                  set("depreciationRate", rules.buildingRate[k]);
+                  set('buildingKind', k);
+                  set('depreciationRate', rules.buildingRate[k]);
                 }}
               >
                 {t(`settings.buildingKind.${k}`)}
@@ -796,34 +608,30 @@ function DepreciationFields({
             <div>
               <Label
                 htmlFor="s-share"
-                info={
-                  <Info about={t("settings.buildingShareAbout")}>
-                    {t("settings.buildingShareInfo")}
-                  </Info>
-                }
+                info={<Info about={t('settings.buildingShareAbout')}>{t('settings.buildingShareInfo')}</Info>}
               >
-                {t("settings.buildingShare")}
+                {t('settings.buildingShare')}
               </Label>
               <input
                 id="s-share"
                 type="number"
                 inputMode="decimal"
                 value={s.buildingSharePct}
-                onChange={num("buildingSharePct")}
+                onChange={num('buildingSharePct')}
               />
             </div>
             <div>
               <Label
                 htmlFor="s-rate"
                 info={
-                  <Info about={t("settings.rateAbout")}>
-                    {t("settings.rateInfo", {
+                  <Info about={t('settings.rateAbout')}>
+                    {t('settings.rateInfo', {
                       max: rules.buildingRate[s.buildingKind],
                     })}
                   </Info>
                 }
               >
-                {t("settings.rate")}
+                {t('settings.rate')}
               </Label>
               <input
                 id="s-rate"
@@ -832,38 +640,30 @@ function DepreciationFields({
                 step="0.1"
                 max={rules.buildingRate[s.buildingKind]}
                 value={s.depreciationRate}
-                onChange={num("depreciationRate")}
+                onChange={num('depreciationRate')}
               />
             </div>
           </div>
           <Label
             htmlFor="s-costs"
-            info={
-              <Info about={t("settings.purchaseCostsAbout")}>
-                {t("settings.purchaseCostsInfo")}
-              </Info>
-            }
+            info={<Info about={t('settings.purchaseCostsAbout')}>{t('settings.purchaseCostsInfo')}</Info>}
           >
-            {t("settings.purchaseCosts")}
+            {t('settings.purchaseCosts')}
           </Label>
           <input
             id="s-costs"
             type="number"
             inputMode="decimal"
-            value={s.purchaseCosts || ""}
-            onChange={num("purchaseCosts")}
+            value={s.purchaseCosts || ''}
+            onChange={num('purchaseCosts')}
           />
           <div className="cols">
             <div>
               <Label
                 htmlFor="s-from"
-                info={
-                  <Info about={t("settings.fromYearAbout")}>
-                    {t("settings.fromYearInfo")}
-                  </Info>
-                }
+                info={<Info about={t('settings.fromYearAbout')}>{t('settings.fromYearInfo')}</Info>}
               >
-                {t("settings.fromYear")}
+                {t('settings.fromYear')}
               </Label>
               <input
                 id="s-from"
@@ -871,45 +671,31 @@ function DepreciationFields({
                 inputMode="numeric"
                 step="1"
                 placeholder={String(
-                  depreciationStartYear(
-                    { ...apt, settings: { ...s, depreciationFromYear: 0 } },
-                    year,
-                  ),
+                  depreciationStartYear({ ...apt, settings: { ...s, depreciationFromYear: 0 } }, year),
                 )}
-                value={s.depreciationFromYear || ""}
-                onChange={num("depreciationFromYear")}
+                value={s.depreciationFromYear || ''}
+                onChange={num('depreciationFromYear')}
               />
             </div>
             <div>
-              <Label
-                htmlFor="s-prior"
-                info={
-                  <Info about={t("settings.priorAbout")}>
-                    {t("settings.priorInfo")}
-                  </Info>
-                }
-              >
-                {t("settings.prior")}
+              <Label htmlFor="s-prior" info={<Info about={t('settings.priorAbout')}>{t('settings.priorInfo')}</Info>}>
+                {t('settings.prior')}
               </Label>
               <input
                 id="s-prior"
                 type="number"
                 inputMode="decimal"
-                value={s.depreciationPrior || ""}
-                onChange={num("depreciationPrior")}
+                value={s.depreciationPrior || ''}
+                onChange={num('depreciationPrior')}
               />
             </div>
           </div>
           <div className="kv" style={{ marginTop: 8, borderBottom: 0 }}>
             <span>
-              {t("settings.thisYear")}
-              <Info about={t("settings.thisYearAbout")}>
-                {t("settings.thisYearInfo")}
-              </Info>
+              {t('settings.thisYear')}
+              <Info about={t('settings.thisYearAbout')}>{t('settings.thisYearInfo')}</Info>
             </span>
-            <b className="num">
-              {eur(computeDepreciation({ ...apt, settings: s }, year))}
-            </b>
+            <b className="num">{eur(computeDepreciation({ ...apt, settings: s }, year))}</b>
           </div>
         </>
       )}
@@ -940,14 +726,14 @@ function SaveBar({
         <div className="savebar">
           <div>
             <button className="btn" onClick={onDiscard} disabled={busy}>
-              {t("settings.discard")}
+              {t('settings.discard')}
             </button>
             <button
               className="btn primary"
               onClick={() => run(() => api.updateSettings(apt.id, draft))}
               disabled={busy || !draft.name.trim()}
             >
-              {busy ? t("common.saving") : t("settings.saveChanges")}
+              {busy ? t('common.saving') : t('settings.saveChanges')}
             </button>
           </div>
         </div>
@@ -956,19 +742,10 @@ function SaveBar({
   );
 }
 
-function DangerZone({
-  apt,
-  account,
-  onGone,
-}: {
-  apt: ApartmentView;
-  account: Account;
-  onGone: () => Promise<void>;
-}) {
+function DangerZone({ apt, account, onGone }: { apt: ApartmentView; account: Account; onGone: () => Promise<void> }) {
   const { t } = useI18n();
   const { busy, error, run } = useAction(onGone);
-  const alone =
-    apt.owners.length === 1 && apt.owners[0]!.userId === account.userId;
+  const alone = apt.owners.length === 1 && apt.owners[0]!.userId === account.userId;
   if (!alone) return null;
   return (
     <section>
@@ -976,16 +753,14 @@ function DangerZone({
         className="link danger"
         disabled={busy}
         onClick={() => {
-          if (
-            confirm(t("settings.deleteConfirm", { name: apt.settings.name }))
-          ) {
+          if (confirm(t('settings.deleteConfirm', { name: apt.settings.name }))) {
             void run(() => api.deleteApartment(apt.id));
           }
         }}
       >
-        {t("settings.delete")}
+        {t('settings.delete')}
       </button>
-      <Info about={t("settings.deleteAbout")}>{t("settings.deleteInfo")}</Info>
+      <Info about={t('settings.deleteAbout')}>{t('settings.deleteInfo')}</Info>
       <ErrorNote message={error} />
     </section>
   );
