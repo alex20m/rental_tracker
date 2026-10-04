@@ -19,10 +19,11 @@ test.describe('interface language', () => {
     const account = await openAccount(page);
     await account.getByRole('radiogroup', { name: 'Language' }).getByRole('radio', { name: 'Svenska' }).click();
 
-    await expect(page.getByRole('dialog', { name: 'Meny' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Kontoinställningar', exact: true })).toBeVisible();
     await expect(page.locator('html')).toHaveAttribute('lang', 'sv');
 
     await page.reload();
+    await page.getByRole('button', { name: 'Meny', exact: true }).click();
     await expect(page.getByRole('navigation').getByRole('button', { name: 'Hem', exact: true })).toBeVisible();
   });
 
@@ -65,6 +66,6 @@ test.describe('interface language', () => {
     const menu = await openMenu(page);
     await menu.getByRole('radio', { name: 'Suomi' }).click();
 
-    await expect(page.getByRole('heading', { name: 'Lisää ensimmäinen asuntosi' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Tilin asetukset', exact: true })).toBeVisible();
   });
 });

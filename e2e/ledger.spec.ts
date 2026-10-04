@@ -6,6 +6,21 @@ import { alert, openInfo, section } from './nav';
 const photo = `${__dirname}/receipt.jpg`;
 
 test.describe('the rent log', () => {
+  test('closes a form with Escape, and only with Escape, handing focus back to where it was opened', async ({ page, api }) => {
+    api.addApartment({ name: 'Flat' });
+    await page.goto('/');
+    await section(page, 'Rent');
+    const january = page.locator('.month').first();
+    await january.click();
+    const sheet = page.getByRole('dialog', { name: `January ${YEAR}` });
+
+    await page.keyboard.press('a');
+    await expect(sheet).toBeVisible();
+    await page.keyboard.press('Escape');
+    await expect(sheet).toHaveCount(0);
+    await expect(january).toBeFocused();
+  });
+
   test('logs a paid month with the usual rent pre-filled, and a note', async ({ page, api }) => {
     const apt = api.addApartment({ name: 'Flat', monthlyRent: 750 });
     await page.goto('/');

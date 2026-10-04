@@ -55,21 +55,18 @@ h1, h2, h3, p { margin: 0; }
 svg.i { width: 20px; height: 20px; flex: none; }
 
 /* ── Layout ── */
-.app { max-width: 560px; margin: 0 auto; min-height: 100dvh; padding: 0 16px calc(96px + env(safe-area-inset-bottom)); }
+.app { max-width: 560px; margin: 0 auto; min-height: 100dvh; padding: 0 16px calc(88px + env(safe-area-inset-bottom)); }
 .page { display: flex; flex-direction: column; gap: 24px; padding-top: 8px; }
-.topbar { position: sticky; top: 0; z-index: 8; display: flex; align-items: center; gap: 6px; margin: 0 -16px; padding: calc(8px + env(safe-area-inset-top)) 16px 8px; min-height: 60px; background: color-mix(in srgb, var(--bg) 90%, transparent); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); }
+.topbar { position: sticky; top: 0; z-index: 8; display: flex; align-items: center; gap: 4px; margin: 0 -16px; padding: calc(8px + env(safe-area-inset-top)) 16px 8px; min-height: 60px; background: color-mix(in srgb, var(--bg) 90%, transparent); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); }
 .topbar .grow { flex: 1; min-width: 0; }
 .brand { font-size: 20px; font-weight: 700; letter-spacing: -0.02em; }
 
 .aptname { font-size: 20px; font-weight: 650; letter-spacing: -0.02em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.stepper { display: inline-flex; align-items: center; font-size: 16px; font-weight: 650; font-variant-numeric: tabular-nums; background: var(--brand-soft); color: var(--brand); border-radius: 99px; }
-.stepper .iconbtn { color: inherit; }
-.stepper .iconbtn:disabled { opacity: 0.3; }
-.stepper svg.i { width: 20px; height: 20px; }
+.year { appearance: none; -webkit-appearance: none; width: auto; min-height: 44px; padding: 0 30px 0 12px; background-color: transparent; border: 0; border-radius: 99px; color: var(--text-2); font-size: 16px; font-weight: 600; font-variant-numeric: tabular-nums; background-image: linear-gradient(45deg, transparent 50%, currentColor 50%), linear-gradient(135deg, currentColor 50%, transparent 50%); background-position: calc(100% - 17px) 55%, calc(100% - 12px) 55%; background-size: 5px 5px; background-repeat: no-repeat; }
+.year:hover { background-color: var(--tint); }
 .iconbtn { display: inline-grid; place-items: center; min-width: 44px; min-height: 44px; background: none; border: 0; padding: 0; color: var(--text-2); border-radius: 99px; }
 .iconbtn:hover:not(:disabled) { color: var(--text); }
 .avatar { display: inline-grid; place-items: center; width: 40px; height: 40px; flex: none; border-radius: 99px; background: var(--brand-soft); color: var(--brand); font-weight: 700; font-size: 14px; }
-.menubtn { display: inline-grid; place-items: center; min-width: 48px; min-height: 48px; padding: 0; background: none; border: 0; border-radius: 99px; }
 
 /* ── Type ── */
 .heading { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 8px; }
@@ -127,13 +124,15 @@ svg.i { width: 20px; height: 20px; flex: none; }
 .chip { display: inline-block; padding: 2px 10px; border-radius: 99px; font-size: 12px; font-weight: 600; white-space: nowrap; background: var(--brand-soft); color: var(--brand); vertical-align: 1px; }
 .chip.warn { background: var(--warn-soft); color: var(--warn); }
 
-/* ── Bottom navigation ── */
-.nav { position: fixed; left: 0; right: 0; bottom: 0; z-index: 10; display: flex; justify-content: center; background: var(--card); border-top: 1px solid var(--line); padding-bottom: env(safe-area-inset-bottom); }
-.nav-inner { display: flex; width: 100%; max-width: 560px; padding: 8px 8px 10px; gap: 4px; }
-.nav button { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; min-height: 56px; padding: 0 4px; background: none; border: 0; border-radius: 12px; color: var(--muted); font-size: 12px; font-weight: 550; }
-.nav button svg.i { box-sizing: content-box; width: 24px; height: 24px; padding: 4px 20px; border-radius: 99px; transition: background-color 0.12s; }
-.nav button[aria-current='page'] { color: var(--text); font-weight: 650; }
-.nav button[aria-current='page'] svg.i { background: var(--brand-soft); color: var(--brand); }
+/* ── Navigation: a drawer on phones, a sidebar from 960px ── */
+.nav { position: fixed; top: 0; bottom: 0; left: 0; z-index: 30; display: flex; flex-direction: column; gap: 4px; width: min(300px, 86vw); padding: calc(8px + env(safe-area-inset-top)) 12px calc(16px + env(safe-area-inset-bottom)); overflow-y: auto; background: var(--card); border-right: 1px solid var(--line); border-radius: 0 20px 20px 0; transform: translateX(-100%); visibility: hidden; transition: transform 0.2s ease-out, visibility 0s linear 0.2s; }
+.nav[data-open='true'] { transform: none; visibility: visible; transition: transform 0.2s ease-out; box-shadow: 0 20px 60px rgba(0, 0, 0, 0.35); }
+.scrim { position: fixed; inset: 0; z-index: 25; background: rgba(8, 12, 14, 0.5); animation: fade 0.15s ease-out; }
+.nav-brand { padding: 20px 16px 12px; font-size: 20px; font-weight: 700; letter-spacing: -0.02em; color: var(--brand); }
+.nav-group { padding: 12px 16px 4px; font-size: 13px; font-weight: 650; letter-spacing: 0.02em; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.nav-sep { height: 1px; margin: 8px 16px; background: var(--line); }
+.nav button { display: flex; align-items: center; gap: 12px; min-height: 48px; padding: 0 16px; background: none; border: 0; border-radius: 99px; color: var(--text-2); font-size: 15px; font-weight: 550; text-align: left; white-space: nowrap; }
+.nav button[aria-current='page'] { background: var(--brand-soft); color: var(--brand); font-weight: 650; }
 
 /* ── Buttons & fields ── */
 .btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 48px; border: 1px solid var(--line); background: var(--card); border-radius: 99px; padding: 10px 22px; font-weight: 600; }
@@ -143,7 +142,7 @@ svg.i { width: 20px; height: 20px; flex: none; }
 .btn.block { width: 100%; }
 .btn.small { min-height: 40px; padding: 6px 16px; font-size: 14px; }
 .btn:disabled { opacity: 0.45; }
-.fab { position: fixed; right: max(16px, calc(50% - 264px)); bottom: calc(92px + env(safe-area-inset-bottom)); z-index: 9; width: 56px; height: 56px; min-height: 0; padding: 0; border-radius: 16px; box-shadow: var(--shadow); }
+.fab { position: fixed; right: max(16px, calc(50% - 264px)); bottom: calc(20px + env(safe-area-inset-bottom)); z-index: 9; width: 56px; height: 56px; min-height: 0; padding: 0; border-radius: 16px; box-shadow: var(--shadow); }
 .fab svg.i { width: 26px; height: 26px; }
 
 input, select, textarea { background: var(--card); border: 1px solid var(--line); border-radius: 12px; min-height: 48px; padding: 11px 14px; width: 100%; min-width: 0; }
@@ -246,8 +245,9 @@ label { display: flex; align-items: center; min-height: 24px; font-size: 14px; f
 /* ── Settings ── */
 .pagehead { display: flex; align-items: center; gap: 4px; }
 .pagehead:has(.iconbtn) { margin-left: -8px; }
+.stack { display: flex; flex-direction: column; gap: 24px; }
 .pagehead h1 { font-size: 24px; font-weight: 650; letter-spacing: -0.02em; }
-.savebar { position: fixed; left: 0; right: 0; bottom: calc(92px + env(safe-area-inset-bottom)); z-index: 9; display: flex; justify-content: center; padding: 0 16px; pointer-events: none; }
+.savebar { position: fixed; left: 0; right: 0; bottom: calc(16px + env(safe-area-inset-bottom)); z-index: 9; display: flex; justify-content: center; padding: 0 16px; pointer-events: none; }
 .savebar > div { pointer-events: auto; display: flex; gap: 10px; width: 100%; max-width: 520px; padding: 10px; background: var(--card); border: 1px solid var(--line); border-radius: 99px; box-shadow: var(--shadow); }
 .savebar .btn { flex: 1; }
 .owner .pct { font-weight: 650; font-variant-numeric: tabular-nums; }
@@ -260,10 +260,8 @@ label { display: flex; align-items: center; min-height: 24px; font-size: 14px; f
 .welcome .lead { color: var(--text-2); }
 
 /* ── Responsive ──
-   Phone first: one column with a bottom bar. Wider screens get a
+   Phone first: one column and a drawer opened from the top bar. Wider screens get a
    roomier column and centred dialogs; from 960px a sidebar and two-column pages. */
-.nav-brand, .side-brand { display: none; }
-.nav button span { white-space: nowrap; }
 .page { min-width: 0; }
 .btn, .month, .iconbtn, .choice { transition: background-color 0.12s, border-color 0.12s, opacity 0.12s; }
 @media (hover: hover) {
@@ -272,7 +270,7 @@ label { display: flex; align-items: center; min-height: 24px; font-size: 14px; f
   .iconbtn:hover:not(:disabled) { background: var(--tint); }
   .month:hover { border-color: var(--brand); }
   .choice:hover { border-color: var(--brand); }
-  .nav button:hover { color: var(--text); }
+  .nav button:not([aria-current]):hover { background: var(--tint); }
 }
 
 /* Phones: 16px inputs keep iOS Safari from zooming on focus. Tap targets are 48px everywhere. */
@@ -286,12 +284,8 @@ label { display: flex; align-items: center; min-height: 24px; font-size: 14px; f
   .topbar { margin: 0 -12px; padding-left: 12px; padding-right: 12px; }
   .stat .v { font-size: 16px; }
   .month { padding: 8px; }
-  .nav button { font-size: 11px; }
-  .nav button svg.i { padding: 4px 14px; }
 }
 @media (max-height: 480px) and (orientation: landscape) and (max-width: 959px) {
-  .nav button { flex-direction: row; justify-content: center; gap: 6px; padding: 6px 4px; min-height: 48px; }
-  .nav button svg.i { padding: 4px 8px; }
   .sheet { max-height: calc(100dvh - 16px); }
   .sheet-bg { padding: 8px; }
 }
@@ -313,24 +307,23 @@ label { display: flex; align-items: center; min-height: 24px; font-size: 14px; f
   .shell > .topbar, .shell > .page, .shell > .alert { max-width: 1040px; margin-left: auto; margin-right: auto; }
   .shell > .topbar { padding: 24px 0 16px; }
 
-  .nav, .side-brand { display: flex; position: fixed; top: 0; bottom: 0; left: 0; width: 232px; background: var(--card); border-right: 1px solid var(--line); }
-  .nav { flex-direction: column; justify-content: flex-start; padding: 0 12px; overflow-y: auto; border-top: 0; }
-  .nav-brand, .side-brand { display: block; padding: 28px 12px 20px; font-size: 18px; font-weight: 700; letter-spacing: -0.02em; color: var(--brand); }
-  .side-brand { padding: 28px 24px 20px; }
-  .nav-inner { flex-direction: column; max-width: none; padding: 0; gap: 4px; }
-  .nav button { flex: none; flex-direction: row; justify-content: flex-start; gap: 12px; min-height: 48px; padding: 0 16px; border-radius: 99px; font-size: 15px; }
-  .nav button svg.i { width: 22px; height: 22px; padding: 0; background: none; }
-  .nav button[aria-current='page'] { background: var(--brand-soft); color: var(--brand); }
-  .nav button[aria-current='page'] svg.i { background: none; }
+  /* The drawer becomes a permanent sidebar, and ☰ and the scrim are no longer needed. */
+  .nav { width: 232px; padding: 0 12px; transform: none; visibility: visible; border-radius: 0; box-shadow: none; transition: none; }
+  .menu-toggle, .scrim { display: none; }
+  .shell > .topbar { gap: 12px; }
+  .topbar .brand { visibility: hidden; } /* the sidebar already names the app */
 
   /* Columns, not a grid: sections of unequal height pack without gaps. */
-  .page-home, .page-portfolio, .page-tax, .page-settings { display: block; column-count: 2; column-gap: 56px; }
-  .page-home > *, .page-portfolio > *, .page-tax > *, .page-settings > * { break-inside: avoid; margin-bottom: 28px; }
+  .page-home, .page-portfolio, .page-tax { display: block; column-count: 2; column-gap: 56px; }
+  .page-home > *, .page-portfolio > *, .page-tax > * { break-inside: avoid; margin-bottom: 28px; }
+  /* Pages that are one short list read better narrow than stretched across the screen. */
+  .shell > .page-settings, .shell > .page-account { max-width: 640px; margin-left: 0; }
   .page > .notice, .page > .allset, .page > .btn.block, .page > .empty, .page > .pagehead, .page > .seg { column-span: all; }
   .months { grid-template-columns: repeat(6, 1fr); }
   .bars { height: 150px; gap: 10px; }
   .fab { right: 40px; bottom: 32px; }
   .savebar { left: 232px; bottom: 24px; }
+  .shell > .welcome { margin: 0 auto; }
 }
 
 /* Sign-in: a single narrow card, never stretched to the page width. */

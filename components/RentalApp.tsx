@@ -1,12 +1,12 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { api, ApiError } from '@/lib/client/api';
 import type { ApartmentView, PortfolioItem } from '@/lib/domain/types';
-import { Avatar, ErrorNote, Icon, Segmented, YearStepper } from '@/components/ui';
+import { ErrorNote, Icon, Segmented, YearSelect } from '@/components/ui';
 import { useI18n } from '@/components/I18nProvider';
 import AddApartment from '@/components/AddApartment';
-import MenuSheet from '@/components/MenuSheet';
+import AppNav, { NAV_ID } from '@/components/AppNav';
 import Portfolio from '@/components/pages/Portfolio';
 import Home from '@/components/pages/Home';
 import RentLog from '@/components/pages/RentLog';
@@ -14,24 +14,14 @@ import Costs from '@/components/pages/Costs';
 import Tax from '@/components/pages/Tax';
 import History from '@/components/pages/History';
 import SettingsPage from '@/components/pages/SettingsPage';
+import AccountPage from '@/components/pages/AccountPage';
 
-export type Tab = 'home' | 'rent' | 'costs' | 'tax' | 'history' | 'settings' | 'portfolio';
+export type Tab = 'home' | 'rent' | 'costs' | 'tax' | 'history' | 'settings' | 'portfolio' | 'account';
 /** Where a tap can lead: a page. */
 export type Destination = Tab;
 export type Go = (to: Destination) => void;
 /** Whose figures to show for an apartment owned by several people. */
 export type Scope = 'mine' | 'whole';
-
-/**
- * The bottom navigation: four places. Rent and costs share one tab, and so do
- * this year's tax and all years; a switch at the top of each tells them apart.
- */
-const SECTIONS = [
-  { id: 'home', icon: Icon.home },
-  { id: 'ledger', icon: Icon.rent },
-  { id: 'tax', icon: Icon.tax },
-  { id: 'settings', icon: Icon.gear },
-] as const;
 
 const SELECTED_KEY = 'rental-tracker:selected-apartment';
 
@@ -79,7 +69,6 @@ export type Account = {
   emailVerified: boolean;
 };
 
-type SheetName = 'menu' | null;
 type LedgerView = 'rent' | 'costs';
 type TaxView = 'tax' | 'history';
 
@@ -94,7 +83,8 @@ export default function RentalApp() {
   const [tab, setTab] = useState<Tab>('home');
   const [year, setYear] = useState(thisYear);
   const [scope, setScope] = useState<Scope>('mine');
-  const [sheet, setSheet] = useState<SheetName>(null);
+  const [navOpen, setNavOpen] = useState(false);
+  const toggle = useRef<HTMLButtonElement>(null);
   const [error, setError] = useState('');
 
   // A 401 has already sent the browser to /sign-in (lib/client/api.ts).
@@ -169,11 +159,22 @@ export default function RentalApp() {
     setTab(to);
   };
 
+  /** Close the drawer and put focus back on the ☰ that opened it. */
+  const closeNav = () => {
+    setNavOpen(false);
+    toggle.current!.focus();
+  };
+
+  /** A place picked in the drawer. */
+  const goFromNav: Go = (to) => {
+    go(to);
+    closeNav();
+  };
+
   /** Open an apartment from the portfolio, at its Home. */
   const open = (id: string) => {
     setSelectedId(id);
     setTab('home');
-    setSheet(null);
   };
 
   if (!account || !items) {
@@ -185,72 +186,55 @@ export default function RentalApp() {
     );
   }
 
-  const menuButton = (
-    <button className="menubtn" aria-label={t('nav.menu')} onClick={() => setSheet('menu')}>
-      <Avatar text={account.name} />
-    </button>
-  );
-
-  const menuSheet = sheet === 'menu' && <MenuSheet account={account} onClose={() => setSheet(null)} />;
-
-  // Nothing to show yet: one field, one button. The menu sheet is a sibling of
-  // the layout, at the same place in both branches, so it stays mounted when
-  // the first apartment turns this screen into the full app underneath it.
-  if (items.length === 0) {
-    return (
-      <>
-        <div className="app">
-          <header className="topbar">
-            <div className="grow brand">{t('app.name')}</div>
-            {menuButton}
-          </header>
-          <ErrorNote message={error} />
-          <div className="welcome">
-            <div className="logo">{Icon.building}</div>
-            <div>
-              <h1>{t('welcome.title')}</h1>
-              <p className="lead" style={{ marginTop: 8 }}>
-                {t('welcome.lead')}
-              </p>
-            </div>
-            <AddApartment
-              autoFocus
-              onCreated={async (id) => {
-                await loadPortfolio();
-                open(id);
-              }}
-            />
-          </div>
-        </div>
-        {menuSheet}
-      </>
-    );
-  }
-
+  const onAccount = tab === 'account';
   const inPortfolio = tab === 'portfolio';
+  const welcome = items.length === 0 && !onAccount;
+  const inApartment = !welcome && !inPortfolio && !onAccount;
   const aptName = apt?.settings.name ?? items.find((i) => i.id === selectedId)?.name ?? '…';
+  // The year matters wherever there are figures for it; settings, history and the account have none.
+  const showYear = !welcome && tab !== 'settings' && tab !== 'history' && !onAccount;
 
   return (
-    <>
-      <div className="app shell">
-        <header className="topbar">
-          {inPortfolio ? (
-            <div className="grow brand">{t('app.name')}</div>
-          ) : (
-            <>
-              <button className="iconbtn" aria-label={t('nav.allApartments')} onClick={() => setTab('portfolio')}>
-                {Icon.left}
-              </button>
-              <h1 className="grow aptname">{aptName}</h1>
-            </>
-          )}
-          {tab !== 'settings' && tab !== 'history' && <YearStepper year={year} years={years} onChange={setYear} />}
-          {inPortfolio && menuButton}
-        </header>
+    <div className="app shell">
+      <header className="topbar">
+        <button
+          ref={toggle}
+          className="iconbtn menu-toggle"
+          aria-label={t('nav.menu')}
+          aria-expanded={navOpen}
+          aria-controls={NAV_ID}
+          onClick={() => setNavOpen((o) => !o)}
+        >
+          {Icon.menu}
+        </button>
+        {inApartment ? <h1 className="grow aptname">{aptName}</h1> : <div className="grow brand">{t('app.name')}</div>}
+        {showYear && <YearSelect year={year} years={years} onChange={setYear} />}
+      </header>
 
-        <ErrorNote message={error} />
+      <ErrorNote message={error} />
 
+      {welcome && (
+        <div className="welcome">
+          <div className="logo">{Icon.building}</div>
+          <div>
+            <h1>{t('welcome.title')}</h1>
+            <p className="lead" style={{ marginTop: 8 }}>
+              {t('welcome.lead')}
+            </p>
+          </div>
+          <AddApartment
+            autoFocus
+            onCreated={async (id) => {
+              await loadPortfolio();
+              open(id);
+            }}
+          />
+        </div>
+      )}
+
+      {!welcome && (
         <main className={'page page-' + tab}>
+          {onAccount && <AccountPage account={account} />}
           {inPortfolio && (
             <Portfolio
               items={items}
@@ -264,7 +248,7 @@ export default function RentalApp() {
               }}
             />
           )}
-          {!inPortfolio && !apt && (
+          {inApartment && !apt && (
             <div className="empty">
               {t('nav.loadFailed')}
               <button className="btn" onClick={() => selectedId && void loadApartment(selectedId)}>
@@ -328,35 +312,16 @@ export default function RentalApp() {
             />
           )}
         </main>
+      )}
 
-        {inPortfolio && <div className="side-brand">{t('app.name')}</div>}
-        {!inPortfolio && (
-          <nav className="nav" aria-label={t('nav.sections')}>
-            <div className="nav-brand">{t('app.name')}</div>
-            <div className="nav-inner">
-              {SECTIONS.map((s) => {
-                const current =
-                  s.id === 'ledger'
-                    ? tab === 'rent' || tab === 'costs'
-                    : s.id === 'tax'
-                      ? tab === 'tax' || tab === 'history'
-                      : tab === s.id;
-                return (
-                  <button
-                    key={s.id}
-                    aria-current={current ? 'page' : undefined}
-                    onClick={() => setTab(s.id === 'ledger' ? 'rent' : s.id)}
-                  >
-                    {s.icon}
-                    <span>{t(`nav.${s.id}`)}</span>
-                  </button>
-                );
-              })}
-            </div>
-          </nav>
-        )}
-      </div>
-      {menuSheet}
-    </>
+      <AppNav
+        open={navOpen}
+        onClose={closeNav}
+        tab={tab}
+        onGo={goFromNav}
+        apartment={items.length > 0 && selectedId ? aptName : null}
+        hasApartments={items.length > 0}
+      />
+    </div>
   );
 }
