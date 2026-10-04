@@ -283,8 +283,8 @@ export class FakeApi {
     }
     if (endpoint === 'sign-up/email' && method === 'POST') {
       if (this.accounts.has(email)) return json(route, { code: 'USER_ALREADY_EXISTS', message: 'User already exists' }, 422);
+      // Sends no code: the project has send-on-sign-up off (SETUP.md), the app asks for it.
       this.accounts.set(email, { password: b.password!, verified: false, userId: ME.userId });
-      this.sentCodes.push(email);
       return json(route, { token: null, user: { id: ME.userId, email } });
     }
     if (endpoint === 'email-otp/send-verification-otp' && method === 'POST') {

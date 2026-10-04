@@ -144,10 +144,18 @@ npx neonctl neon-auth config email-password update --project-id "$PROJECT_ID" --
   --enabled true \
   --require-email-verification true \
   --email-verification-method otp \
-  --send-verification-email-on-sign-up true \
+  --send-verification-email-on-sign-up false \
   --auto-sign-in-after-verification true
 npx neonctl neon-auth config email-password get --project-id "$PROJECT_ID" --branch main
 ```
+
+Neon is told **not** to send the code on sign-up because the app asks for it
+itself, right after `signUp.email` (`components/SignIn.tsx`). With the
+`send.otp` webhook below switched on, Neon's sign-up path neither sends its own
+email nor calls the webhook — sign-up succeeds and no code exists. An explicit
+`emailOtp.sendVerificationOtp` does call the webhook, so asking for it from the
+app works whether the webhook is on or off. Deploy the app change **before**
+turning this off, or sign-ups in between get no code.
 
 Trust the deployed URL (otherwise emails point at localhost):
 
@@ -174,25 +182,23 @@ npx neonctl neon-auth config email-provider get --project-id "$PROJECT_ID" --bra
 This is per Neon branch, so repeat it for any branch whose sign-up emails should
 carry the app's name (`--type shared` switches back to Neon's sender).
 
-Send the sign-up codes from your own address instead of Neon's shared
-`auth@mail.myneon.app`, through Resend's SMTP. Use the same verified domain as
-`MAIL_FROM` — Resend verifies each domain separately, so a sender on a
-subdomain (`rent.example.com`) is rejected unless that subdomain is verified
-too (`550 This API key is not authorized to send emails from ...`). The SMTP
-password is the Resend API key:
+The sender must be on the **exact domain verified in Resend** — a subdomain such
+as `rent.example.com` is refused (`550 This API key is not authorized to send
+emails from ...`) unless that subdomain is verified too, and `MAIL_FROM` should
+use the same address. `update` accepts a config that cannot send, which breaks
+every sign-up, so always run the `test` and revert with `--type shared` if it
+fails.
+
+The header of Neon's emails shows the **Application Name**, which defaults to the
+Neon project name (here `rental_tracker_db`). No `neonctl` flag sets it; the
+API does, with the Neon API key from `.env.local`:
 
 ```bash
-npx neonctl neon-auth config email-provider update --project-id "$PROJECT_ID" --branch main \
-  --type standard --host smtp.resend.com --port 465 --username resend \
-  --password "$RESEND_API_KEY" \
-  --sender-email rentals@your-domain --sender-name "Rental Tracker"
-npx neonctl neon-auth config email-provider test --project-id "$PROJECT_ID" --branch main \
-  --recipient-email <an address you can read>
+BRANCH_ID=$(npx neonctl neon-auth status --project-id "$PROJECT_ID" --branch main --output json | jq -r .branch_id)
+curl -s -X PATCH "https://console.neon.tech/api/v2/projects/$PROJECT_ID/branches/$BRANCH_ID/auth/config" \
+  -H "Authorization: Bearer $NEON_API_KEY" -H 'Content-Type: application/json' \
+  -d '{"name":"Rental Tracker"}'
 ```
-
-Run the `test` — a saved config that cannot send breaks every sign-up, and
-`update` accepts it without checking. If it fails, put the provider back with
-`--type shared`.
 
 Neon's own code email has fixed wording that the CLI cannot change. To control
 it, subscribe the app to the `send.otp` webhook: Neon then skips its email and
@@ -213,6 +219,12 @@ auth base URL's JWKS, so it needs `NEON_AUTH_BASE_URL` and the Resend variables
 and nothing else. It answers 500 when it cannot send, so a misconfigured Resend
 shows up as a failed sign-up rather than a silent one. To go back to Neon's
 email: `webhook update --enabled false`.
+
+Neon has no event log, test event or redelivery for webhooks, so Vercel's request
+log for the route is the only evidence of what arrived: a 401 means the
+signature did not verify, a 400 means it did but the event is not one the route
+handles, a 500 means Resend refused. The URL must be HTTPS on a hostname with
+no redirects, and a failing endpoint rejects the sign-up (fail-closed).
 
 Set the two variables. The cookie secret is yours to generate and must be
 **at least 32 characters** or the SDK throws:

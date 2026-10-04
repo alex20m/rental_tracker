@@ -492,7 +492,9 @@ Ten things that bite:
   into your own page and verified with a plain POST through the auth proxy,
   so it never meets the redirect trap in the next item:
   `neonctl neon-auth config email-password update --project-id <id> --branch <branch> --require-email-verification true --email-verification-method otp --send-verification-email-on-sign-up true`
-  (flags read from `neonctl@7.0.6`'s `--help`). On the client that is
+  (flags read from `neonctl@7.0.6`'s `--help`; `--send-verification-email-on-sign-up`
+  has to become `false` if you later take over the email with a webhook — see
+  "Changing what Neon Auth's emails say"). On the client that is
   `authClient.emailOtp.verifyEmail({ email, otp })`, with
   `emailOtp.sendVerificationOtp({ email, type: 'email-verification' })` to
   resend — `emailOTPClient` is among the plugins `@neondatabase/auth@0.5.0-beta`
@@ -570,6 +572,67 @@ npx neonctl neon-auth oauth-provider add --project-id <id>       # google, githu
 Read the variable names back from `status --output json` rather than assuming
 them. They are what the app imports, and a wrong guess builds clean and fails at
 sign-in.
+
+### Changing what Neon Auth's emails say and who sends them
+
+Out of the box the sign-up code arrives from Neon's shared sender, under the
+**Neon project name** (for example `myapp_db`) — not something to show a user.
+Four separate things control that, each reached differently:
+
+- **The name in the header (Application Name).** Defaults to the Neon project
+  name. There is no `neonctl` flag for it; it is `PATCH
+  https://console.neon.tech/api/v2/projects/<project>/branches/<branch-id>/auth/config`
+  with `{"name": "My App"}` and a Neon API key (`neonctl neon-auth status
+  --output json` shows the current `name` and the `branch_id`). Per branch.
+- **The sender address.** `neonctl neon-auth config email-provider update --type
+  standard --host … --port … --username … --password … --sender-email …
+  --sender-name …`. Resend works as the SMTP provider: `smtp.resend.com`, port
+  465, username the literal `resend`, password the API key. Two traps: Resend
+  verifies **each domain separately**, so a sender on a subdomain is refused
+  (`550 … not authorized to send emails from …`) unless that exact subdomain is
+  verified; and `update` **accepts a config that cannot send** without
+  complaint, which then breaks every sign-up. Always follow it with
+  `email-provider test --recipient-email …`, and revert with `--type shared`.
+- **The body.** Not configurable through the CLI, and dashboard templates were
+  listed as not yet available. The only handle is the `send.otp` /
+  `send.magic_link` **webhook**: subscribe and Neon skips its own email and
+  posts the code to your URL for you to send. Neon signs it with Ed25519
+  (`X-Neon-Signature` detached JWS, key from `<auth base url>/.well-known/jwks.json`,
+  matched by `X-Neon-Signature-Kid`); the signed bytes are
+  `base64url(timestamp + "." + base64url(rawBody))` — the body is encoded
+  **twice**, so rebuilding it the obvious way fails every request. The URL must
+  be HTTPS on a hostname, with no redirects, and delivery is **fail-closed**:
+  if the endpoint fails, the sign-up is rejected. There are no event logs, test
+  events or redelivery on Neon's side, so your own request log is the only
+  evidence of what arrived.
+- **Whether Neon sends the code on sign-up at all.**
+  `--send-verification-email-on-sign-up`. This is the trap: **with the webhook
+  subscribed, the sign-up path neither calls the webhook nor sends Neon's own
+  email.** Sign-up returns 200 with `token: null` and no code exists anywhere;
+  nothing errors. An explicit `emailOtp.sendVerificationOtp({ email, type:
+  'email-verification' })` *does* fire `send.otp`. So: set
+  `--send-verification-email-on-sign-up false` and have the client request the
+  code itself right after `signUp.email` (sign-in of an unverified account
+  already does). That also makes the flow identical with the webhook on or off.
+
+How to tell which link is broken without Neon-side logs: subscribe temporarily
+to the blocking `user.before_create` event as well and sign up once. A request
+reaching your route proves the URL is reachable and DNS-pinning is not in the
+way; a 400 (not 401) from your route proves the signature check passed against
+Neon's real signature, since the 401 comes first. Then probe the explicit
+`email-otp/send-verification-otp` endpoint. The tempting wrong conclusion from
+"no request in the logs" is that the URL, the signature or the config is wrong;
+here none of them were.
+
+Order, because the failure is silent or total: deploy the route first; only
+then enable the webhook; deploy the client change that requests the code
+before turning off send-on-sign-up (in between, users would get two codes or
+none). Roll back with `config webhook update --enabled false`.
+
+Verified against `neonctl@8.0.7` and `@neondatabase/auth@0.5.0-beta`
+(October 2026). Unsure whether the webhook skipping the sign-up send is
+intended or a beta bug — if it is fixed, the explicit request becomes redundant
+but harmless, so recheck before removing it.
 
 ### When to use something else
 
