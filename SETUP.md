@@ -174,6 +174,26 @@ npx neonctl neon-auth config email-provider get --project-id "$PROJECT_ID" --bra
 This is per Neon branch, so repeat it for any branch whose sign-up emails should
 carry the app's name (`--type shared` switches back to Neon's sender).
 
+Send the sign-up codes from your own address instead of Neon's shared
+`auth@mail.myneon.app`, through Resend's SMTP. Use the same verified domain as
+`MAIL_FROM` — Resend verifies each domain separately, so a sender on a
+subdomain (`rent.example.com`) is rejected unless that subdomain is verified
+too (`550 This API key is not authorized to send emails from ...`). The SMTP
+password is the Resend API key:
+
+```bash
+npx neonctl neon-auth config email-provider update --project-id "$PROJECT_ID" --branch main \
+  --type standard --host smtp.resend.com --port 465 --username resend \
+  --password "$RESEND_API_KEY" \
+  --sender-email rentals@your-domain --sender-name "Rental Tracker"
+npx neonctl neon-auth config email-provider test --project-id "$PROJECT_ID" --branch main \
+  --recipient-email <an address you can read>
+```
+
+Run the `test` — a saved config that cannot send breaks every sign-up, and
+`update` accepts it without checking. If it fails, put the provider back with
+`--type shared`.
+
 Set the two variables. The cookie secret is yours to generate and must be
 **at least 32 characters** or the SDK throws:
 
@@ -256,7 +276,8 @@ place.
 - [ ] Vercel project created and linked
 - [ ] Neon added through Vercel; `DATABASE_URL` visible in `vercel env ls`
 - [ ] `npm run migrate` applied; the seven tables exist
-- [ ] Neon Auth enabled, email verification required with OTP, deployed URL trusted
+- [ ] Neon Auth enabled, email verification required with OTP, deployed URL trusted,
+      custom SMTP sender tested (`email-provider test`)
 - [ ] Neon Auth sends from the app's own sender (`email-provider test` arrived from it)
 - [ ] `NEON_AUTH_BASE_URL`, `NEON_AUTH_COOKIE_SECRET`, `APP_URL` set for production, preview, development
 - [ ] Git integration connected with automatic deploys on
