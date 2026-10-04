@@ -96,7 +96,7 @@ export const fi: Record<MessageKey, string> = {
   'home.yieldAbout': 'tuotto',
   'home.yieldInfo': 'Bruttotuotto on saadut vuokrat jaettuna ostohinnalla{net}.{addPrice}',
   'home.yieldNet': '; vähennyskelpoisten kulujen jälkeen se on {n} %',
-  'home.yieldAddPrice': ' Lisää ostohinta asunnon asetuksissa, niin näet sen.',
+  'home.yieldAddPrice': ' Lisää ostohinta asunnon asetusten kohdassa Lisäasetukset, niin näet sen.',
   'home.recent': 'Viimeisimmät',
   'home.recentRent': 'Vuokra {month}',
   'home.recentVacant': 'Tyhjillään {month}',
@@ -333,7 +333,7 @@ export const fi: Record<MessageKey, string> = {
 
   // — checklist —
   'check.price.ok': 'Ostohinta annettu',
-  'check.price.todo': 'Lisää ostohinta (poistoja ja tuottoa varten)',
+  'check.price.todo': 'Lisää ostohinta (rakennuksen poistoa varten)',
   'check.logged.ok': 'Jokainen kuukausi on kirjattu',
   'check.logged.todo.one': '{n} kuukausi ei ole vielä kirjattu',
   'check.logged.todo.other': '{n} kuukautta ei ole vielä kirjattu',
@@ -414,7 +414,7 @@ export const fi: Record<MessageKey, string> = {
   'settings.purchaseDate': 'Ostopäivä',
   'settings.purchasePrice': 'Ostohinta (€)',
   'settings.purchasePriceAbout': 'ostohinta',
-  'settings.purchasePriceInfo': 'Koko asunnon hinta, ei vain sinun osuutesi.',
+  'settings.purchasePriceInfo': 'Koko asunnon hinta, ei vain sinun osuutesi. Siitä saadaan tuotto Koti-näkymään ja se on kiinteistön rakennuksen poiston perusta; asunto-osakeyhtiön asuntoa ei koskaan poisteta.',
   'settings.monthlyRent': 'Tavallinen kuukausivuokra (€)',
   'settings.monthlyRentAbout': 'tavallinen vuokra',
   'settings.monthlyRentInfo': 'Täyttää summan valmiiksi, kun kirjaat kuukauden vuokrakirjanpitoon.',

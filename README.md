@@ -96,7 +96,9 @@ The rules follow vero.fi. Each apartment is either a **housing-company flat**
 The app is built for the standard case: one person letting out a whole flat in a
 housing company. Everything that case does not need is under **Advanced** in the
 apartment's settings: the kind of property, only part of the home let, a rent
-below the usual, the flat-rate furniture deduction and building depreciation. The
+below the usual, the flat-rate furniture deduction, building depreciation and the
+purchase price and date (a flat's price is never depreciated; it only gives the
+yield on Home, and the checklist asks for it only for a depreciated property). The
 list of settings says which of those are in use, so none is on without showing.
 
 - Rent counts in the year it was **received** (cash basis).

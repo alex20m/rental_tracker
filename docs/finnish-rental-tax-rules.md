@@ -204,8 +204,8 @@ Where the sources leave a choice, or the app deliberately stops short:
   it: OmaVero does not ask for it.
 - **Advanced settings**: the app assumes one person letting a whole flat in a
   housing company. The kind of property, the share of the home let, a rent below
-  the usual, the flat-rate furniture deduction and building depreciation are
-  under Advanced; the list of settings names the ones in use.
+  the usual, the flat-rate furniture deduction, building depreciation and the
+  purchase price and date are under Advanced; the list of settings names the ones in use.
 - **Kilometre rate** by year in `taxRules.ts`; 2026 is the 2025 figure until
   Verohallinto publishes its decision (§6).
 - **Part of the home let**: a percentage that scales the costs of the whole home

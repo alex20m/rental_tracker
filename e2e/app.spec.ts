@@ -144,8 +144,8 @@ test.describe('home', () => {
   });
 
   test('lists three to-do items and counts the rest, leading to the Tax checklist', async ({ page, api }) => {
-    coOwned(api); // months, receipts and an invitation to check: three. Missing price makes four.
-    api.apartments.forEach((a) => (a.settings.purchasePrice = 0));
+    coOwned(api); // months, receipts and an invitation to check: three. A depreciated property with no price makes four.
+    api.apartments.forEach((a) => Object.assign(a.settings, { propertyType: 'property', useDepreciation: true, purchasePrice: 0 }));
     await page.goto('/');
 
     await expect(page.locator('.todo .dot')).toHaveCount(3);

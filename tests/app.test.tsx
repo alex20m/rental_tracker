@@ -414,7 +414,7 @@ describe('the home screen', () => {
     });
     serve([
       view('a1', 'Alpha', {
-        settings: { ...defaultSettings, name: 'Alpha', purchasePrice: 0 },
+        settings: { ...defaultSettings, name: 'Alpha', purchasePrice: 0, propertyType: 'property', useDepreciation: true },
         rents: [paid('2026-01')],
         costs: [cost('c1')],
         invites: [{ id: 'i1', email: 'x@example.test', sharePct: 10 }],
@@ -651,9 +651,14 @@ describe('settings topics', () => {
     expect(screen.queryByRole('radiogroup', { name: 'Kind of property' })).toBeNull();
     expect(screen.queryByLabelText('Share of the home that is let (%)')).toBeNull();
     expect(screen.queryByRole('radiogroup', { name: 'Furniture' })).toBeNull();
+    // What a flat in a housing company never needs: the purchase is for the yield and a property's depreciation.
+    expect(screen.queryByLabelText('Purchase price (€)')).toBeNull();
+    expect(screen.queryByLabelText('Purchase date')).toBeNull();
 
     await user().click(screen.getByRole('button', { name: 'Back to settings' }));
     await user().click(screen.getByRole('button', { name: /^Advanced/ }));
+    expect(screen.getByLabelText('Purchase price (€)')).toBeTruthy();
+    expect(screen.getByLabelText('Purchase date')).toBeTruthy();
     expect(screen.getByRole('radiogroup', { name: 'Kind of property' })).toBeTruthy();
     expect(screen.getByLabelText('Share of the home that is let (%)')).toBeTruthy();
     expect(screen.getByRole('heading', { name: 'Building depreciation' })).toBeTruthy();

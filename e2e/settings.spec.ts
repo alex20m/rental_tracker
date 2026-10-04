@@ -185,14 +185,14 @@ test.describe('apartment details', () => {
 
     await page.getByLabel('Address').fill('Rantatie 5');
     await page.getByLabel('Housing company', { exact: true }).fill('As Oy Ranta');
-    await page.getByLabel('Purchase date').fill('2020-05-04');
-    await page.getByLabel('Purchase price (€)').fill('120000');
     // Clearing a number field stores 0, not an empty string.
     await page.getByLabel('Usual monthly rent (€)').fill('900');
     await page.getByLabel('Usual monthly rent (€)').fill('');
-    // The kind of property and its depreciation are under Advanced; what was typed here is kept on the way there.
+    // The purchase, the kind of property and its depreciation are under Advanced; what was typed here is kept on the way there.
     await page.getByRole('button', { name: 'Back to settings' }).click();
     await page.getByRole('button', { name: /^Advanced/ }).click();
+    await page.getByLabel('Purchase date').fill('2020-05-04');
+    await page.getByLabel('Purchase price (€)').fill('120000');
     await page.getByRole('radio', { name: 'Property of my own' }).click();
     await page.getByRole('switch', { name: 'Deduct building depreciation in the declaration' }).click();
     await page.getByLabel('Building share (%)').fill('80');

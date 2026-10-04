@@ -28,7 +28,7 @@ test.describe('the tax page', () => {
 
   test('ticks off what is done and links each open item to where it is fixed', async ({ page, api }) => {
     api.addApartment(
-      { name: 'Flat', purchasePrice: 10 },
+      { name: 'Flat' },
       { rents: [...ledger().rents, { month: m(5), status: 'unpaid', amount: 0, receivedDate: '', note: '' }] },
     );
     await page.clock.setFixedTime(new Date(`${YEAR}-05-20T12:00:00`));
@@ -36,7 +36,7 @@ test.describe('the tax page', () => {
     await section(page, 'Tax');
 
     const list = page.locator('.todo');
-    await expect(list.locator('.done')).toHaveText(['Purchase price set', 'Every month logged', 'Every cost has a receipt']);
+    await expect(list.locator('.done')).toHaveText(['Every month logged', 'Every cost has a receipt']);
     await list.getByRole('button', { name: '1 month unpaid — not counted as income' }).click();
     await expect(page.getByRole('heading', { name: 'Months' })).toBeVisible();
 
@@ -45,6 +45,23 @@ test.describe('the tax page', () => {
     await expect(page.getByText(`No costs logged for ${YEAR}.`)).toBeVisible();
     await openInfo(page, 'About rent months');
     await expect(page.getByRole('note')).toContainText(`3 paid, 1 vacant and 1 unpaid months logged for ${YEAR}`);
+  });
+
+  test('asks for the purchase price only of a depreciated property, and sends it to Advanced', async ({ page, api }) => {
+    api.addApartment({ name: 'House', propertyType: 'property', useDepreciation: true }, { rents: ledger().rents });
+    await page.goto('/');
+    await section(page, 'Tax');
+
+    const price = page.locator('.todo').getByRole('button', { name: 'Add the purchase price (for the building depreciation)' });
+    await price.click();
+    await expect(page.getByRole('heading', { name: 'Apartment settings', exact: true })).toBeVisible();
+    await page.getByRole('button', { name: /^Advanced/ }).click();
+    await page.getByLabel('Purchase price (€)').fill('90000');
+    await page.getByRole('button', { name: 'Save changes' }).click();
+    await expect(page.getByRole('button', { name: 'Save changes' })).toHaveCount(0);
+
+    await section(page, 'Tax');
+    await expect(page.locator('.todo .done').first()).toHaveText('Purchase price set');
   });
 
   test('downloads the declaration package with the PDF, the ledger and the receipts', async ({ page, api }) => {
