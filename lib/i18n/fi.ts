@@ -23,6 +23,12 @@ export const fi: Record<MessageKey, string> = {
   // — language —
   'language.label': 'Kieli',
 
+  // — theme —
+  'theme.label': 'Teema',
+  'theme.system': 'Järjestelmä',
+  'theme.light': 'Vaalea',
+  'theme.dark': 'Tumma',
+
   // — navigation —
   'nav.sections': 'Osiot',
   'nav.home': 'Koti',
