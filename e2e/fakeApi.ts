@@ -40,10 +40,19 @@ export class FakeApi {
   calls: { call: string; body: unknown }[] = [];
   unhandled: string[] = [];
   private failures: Failure[] = [];
+  private holds: { method: string; path: RegExp; gate: Promise<void> }[] = [];
 
   /** The next matching request fails: with `status` (and `body`), or as a network error. */
   failNext(method: string, path: RegExp, how: { status?: number; body?: unknown; text?: string; abort?: boolean }) {
     this.failures.push({ method, path, ...how });
+  }
+
+  /** The next matching request is not answered until the returned function is called. */
+  holdNext(method: string, path: RegExp): () => void {
+    let release!: () => void;
+    const gate = new Promise<void>((resolve) => (release = resolve));
+    this.holds.push({ method, path, gate });
+    return release;
   }
 
   /** An apartment as the viewer sees it, owned by them alone unless `owners` says otherwise. */
@@ -87,6 +96,12 @@ export class FakeApi {
       body = raw;
     }
     if (method !== 'GET') this.calls.push({ call: `${method} ${path}`, body });
+
+    const hold = this.holds.find((h) => h.method === method && h.path.test(path));
+    if (hold) {
+      this.holds.splice(this.holds.indexOf(hold), 1);
+      await hold.gate;
+    }
 
     const failure = this.failures.find((f) => f.method === method && f.path.test(path));
     if (failure) {

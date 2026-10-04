@@ -15,6 +15,7 @@ export default function AccountPanel({ account }: { account: Account }) {
   const router = useRouter();
   const { t } = useI18n();
   const [error, setError] = useState('');
+  const [deleting, setDeleting] = useState(false);
 
   const signOut = async () => {
     await authClient()
@@ -26,10 +27,12 @@ export default function AccountPanel({ account }: { account: Account }) {
   const deleteAccount = async () => {
     if (!confirm(t('menu.deleteAccountConfirm'))) return;
     setError('');
+    setDeleting(true);
     try {
       await api.deleteAccount();
     } catch (e) {
       setError((e as Error).message);
+      setDeleting(false);
       return;
     }
     await signOut();
@@ -70,6 +73,20 @@ export default function AccountPanel({ account }: { account: Account }) {
         </button>
         <Info about={t('menu.deleteAccountAbout')}>{t('menu.deleteAccountInfo')}</Info>
       </div>
+
+      {deleting && (
+        <div className="sheet-bg busy" role="alertdialog" aria-modal="true" aria-labelledby="deleting-title" aria-describedby="deleting-about">
+          <div className="busy-card">
+            <div className="spinner small" aria-hidden="true" />
+            <div id="deleting-title" className="t">
+              {t('menu.deleting')}
+            </div>
+            <div id="deleting-about" className="s">
+              {t('menu.deletingAbout')}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

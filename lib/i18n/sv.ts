@@ -58,6 +58,8 @@ export const sv: Record<MessageKey, string> = {
   'menu.deleteAccount': 'Ta bort konto',
   'menu.deleteAccountAbout': 'ditt konto',
   'menu.deleteAccountInfo': 'Detta tar bort ditt konto och de lägenheter du äger ensam, med hyror, kostnader och kvitton. Delade lägenheter stannar hos de andra ägarna, som också får din andel.',
+  'menu.deleting': 'Ditt konto tas bort',
+  'menu.deletingAbout': 'Det kan ta några sekunder. Låt den här sidan vara öppen.',
   'menu.deleteAccountConfirm': 'Ta bort ditt konto och alla dina uppgifter permanent? Detta kan inte ångras.',
 
   // — notices —

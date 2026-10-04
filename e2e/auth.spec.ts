@@ -390,6 +390,36 @@ test.describe('deleting your account', () => {
     expect(api.signedIn).toBe(false);
   });
 
+  test('shows a blocking progress screen while the account is being deleted', async ({ page, api }) => {
+    const finish = api.holdNext('DELETE', /\/api\/me$/);
+    await page.goto('/');
+    const menu = await openMenu(page);
+    page.once('dialog', (d) => void d.accept());
+    await menu.getByRole('button', { name: 'Delete account' }).click();
+
+    const progress = page.getByRole('alertdialog', { name: 'Deleting your account' });
+    await expect(progress).toBeVisible();
+    await expect(progress).toContainText('This can take a few seconds. Please keep this page open.');
+    await expect(page).not.toHaveURL(/sign-in/);
+
+    finish();
+    await expect(page).toHaveURL(/\/sign-in$/);
+  });
+
+  test('removes the progress screen and shows the error when deleting fails', async ({ page, api }) => {
+    const finish = api.holdNext('DELETE', /\/api\/me$/);
+    api.failNext('DELETE', /\/api\/me$/, { status: 500, body: { error: 'Could not delete the account.' } });
+    await page.goto('/');
+    const menu = await openMenu(page);
+    page.once('dialog', (d) => void d.accept());
+    await menu.getByRole('button', { name: 'Delete account' }).click();
+    await expect(page.getByRole('alertdialog')).toBeVisible();
+
+    finish();
+    await expect(page.getByRole('alertdialog')).toHaveCount(0);
+    await expect(menu.getByText('Could not delete the account.')).toBeVisible();
+  });
+
   test('stays signed in and says so when the server cannot delete it', async ({ page, api }) => {
     api.failNext('DELETE', /\/api\/me$/, { status: 500, body: { error: 'Could not delete the account.' } });
     await page.goto('/');
