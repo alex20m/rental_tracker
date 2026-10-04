@@ -107,6 +107,7 @@ export default function SignIn() {
     <div className="app auth">
       <div className="welcome">
         <h1>{title}</h1>
+        {mode !== 'verify' && <p className="lead">{t('auth.tagline')}</p>}
         <form
           onSubmit={(e) => {
             e.preventDefault();
