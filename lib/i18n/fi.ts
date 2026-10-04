@@ -17,8 +17,6 @@ export const fi: Record<MessageKey, string> = {
   'common.yours': 'Omasi',
   'common.notDeductible': 'ei vähennyskelpoinen',
   'common.notDeductibleCap': 'Ei vähennyskelpoinen',
-  'common.previousYear': 'Edellinen vuosi',
-  'common.nextYear': 'Seuraava vuosi',
   'common.taxYear': 'Verovuosi',
   'common.imageUnreadable': 'Kuvaa ei voitu lukea.',
 
@@ -33,7 +31,8 @@ export const fi: Record<MessageKey, string> = {
   'nav.tax': 'Vero',
   'nav.menu': 'Valikko',
   'nav.ledger': 'Vuokrat ja kulut',
-  'nav.settings': 'Asetukset',
+  'nav.settings': 'Asunnon asetukset',
+  'nav.account': 'Tilin asetukset',
   'ledger.view': 'Vuokrat tai kulut',
   'nav.allApartments': 'Kaikki asunnot',
   'nav.newApartment': 'Uusi asunto',
@@ -49,7 +48,6 @@ export const fi: Record<MessageKey, string> = {
   'add.busy': 'Lisätään…',
 
   // — account menu —
-  'menu.title': 'Valikko',
   'menu.signOut': 'Kirjaudu ulos',
   'menu.deleteAccount': 'Poista tili',
   'menu.deleteAccountAbout': 'tilisi',
@@ -256,7 +254,7 @@ export const fi: Record<MessageKey, string> = {
   'history.onlyOne': 'Aiemmat vuodet näkyvät tässä, kun kirjaat niille vuokria tai kuluja.',
 
   // — settings —
-  'settings.title': 'Asetukset',
+  'settings.title': 'Asunnon asetukset',
   'settings.account': 'Tili',
   'settings.owners': 'Omistajat',
   'settings.ownersAbout': 'omistajat ja osuudet',

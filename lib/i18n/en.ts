@@ -22,8 +22,6 @@ export const en = {
   'common.yours': 'Yours',
   'common.notDeductible': 'not deductible',
   'common.notDeductibleCap': 'Not deductible',
-  'common.previousYear': 'Previous year',
-  'common.nextYear': 'Next year',
   'common.taxYear': 'Tax year',
   'common.imageUnreadable': 'Could not read that image.',
 
@@ -38,7 +36,8 @@ export const en = {
   'nav.tax': 'Tax',
   'nav.menu': 'Menu',
   'nav.ledger': 'Rent & costs',
-  'nav.settings': 'Settings',
+  'nav.settings': 'Apartment settings',
+  'nav.account': 'Account settings',
   'ledger.view': 'Rent or costs',
   'nav.allApartments': 'All apartments',
   'nav.newApartment': 'New apartment',
@@ -54,7 +53,6 @@ export const en = {
   'add.busy': 'Adding…',
 
   // — account menu —
-  'menu.title': 'Menu',
   'menu.signOut': 'Sign out',
   'menu.deleteAccount': 'Delete account',
   'menu.deleteAccountAbout': 'your account',
@@ -259,7 +257,7 @@ export const en = {
   'history.onlyOne': 'Earlier years appear here once you log rent or costs in them.',
 
   // — settings —
-  'settings.title': 'Settings',
+  'settings.title': 'Apartment settings',
   'settings.account': 'Account',
   'settings.owners': 'Owners',
   'settings.ownersAbout': 'owners and shares',

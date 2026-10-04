@@ -23,8 +23,7 @@ declaration package (PDF + CSV + receipts, zipped) for their own share.
 - **Per-owner tax.** Rent and costs are logged for the whole apartment. The Tax
   tab, the PDF and the CSV show the apartment total next to your share, and the
   share is what you declare.
-- **English, Swedish and Finnish.** Pick the language under the account **Menu** on the portfolio page (or on the
-  sign-in page). It defaults to the browser's language, is remembered on that
+- **English, Swedish and Finnish.** Pick the language under **Account settings** (or on the sign-in page). It defaults to the browser's language, is remembered on that
   device, and covers the whole interface. Server error messages, the PDF and the
   CSV stay as they are — the PDF follows the Finnish form. Strings live in
   `lib/i18n/` — English is the source, and the typecheck fails until a new
@@ -32,11 +31,16 @@ declaration package (PDF + CSV + receipts, zipped) for their own share.
 
 ## Using it
 
-Two levels. The **portfolio** page lists your apartments and has **New
-apartment** and the round **account menu** (who you are, language, sign out,
-delete account). Open an apartment and the top bar shows its name, a ‹ back to
-the portfolio, and the **tax year** (‹ ›). Everything about that apartment is in
-the bottom navigation, four places and nothing hidden behind other buttons:
+Two levels, one **menu**. The ☰ in the top bar opens a drawer (from 960 px wide it
+is a permanent sidebar) with every place in the app: first the open apartment's
+own — **Home**, **Rent & costs**, **Tax**, **Apartment settings** — under its name,
+then, after a divider, what is about you rather than an apartment — **All
+apartments** (the portfolio: your totals, one row per apartment, **New
+apartment**) and **Account settings** (who you are, language, sign out, delete
+account). Nothing floats over the page while you read it. The top bar shows the
+apartment's name and, quietly at the right, the **tax year** — a plain list of the
+years that have data, since it is rarely changed; it is left out on pages that
+have no figures. Everything about an apartment:
 
 - **Home** – a glance, not a report: net income for the year in one big number,
   with rent, deductions and estimated tax under it; the first three things still
@@ -58,7 +62,7 @@ the bottom navigation, four places and nothing hidden behind other buttons:
   is fixed — and **Download declaration (.zip)**. *All years*: every year of the
   apartment side by side, newest first, with the combined net income of all
   years; tap a year to open its tax summary.
-- **Settings** – a short list of topics, each opening on its own with a ‹ back:
+- **Apartment settings** – a short list of topics, each opening on its own with a ‹ back:
   *Owners* (shares, inviting co-owners, leaving), *Property details* (flat or
   property, how the financing charge is booked, price, usual rent) and
   *Building depreciation* (poisto, for a property). Changes to the last two are

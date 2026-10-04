@@ -135,7 +135,7 @@ test.describe('home', () => {
     for (const [item, arrival] of [
       ['8 months not logged yet', page.getByRole('heading', { name: 'Months' })],
       ['3 costs have no receipt photo', page.getByRole('button', { name: 'Add cost' })],
-      ['1 invited owner hasn’t joined yet — check the shares are final', page.getByRole('heading', { name: 'Settings', exact: true })],
+      ['1 invited owner hasn’t joined yet — check the shares are final', page.getByRole('heading', { name: 'Apartment settings', exact: true })],
     ] as const) {
       await todo.getByRole('button', { name: item }).click();
       await expect(arrival).toBeVisible();
@@ -199,19 +199,18 @@ test.describe('home', () => {
     await expect(page.getByRole('button', { name: `Prepare the ${YEAR} declaration` })).toHaveCount(0);
   });
 
-  test('steps through the years that have data, and no further', async ({ page, api }) => {
+  test('changes the year from a quiet list of the years that have data, and nothing else', async ({ page, api }) => {
     api.addApartment({ name: 'Flat' }, ledger());
     await page.goto('/');
 
     const year = page.getByLabel('Tax year');
-    await expect(year).toHaveText(String(YEAR));
-    await expect(page.getByRole('button', { name: 'Next year' })).toBeDisabled();
-    await page.getByRole('button', { name: 'Previous year' }).click();
-    await expect(year).toHaveText(String(YEAR - 1));
-    await expect(page.getByRole('button', { name: 'Previous year' })).toBeDisabled();
+    await expect(year).toHaveValue(String(YEAR));
+    await expect(year.locator('option')).toHaveText([String(YEAR), String(YEAR - 1)]);
+    await year.selectOption(String(YEAR - 1));
+    await expect(year).toHaveValue(String(YEAR - 1));
     await expect(netIncome(page)).toHaveText('0,00 €');
-    await page.getByRole('button', { name: 'Next year' }).click();
-    await expect(year).toHaveText(String(YEAR));
+    await year.selectOption(String(YEAR));
+    await expect(netIncome(page)).toHaveText('2 184,00 €');
   });
 
   test('explains a figure in a popover that closes on Escape, outside, on scroll and on a second tap', async ({ page, api }) => {
@@ -248,7 +247,7 @@ test.describe('home', () => {
     await expect(note).toHaveCount(0);
   });
 
-  test('keeps a popover inside a sheet from closing the sheet', async ({ page }) => {
+  test('closes a popover with Escape without leaving the page it is on', async ({ page }) => {
     await page.goto('/');
     const menu = await openMenu(page);
     await menu.getByRole('button', { name: 'About your account' }).click();
@@ -257,8 +256,6 @@ test.describe('home', () => {
     await page.keyboard.press('Escape');
     await expect(page.getByRole('note')).toHaveCount(0);
     await expect(menu).toBeVisible();
-    await page.keyboard.press('Escape');
-    await expect(menu).toHaveCount(0);
   });
 });
 
@@ -270,7 +267,7 @@ test.describe('the portfolio', () => {
     await section(page, 'Rent');
 
     await openPortfolio(page);
-    await expect(page.getByRole('navigation', { name: 'Sections' })).toBeHidden();
+    await expect(page.getByRole('button', { name: 'Menu' })).toHaveAttribute('aria-expanded', 'false');
     await expect(page.getByRole('button', { name: /^First/ })).toContainText('You own 60 % · 2 owners · Kauppakatu 12 B 7, Vaasa');
     await expect(page.getByRole('button', { name: /^Second/ })).toContainText('Toinen katu 2');
     await page.getByRole('button', { name: /^Second/ }).click();
@@ -337,34 +334,100 @@ test.describe('the portfolio', () => {
     expect(api.apartments.size).toBe(2);
   });
 
-  test('centres the menu dialog on a phone-sized screen instead of docking it to the bottom', async ({ page, api }) => {
+});
+
+test.describe('the navigation drawer', () => {
+  const toggle = (page: Page) => page.getByRole('button', { name: 'Menu', exact: true });
+  const drawer = (page: Page) => page.getByRole('navigation', { name: 'Sections' });
+
+  test('stays out of the way until ☰ is tapped, and then covers nothing but a dimmed page', async ({ page, api }) => {
     api.addApartment({ name: 'Flat' });
-    await page.setViewportSize({ width: 390, height: 844 });
     await page.goto('/');
 
-    await openAccount(page);
-    // The dialog slides in; measure once it has settled.
-    await expect
-      .poll(async () => {
-        const box = (await page.getByRole('dialog').boundingBox())!;
-        return Math.abs(Math.round(box.y - (844 - (box.y + box.height))));
-      })
-      .toBe(0);
-    const box = (await page.getByRole('dialog').boundingBox())!;
-    expect(box.y).toBeGreaterThan(20);
+    await expect(drawer(page)).toBeHidden();
+    await expect(toggle(page)).toHaveAttribute('aria-expanded', 'false');
+    await toggle(page).click();
+    await expect(drawer(page)).toBeVisible();
+    await expect(toggle(page)).toHaveAttribute('aria-expanded', 'true');
+    await expect(drawer(page).getByRole('button', { name: 'Home', exact: true })).toBeFocused();
+    await expect(drawer(page).getByRole('button', { name: 'Home', exact: true })).toHaveAttribute('aria-current', 'page');
   });
 
-  test('closes the menu with its close button, or by tapping outside', async ({ page, api }) => {
+  test('closes with Escape, or by tapping the dimmed page, and hands focus back to ☰', async ({ page, api }) => {
     api.addApartment({ name: 'Flat' });
     await page.goto('/');
+
+    await toggle(page).click();
+    await page.keyboard.press('Escape');
+    await expect(drawer(page)).toBeHidden();
+    await expect(toggle(page)).toBeFocused();
+
+    await toggle(page).click();
+    await page.locator('.scrim').click({ position: { x: 395, y: 400 } });
+    await expect(drawer(page)).toBeHidden();
+    await expect(toggle(page)).toHaveAttribute('aria-expanded', 'false');
+  });
+
+  test('closes once a place is picked, and keeps Tab inside while open', async ({ page, api }) => {
+    api.addApartment({ name: 'Flat' });
+    await page.goto('/');
+
+    await toggle(page).click();
+    await page.keyboard.press('Shift+Tab');
+    await expect(drawer(page).getByRole('button', { name: 'Account settings', exact: true })).toBeFocused();
+    await page.keyboard.press('Tab');
+    await expect(drawer(page).getByRole('button', { name: 'Home', exact: true })).toBeFocused();
+    await page.keyboard.press('Tab');
+    await expect(drawer(page).getByRole('button', { name: 'Rent & costs', exact: true })).toBeFocused();
+
+    await page.keyboard.press('Enter');
+    await expect(drawer(page)).toBeHidden();
+    await expect(page.getByRole('heading', { name: 'Months' })).toBeVisible();
+  });
+
+  test('lists the apartment’s places under its name, and the portfolio and account apart from them', async ({ page, api }) => {
+    api.addApartment({ name: 'Flat' });
+    await page.goto('/');
+    await toggle(page).click();
+
+    await expect(drawer(page).locator('.nav-group')).toHaveText('Flat');
+    await expect(drawer(page).getByRole('button')).toHaveText([
+      'Home',
+      'Rent & costs',
+      'Tax',
+      'Apartment settings',
+      'All apartments',
+      'Account settings',
+    ]);
+    await expect(drawer(page).getByRole('separator')).toHaveCount(1);
+  });
+
+  test('offers only the account before the first apartment exists', async ({ page }) => {
+    await page.goto('/');
+    await expect(page.getByRole('heading', { name: 'Add your first apartment' })).toBeVisible();
+    await toggle(page).click();
+
+    await expect(drawer(page).getByRole('button')).toHaveText(['Account settings']);
+    await drawer(page).getByRole('button', { name: 'Account settings' }).click();
+    await expect(page.getByRole('heading', { name: 'Account settings', exact: true })).toBeVisible();
+    await expect(page.getByLabel('Tax year')).toHaveCount(0);
+  });
+});
+
+test.describe('account settings and apartment settings', () => {
+  test('are two pages: you on one, the apartment on the other', async ({ page, api }) => {
+    api.addApartment({ name: 'Flat' });
+    await page.goto('/');
+
     await openAccount(page);
+    await expect(page.getByRole('heading', { name: 'Account settings', exact: true })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Sign out' })).toBeVisible();
+    await expect(page.getByRole('button', { name: /^Owners/ })).toHaveCount(0);
 
-    await page.getByRole('button', { name: 'Close' }).click();
-    await expect(page.getByRole('dialog')).toHaveCount(0);
-
-    await openMenu(page);
-    await page.locator('.sheet-bg').click({ position: { x: 5, y: 5 } });
-    await expect(page.getByRole('dialog')).toHaveCount(0);
+    await section(page, 'Settings');
+    await expect(page.getByRole('heading', { name: 'Apartment settings', exact: true })).toBeVisible();
+    await expect(page.getByRole('button', { name: /^Owners/ })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Sign out' })).toHaveCount(0);
   });
 });
 

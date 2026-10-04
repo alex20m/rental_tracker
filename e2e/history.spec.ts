@@ -28,7 +28,7 @@ test.describe('history', () => {
     // 2 400 − 216 + 500 − 120
     await expect(page.getByTestId('history-total')).toContainText('2 564,00 €');
     // The year stepper belongs to the other pages; history already shows every year.
-    await expect(page.getByRole('button', { name: 'Previous year' })).toHaveCount(0);
+    await expect(page.getByLabel('Tax year')).toHaveCount(0);
   });
 
   test('opens the tax summary of the year that is tapped', async ({ page, api }) => {
@@ -37,11 +37,8 @@ test.describe('history', () => {
     await section(page, 'History');
     await page.getByRole('button', { name: new RegExp(`^${YEAR - 2}`) }).click();
 
-    await expect(page.getByRole('navigation', { name: 'Sections' }).getByRole('button', { name: 'Tax' })).toHaveAttribute(
-      'aria-current',
-      'page',
-    );
-    await expect(page.getByLabel('Tax year')).toHaveText(String(YEAR - 2));
+    await expect(page.getByRole('radio', { name: 'This year', exact: true })).toHaveAttribute('aria-checked', 'true');
+    await expect(page.getByLabel('Tax year')).toHaveValue(String(YEAR - 2));
     await expect(page.locator('.kv').filter({ hasText: 'Rent received' })).toContainText('500,00 €');
   });
 

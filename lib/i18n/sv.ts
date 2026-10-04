@@ -17,8 +17,6 @@ export const sv: Record<MessageKey, string> = {
   'common.yours': 'Din',
   'common.notDeductible': 'ej avdragsgill',
   'common.notDeductibleCap': 'Ej avdragsgill',
-  'common.previousYear': 'Föregående år',
-  'common.nextYear': 'Nästa år',
   'common.taxYear': 'Skatteår',
   'common.imageUnreadable': 'Det gick inte att läsa bilden.',
 
@@ -33,7 +31,8 @@ export const sv: Record<MessageKey, string> = {
   'nav.tax': 'Skatt',
   'nav.menu': 'Meny',
   'nav.ledger': 'Hyror & kostnader',
-  'nav.settings': 'Inställningar',
+  'nav.settings': 'Lägenhetsinställningar',
+  'nav.account': 'Kontoinställningar',
   'ledger.view': 'Hyra eller kostnader',
   'nav.allApartments': 'Alla lägenheter',
   'nav.newApartment': 'Ny lägenhet',
@@ -49,7 +48,6 @@ export const sv: Record<MessageKey, string> = {
   'add.busy': 'Lägger till…',
 
   // — account menu —
-  'menu.title': 'Meny',
   'menu.signOut': 'Logga ut',
   'menu.deleteAccount': 'Ta bort konto',
   'menu.deleteAccountAbout': 'ditt konto',
@@ -257,7 +255,7 @@ export const sv: Record<MessageKey, string> = {
   'history.onlyOne': 'Tidigare år visas här när du för in hyror eller kostnader för dem.',
 
   // — settings —
-  'settings.title': 'Inställningar',
+  'settings.title': 'Lägenhetsinställningar',
   'settings.account': 'Konto',
   'settings.owners': 'Ägare',
   'settings.ownersAbout': 'ägare och andelar',

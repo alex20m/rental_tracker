@@ -6,7 +6,6 @@ import { createPortal } from 'react-dom';
 import { useI18n } from '@/components/I18nProvider';
 import { moneyParts } from '@/lib/ui/format';
 import { placePopover, type Placement } from '@/lib/ui/popover';
-import { stepYear } from '@/lib/ui/years';
 
 /* ───────────────────────── Sheet ───────────────────────── */
 
@@ -152,8 +151,8 @@ export function Info({ about, children }: { about: string; children: ReactNode }
 
 /* ───────────────────────── Small controls ───────────────────────── */
 
-/** `‹ 2026 ›` — steps through the years that have data. */
-export function YearStepper({
+/** The year being looked at: quiet on purpose, since it is rarely changed. A native list, so it works everywhere. */
+export function YearSelect({
   year,
   years,
   onChange,
@@ -163,20 +162,19 @@ export function YearStepper({
   onChange: (y: number) => void;
 }) {
   const { t } = useI18n();
-  const prev = stepYear(years, year, -1);
-  const next = stepYear(years, year, 1);
   return (
-    <div className="stepper">
-      <button className="iconbtn" aria-label={t('common.previousYear')} disabled={prev === year} onClick={() => onChange(prev)}>
-        {Icon.left}
-      </button>
-      <span aria-label={t('common.taxYear')} aria-live="polite">
-        {year}
-      </span>
-      <button className="iconbtn" aria-label={t('common.nextYear')} disabled={next === year} onClick={() => onChange(next)}>
-        {Icon.right}
-      </button>
-    </div>
+    <select
+      className="year"
+      aria-label={t('common.taxYear')}
+      value={year}
+      onChange={(e) => onChange(Number(e.target.value))}
+    >
+      {years.map((y) => (
+        <option key={y} value={y}>
+          {y}
+        </option>
+      ))}
+    </select>
   );
 }
 
@@ -430,6 +428,13 @@ export const Icon = {
     <>
       <circle cx="12" cy="12" r="9" />
       <path d="M12 7v5l3 2" />
+    </>,
+  ),
+  menu: svg(<path d="M4 6h16M4 12h16M4 18h16" />),
+  user: svg(
+    <>
+      <circle cx="12" cy="8" r="3.5" />
+      <path d="M5 20a7 7 0 0 1 14 0" />
     </>,
   ),
   down: svg(<path d="m6 9 6 6 6-6" />),

@@ -70,14 +70,12 @@ afterEach(() => {
 describe('choosing a language', () => {
   it('switches the whole screen to Swedish from the menu and remembers the choice', async () => {
     app();
-    await userEvent.click(await screen.findByRole('button', { name: 'All apartments' }));
-    await userEvent.click(screen.getByRole('button', { name: 'Menu' }));
+    await userEvent.click(await screen.findByRole('button', { name: 'Account settings' }));
     await userEvent.click(screen.getByRole('radio', { name: 'Svenska' }));
 
-    // The open menu changes language, and so does the apartment behind it.
-    expect(screen.getByRole('dialog', { name: 'Meny' })).toBeTruthy();
-    await userEvent.keyboard('{Escape}');
-    await userEvent.click(screen.getByRole('button', { name: /^Alpha/ }));
+    // The account page changes language at once, and so does the apartment behind it.
+    expect(screen.getByRole('heading', { name: 'Kontoinställningar' })).toBeTruthy();
+    await userEvent.click(screen.getByRole('button', { name: 'Hem' }));
     expect(screen.getByRole('button', { name: 'Hyror & kostnader' })).toBeTruthy();
     expect(screen.getByText('Inget loggat ännu.')).toBeTruthy();
     expect(screen.queryByText('Sign out')).toBeNull();
@@ -87,11 +85,8 @@ describe('choosing a language', () => {
 
   it('switches to Finnish, including pluralised and dated text', async () => {
     app();
-    await userEvent.click(await screen.findByRole('button', { name: 'All apartments' }));
-    await userEvent.click(screen.getByRole('button', { name: 'Menu' }));
+    await userEvent.click(await screen.findByRole('button', { name: 'Account settings' }));
     await userEvent.click(screen.getByRole('radio', { name: 'Suomi' }));
-    await userEvent.keyboard('{Escape}');
-    await userEvent.click(screen.getByRole('button', { name: /^Alpha/ }));
     await userEvent.click(screen.getByRole('button', { name: 'Vuokrat ja kulut' }));
 
     // The month grid is in Finnish.
