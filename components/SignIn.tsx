@@ -40,6 +40,14 @@ export default function SignIn() {
   const [error, setError] = useState('');
   const [info, setInfo] = useState(verifyEmail ? t('auth.pressSend') : '');
 
+  // Moving between forms by hand drops the notice: it described the step the
+  // person just left (e.g. "code sent"). Programmatic moves set theirs after.
+  const goTo = (next: Mode) => {
+    setInfo('');
+    setError('');
+    setMode(next);
+  };
+
   const newPasswordInput = useRef<HTMLInputElement>(null);
 
   const auth = authClient();
@@ -245,21 +253,21 @@ export default function SignIn() {
           <div style={{ display: 'flex', gap: 18, marginTop: 16 }}>
             {mode === 'sign-in' && (
               <>
-                <button type="button" className="link" onClick={() => setMode('sign-up')}>
+                <button type="button" className="link" onClick={() => goTo('sign-up')}>
                   {t('auth.toSignUp')}
                 </button>
-                <button type="button" className="link" onClick={() => setMode('forgot')}>
+                <button type="button" className="link" onClick={() => goTo('forgot')}>
                   {t('auth.forgot')}
                 </button>
               </>
             )}
             {mode === 'sign-up' && (
-              <button type="button" className="link" onClick={() => setMode('sign-in')}>
+              <button type="button" className="link" onClick={() => goTo('sign-in')}>
                 {t('auth.toSignIn')}
               </button>
             )}
             {mode === 'forgot' && (
-              <button type="button" className="link" onClick={() => setMode('sign-in')}>
+              <button type="button" className="link" onClick={() => goTo('sign-in')}>
                 {t('common.back')}
               </button>
             )}
@@ -268,7 +276,7 @@ export default function SignIn() {
                 <button type="button" className="link" disabled={busy} onClick={() => step(requestReset)}>
                   {t('auth.sendCode')}
                 </button>
-                <button type="button" className="link" onClick={() => setMode('forgot')}>
+                <button type="button" className="link" onClick={() => goTo('forgot')}>
                   {t('common.back')}
                 </button>
               </>
@@ -281,7 +289,7 @@ export default function SignIn() {
                 <button
                   type="button"
                   className="link"
-                  onClick={() => (verifyEmail ? router.replace('/') : setMode('sign-in'))}
+                  onClick={() => (verifyEmail ? router.replace('/') : goTo('sign-in'))}
                 >
                   {t('common.back')}
                 </button>

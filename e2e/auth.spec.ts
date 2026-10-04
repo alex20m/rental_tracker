@@ -210,6 +210,26 @@ test.describe('signing in', () => {
   });
 });
 
+test.describe('the info box', () => {
+  test.beforeEach(({ api }) => {
+    api.signedIn = false;
+    api.accounts.set('me@example.test', { password: 'correct horse', verified: false, userId: 'usr_me' });
+  });
+
+  test('disappears when the person navigates to another form', async ({ page }) => {
+    await page.goto('/sign-in');
+    await page.getByLabel('Email', { exact: true }).fill('me@example.test');
+    await page.getByLabel('Password').fill('correct horse');
+    await page.getByRole('button', { name: 'Sign in' }).click();
+    await expect(page.getByRole('heading', { name: 'Check your email' })).toBeVisible();
+    await expect(page.locator('.notice')).toBeVisible();
+
+    await page.getByRole('button', { name: 'Back' }).click();
+    await expect(page.getByRole('heading', { name: 'Sign in' })).toBeVisible();
+    await expect(page.locator('.notice')).toHaveCount(0);
+  });
+});
+
 test.describe('resetting a forgotten password', () => {
   test.beforeEach(({ api }) => {
     api.signedIn = false;
