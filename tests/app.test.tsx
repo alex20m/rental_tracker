@@ -635,7 +635,28 @@ describe('settings topics', () => {
 
     expect(screen.getByRole('button', { name: /^Owners.*2 owners · you own 60 %/ })).toBeTruthy();
     expect(screen.getByRole('button', { name: /^Property details.*Alpha street 1/ })).toBeTruthy();
-    expect(screen.getByRole('button', { name: /^Building depreciation.*On · 2.5 % a year/ })).toBeTruthy();
+    expect(screen.getByRole('button', { name: /^Advanced.*Property of my own · Building depreciation 2.5 %/ })).toBeTruthy();
+  });
+
+  it('keeps the uncommon choices off the details page, behind Advanced', async () => {
+    serve([view('a1', 'Alpha')]);
+    render(<RentalApp />);
+    await user().click(await screen.findByRole('button', { name: 'Apartment settings' }));
+    expect(screen.getByRole('button', { name: /^Advanced.*Standard: a whole apartment in a housing company/ })).toBeTruthy();
+    expect(screen.queryByRole('button', { name: /^Building depreciation/ })).toBeNull();
+
+    await user().click(screen.getByRole('button', { name: /^Property details/ }));
+    expect(screen.getByLabelText('Address')).toBeTruthy();
+    expect(screen.getByLabelText('Usual monthly rent (€)')).toBeTruthy();
+    expect(screen.queryByRole('radiogroup', { name: 'Kind of property' })).toBeNull();
+    expect(screen.queryByLabelText('Share of the home that is let (%)')).toBeNull();
+    expect(screen.queryByRole('radiogroup', { name: 'Furniture' })).toBeNull();
+
+    await user().click(screen.getByRole('button', { name: 'Back to settings' }));
+    await user().click(screen.getByRole('button', { name: /^Advanced/ }));
+    expect(screen.getByRole('radiogroup', { name: 'Kind of property' })).toBeTruthy();
+    expect(screen.getByLabelText('Share of the home that is let (%)')).toBeTruthy();
+    expect(screen.getByRole('heading', { name: 'Building depreciation' })).toBeTruthy();
   });
 
   it('opens one topic at a time and goes back to the list', async () => {

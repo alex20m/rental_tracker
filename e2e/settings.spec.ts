@@ -177,7 +177,7 @@ test.describe('owners and shares', () => {
 });
 
 test.describe('apartment details', () => {
-  test('saves edited details, including building depreciation for a property, from the save bar', async ({ page, api }) => {
+  test('saves edited details, and building depreciation for a property from Advanced, from the one save bar', async ({ page, api }) => {
     const apt = api.addApartment({ name: 'Flat' });
     await page.goto('/');
     await openTopic(page, 'Property details');
@@ -190,10 +190,10 @@ test.describe('apartment details', () => {
     // Clearing a number field stores 0, not an empty string.
     await page.getByLabel('Usual monthly rent (€)').fill('900');
     await page.getByLabel('Usual monthly rent (€)').fill('');
-    await page.getByRole('radio', { name: 'Property of my own' }).click();
-    // Depreciation is a topic of its own; what was typed here is kept on the way there.
+    // The kind of property and its depreciation are under Advanced; what was typed here is kept on the way there.
     await page.getByRole('button', { name: 'Back to settings' }).click();
-    await page.getByRole('button', { name: /^Building depreciation/ }).click();
+    await page.getByRole('button', { name: /^Advanced/ }).click();
+    await page.getByRole('radio', { name: 'Property of my own' }).click();
     await page.getByRole('switch', { name: 'Deduct building depreciation in the declaration' }).click();
     await page.getByLabel('Building share (%)').fill('80');
     await page.getByLabel('Rate (% / year)').fill('2.5');
@@ -207,7 +207,7 @@ test.describe('apartment details', () => {
     await expect(page.getByRole('button', { name: 'Save changes' })).toHaveCount(0);
     // The list summarises what was saved.
     await page.getByRole('button', { name: 'Back to settings' }).click();
-    await expect(page.getByRole('button', { name: /^Building depreciation.*On · 2.5 % a year/ })).toBeVisible();
+    await expect(page.getByRole('button', { name: /^Advanced.*Property of my own · Building depreciation 2.5 %/ })).toBeVisible();
     await expect(page.getByRole('button', { name: /^Property details.*Rantatie 5/ })).toBeVisible();
     expect(apt.settings).toMatchObject({
       address: 'Rantatie 5',
@@ -226,7 +226,7 @@ test.describe('apartment details', () => {
   test('chooses the kind of building, which sets the highest rate, and adds the purchase costs to its cost', async ({ page, api }) => {
     const apt = api.addApartment({ name: 'Shop', propertyType: 'property', useDepreciation: true, purchasePrice: 200000 });
     await page.goto('/');
-    await openTopic(page, 'Building depreciation');
+    await openTopic(page, 'Advanced');
     const thisYear = page.locator('.kv').filter({ hasText: 'This year' });
     await expect(thisYear).toContainText('8 000,00 €');
 
@@ -262,7 +262,7 @@ test.describe('apartment details', () => {
       { rents: [{ month: `${YEAR - 1}-12`, status: 'paid', amount: 800, receivedDate: `${YEAR - 1}-12-03`, note: '' }] },
     );
     await page.goto('/');
-    await openTopic(page, 'Building depreciation');
+    await openTopic(page, 'Advanced');
 
     await expect(page.getByLabel('Calculate from tax year')).toHaveAttribute('placeholder', String(YEAR - 1));
     // 4 000 € last year leaves 96 000 €, and 4 % of that is this year's.
@@ -274,7 +274,7 @@ test.describe('apartment details', () => {
   test('records that only part of the home is let, and that the rent is below the usual', async ({ page, api }) => {
     const apt = api.addApartment({ name: 'Flat' });
     await page.goto('/');
-    await openTopic(page, 'Property details');
+    await openTopic(page, 'Advanced');
 
     // Clearing the field leaves it empty rather than showing a 0 that nothing could be let at.
     await page.getByLabel('Share of the home that is let (%)').fill('');
@@ -299,7 +299,7 @@ test.describe('apartment details', () => {
   test('chooses the flat-rate furniture deduction and the size of the flat', async ({ page, api }) => {
     const apt = api.addApartment({ name: 'Flat' }, ledger());
     await page.goto('/');
-    await openTopic(page, 'Property details');
+    await openTopic(page, 'Advanced');
     await expect(page.getByRole('radiogroup', { name: 'Size of the flat' })).toHaveCount(0);
     await expect(page.getByRole('radio', { name: 'Actual costs' })).toHaveAttribute('aria-checked', 'true');
 
@@ -318,12 +318,11 @@ test.describe('apartment details', () => {
     await expect(page.getByRole('radiogroup', { name: 'Size of the flat' })).toHaveCount(0);
   });
 
-  test('says a flat is not depreciated, and records whether its financing charge is deductible', async ({ page, api }) => {
+  test('records whether the financing charge is deductible, and says a flat is not depreciated', async ({ page, api }) => {
     const apt = api.addApartment({ name: 'Flat' });
     await page.goto('/');
     await openTopic(page, 'Property details');
 
-    await expect(page.getByRole('radio', { name: 'Housing-company flat' })).toHaveAttribute('aria-checked', 'true');
     // At phone height the button starts under the floating bottom nav. A person scrolls it clear before
     // tapping; Playwright would instead scroll mid-click, and that scroll rightly closes the popover.
     const about = page.getByRole('button', { name: 'About the financing charge' });
@@ -336,30 +335,45 @@ test.describe('apartment details', () => {
     await expect(page.getByRole('button', { name: 'Save changes' })).toHaveCount(0);
     expect(apt.settings).toMatchObject({ propertyType: 'share', financingChargeDeductible: true });
 
+    // A flat is the standard case, so Advanced says so, and a flat is not depreciated.
     await page.getByRole('button', { name: 'Back to settings' }).click();
-    await expect(page.getByRole('button', { name: /^Building depreciation.*Not used for a housing-company flat/ })).toBeVisible();
-    await page.getByRole('button', { name: /^Building depreciation/ }).click();
+    await expect(page.getByRole('button', { name: /^Advanced.*Standard: a whole apartment in a housing company/ })).toBeVisible();
+    await page.getByRole('button', { name: /^Advanced/ }).click();
+    await expect(page.getByRole('radio', { name: 'Housing-company flat' })).toHaveAttribute('aria-checked', 'true');
     await expect(page.getByText('The price of a housing-company flat is not depreciated')).toBeVisible();
-    await expect(page.getByRole('switch')).toHaveCount(0);
+    await expect(page.getByRole('switch', { name: 'Deduct building depreciation in the declaration' })).toHaveCount(0);
 
-    // A property has no housing company, so no financing charge to ask about.
+    // A property has no housing company, so no financing charge to ask about back on the details.
+    await page.getByRole('radio', { name: 'Property of my own' }).click();
     await page.getByRole('button', { name: 'Back to settings' }).click();
     await page.getByRole('button', { name: /^Property details/ }).click();
-    await page.getByRole('radio', { name: 'Property of my own' }).click();
     await expect(page.getByRole('switch', { name: /financing charge/ })).toHaveCount(0);
   });
 
-  test('summarises a property that is not depreciated as off, and a flat as not applicable', async ({ page, api }) => {
+  test('lists the advanced choices in use, each one that departs from the standard case', async ({ page, api }) => {
     api.addApartment({ name: 'Own house', propertyType: 'property', useDepreciation: false });
+    api.addApartment({ name: 'Part', letSharePct: 60, belowMarketRent: true, furnishing: 'flat' });
     api.addApartment({ name: 'Flat' });
     await page.goto('/');
     await openApartment(page, 'Own house');
     await openSettings(page);
-    await expect(page.getByRole('button', { name: /^Building depreciation.*Off/ })).toBeVisible();
+    await expect(page.getByRole('button', { name: /^Advanced.*Property of my own$/ })).toBeVisible();
+
+    await openApartment(page, 'Part');
+    await openSettings(page);
+    await expect(page.getByRole('button', { name: /^Advanced.*60 % of the home let · Rent below the usual · Furniture flat rate$/ })).toBeVisible();
 
     await openApartment(page, 'Flat');
     await openSettings(page);
-    await expect(page.getByRole('button', { name: /^Building depreciation.*Not used for a housing-company flat/ })).toBeVisible();
+    await expect(page.getByRole('button', { name: /^Advanced.*Standard: a whole apartment in a housing company/ })).toBeVisible();
+  });
+
+  test('explains Advanced: who it is for', async ({ page, api }) => {
+    api.addApartment({ name: 'Flat' });
+    await page.goto('/');
+    await openTopic(page, 'Advanced');
+    await openInfo(page, 'About the advanced settings');
+    await expect(page.getByRole('note')).toContainText('Most landlords never need this.');
   });
 
   test('discards unsaved details from the list of topics too', async ({ page, api }) => {

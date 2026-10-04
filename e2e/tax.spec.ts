@@ -136,7 +136,6 @@ test.describe('the tax page', () => {
     const zip = await JSZip.loadAsync(readFileSync(await download.path()));
     const text = Buffer.from(await zip.file(`vuokratulot-ja-menot-${YEAR}.pdf`)!.async('uint8array')).toString('latin1');
     expect(text).toContain('page 2/2');
-    expect(text).toContain('2019-03-01 for 150 000,00 EUR');
     expect(text).toContain('The apartment has 1 owner and 1 pending.');
     expect(await zip.file(`ledger-${YEAR}.csv`)!.async('string')).toContain(`"${m(1)}-02","rent","paid","Rent for ${YEAR - 1}-12"`);
   });
@@ -175,8 +174,9 @@ test.describe('the tax page', () => {
 
     const [pdf] = await Promise.all([page.waitForEvent('download'), page.getByRole('button', { name: 'PDF summary only' }).click()]);
     const text = readFileSync(await pdf.path()).toString('latin1');
-    expect(text).toContain('figures for tax form 7H / OmaVero');
-    expect(text).toContain('Declared separately');
+    expect(text).toContain('what to enter in MyTax');
+    expect(text).toContain('4 · Other deductions: Interest on debts');
+    expect(text).toMatch(/Loan interest \\\(your portion\\\)\) Tj[\s\S]*?\(400,00 EUR\) Tj/);
     expect(text).toContain('Basic improvements deducted over several years');
     expect(text).toContain('Balcony glazing');
     expect(text).toContain('Inventory of furniture and appliances');
@@ -311,7 +311,7 @@ test.describe('the tax page', () => {
     expect(text).toContain('(Share of the home that is let) Tj');
     expect(text).toContain('Furnished flat, flat-rate deduction');
     // 60 % of 5 000 € and 180 € of flat rate against 2 400 € of rent.
-    expect(text).toMatch(/Reduce the rows above by\) Tj[\s\S]*?\(780,00 EUR\) Tj/);
+    expect(text).toMatch(/Reduce the fields above by\) Tj[\s\S]*?\(780,00 EUR\) Tj/);
   });
 
   test('tells in the PDF about the deficit credit under a loss', async ({ page, api }) => {
