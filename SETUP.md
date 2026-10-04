@@ -194,6 +194,26 @@ Run the `test` — a saved config that cannot send breaks every sign-up, and
 `update` accepts it without checking. If it fails, put the provider back with
 `--type shared`.
 
+Neon's own code email has fixed wording that the CLI cannot change. To control
+it, subscribe the app to the `send.otp` webhook: Neon then skips its email and
+posts the code to `/api/webhooks/neon-auth`, which sends it through Resend with
+the wording in `lib/mail.ts` (next to the invite email). Order matters — with
+the webhook on and the route not yet deployed, **every sign-up fails**, because
+Neon no longer sends anything itself. So deploy first, then:
+
+```bash
+npx neonctl neon-auth config webhook update --project-id "$PROJECT_ID" --branch main \
+  --enabled true --url https://<your-app-url>/api/webhooks/neon-auth --enabled-events send.otp
+npx neonctl neon-auth config webhook get --project-id "$PROJECT_ID" --branch main
+```
+
+Then sign up with an address you can read: the code must arrive from the
+`MAIL_FROM` sender. The route verifies Neon's Ed25519 signature against the
+auth base URL's JWKS, so it needs `NEON_AUTH_BASE_URL` and the Resend variables
+and nothing else. It answers 500 when it cannot send, so a misconfigured Resend
+shows up as a failed sign-up rather than a silent one. To go back to Neon's
+email: `webhook update --enabled false`.
+
 Set the two variables. The cookie secret is yours to generate and must be
 **at least 32 characters** or the SDK throws:
 
@@ -277,7 +297,8 @@ place.
 - [ ] Neon added through Vercel; `DATABASE_URL` visible in `vercel env ls`
 - [ ] `npm run migrate` applied; the seven tables exist
 - [ ] Neon Auth enabled, email verification required with OTP, deployed URL trusted,
-      custom SMTP sender tested (`email-provider test`)
+      custom SMTP sender tested (`email-provider test`),
+      `send.otp` webhook enabled after the deploy, and a real sign-up code received
 - [ ] Neon Auth sends from the app's own sender (`email-provider test` arrived from it)
 - [ ] `NEON_AUTH_BASE_URL`, `NEON_AUTH_COOKIE_SECRET`, `APP_URL` set for production, preview, development
 - [ ] Git integration connected with automatic deploys on
