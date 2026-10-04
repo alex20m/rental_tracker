@@ -50,9 +50,7 @@ export default function Tax({ apt, year, taxpayerName, scope, onScope, go }: Pro
         {shared && <ScopeToggle sharePct={apt.mySharePct} scope={scope} onScope={onScope} />}
         <div className="label" style={{ marginTop: shared ? 10 : 0 }}>
           {f.netIncome >= 0 ? t('tax.taxable') : t('home.rentalLoss')} · {year}
-          {shared && (
-            <Info about={t('tax.coOwnedAbout')}>{t('tax.coOwnedInfo')}</Info>
-          )}
+          {shared && <Info about={t('tax.coOwnedAbout')}>{t('tax.coOwnedInfo')}</Info>}
         </div>
         <div className={'big ' + (f.netIncome < 0 ? 'neg' : '')}>
           <Money value={f.netIncome} />
@@ -88,70 +86,70 @@ export default function Tax({ apt, year, taxpayerName, scope, onScope, go }: Pro
 
       <section className="section">
         <Heading>{t('tax.income')}</Heading>
-        <div className="kv">
-          <span>
-            {t('tax.rentReceived')}
-            <Info about={t('tax.rentMonthsAbout')}>
-              {t('tax.rentMonthsInfo', {
-                paid: tax.paidMonths,
-                vacant: tax.vacantMonths,
-                unpaid: tax.unpaidMonths,
-                year,
-              })}
-            </Info>
-          </span>
-          <span className="num">{eur(f.rentIncome)}</span>
+        <div className="card pad">
+          <div className="kv">
+            <span>
+              {t('tax.rentReceived')}
+              <Info about={t('tax.rentMonthsAbout')}>
+                {t('tax.rentMonthsInfo', {
+                  paid: tax.paidMonths,
+                  vacant: tax.vacantMonths,
+                  unpaid: tax.unpaidMonths,
+                  year,
+                })}
+              </Info>
+            </span>
+            <span className="num">{eur(f.rentIncome)}</span>
+          </div>
         </div>
       </section>
 
       <section className="section">
         <Heading>{t('tax.expenses')}</Heading>
-        {f.lines.length === 0 && f.depreciation === 0 && <div className="kv dim">{t('tax.noCosts', { year })}</div>}
-        {f.lines.map((l) => {
-          const label = t(`cat.${l.category}.label`);
-          return (
-            <div className={'kv' + (l.deductible ? '' : ' faded')} key={l.category}>
+        <div className="card pad">
+          {f.lines.length === 0 && f.depreciation === 0 && <div className="kv dim">{t('tax.noCosts', { year })}</div>}
+          {f.lines.map((l) => {
+            const label = t(`cat.${l.category}.label`);
+            return (
+              <div className={'kv' + (l.deductible ? '' : ' faded')} key={l.category}>
+                <span>
+                  {label}
+                  {!l.deductible && (
+                    <span className="chip warn" style={{ marginLeft: 6 }}>
+                      {t('common.notDeductible')}
+                    </span>
+                  )}
+                  {CATEGORIES[l.category].treatment === 'interest' && (
+                    <span className="chip" style={{ marginLeft: 6 }}>
+                      {t('tax.separately')}
+                    </span>
+                  )}
+                  <Info about={label}>
+                    {t('costs.categoryInfo', { fi: l.fi })} {t(`cat.${l.category}.hint`)}
+                  </Info>
+                </span>
+                <span className="num">{eur(l.amount)}</span>
+              </div>
+            );
+          })}
+          {f.depreciationLines.map((d) => (
+            <div className="kv" key={d.kind}>
               <span>
-                {label}
-                {!l.deductible && (
-                  <span className="chip warn" style={{ marginLeft: 6 }}>
-                    {t('common.notDeductible')}
-                  </span>
-                )}
-                {CATEGORIES[l.category].treatment === 'interest' && (
-                  <span className="chip" style={{ marginLeft: 6 }}>
-                    {t('tax.separately')}
-                  </span>
-                )}
-                <Info about={label}>
-                  {t('costs.categoryInfo', { fi: l.fi })} {t(`cat.${l.category}.hint`)}
-                </Info>
+                {t(`tax.depr.${d.kind}`)}
+                <Info about={t(`tax.depr.${d.kind}`)}>{t(`tax.depr.${d.kind}Info`)}</Info>
               </span>
-              <span className="num">{eur(l.amount)}</span>
+              <span className="num">{eur(d.amount)}</span>
             </div>
-          );
-        })}
-        {f.depreciationLines.map((d) => (
-          <div className="kv" key={d.kind}>
-            <span>
-              {t(`tax.depr.${d.kind}`)}
-              <Info about={t(`tax.depr.${d.kind}`)}>{t(`tax.depr.${d.kind}Info`)}</Info>
-            </span>
-            <span className="num">{eur(d.amount)}</span>
+          ))}
+          <div className="kv sum">
+            <span>{t('tax.deductibleTotal')}</span>
+            <span className="num">{eur(f.deductibleCosts + f.depreciation)}</span>
           </div>
-        ))}
-        <div className="kv sum">
-          <span>{t('tax.deductibleTotal')}</span>
-          <span className="num">{eur(f.deductibleCosts + f.depreciation)}</span>
         </div>
       </section>
 
       <section>
-        <Heading
-          info={
-            <Info about={t('tax.packageAbout')}>{t('tax.packageInfo')}</Info>
-          }
-        >
+        <Heading info={<Info about={t('tax.packageAbout')}>{t('tax.packageInfo')}</Info>}>
           {t('tax.declaration')}
         </Heading>
         <ErrorNote message={error} />

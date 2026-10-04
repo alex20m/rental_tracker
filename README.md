@@ -36,11 +36,14 @@ Two levels. The **portfolio** page lists your apartments and has **New
 apartment** and the round **account menu** (who you are, language, sign out,
 delete account). Open an apartment and the top bar shows its name, a ‹ back to
 the portfolio, and the **tax year** (‹ ›). Everything about that apartment is in
-the bottom navigation, five places and nothing hidden behind other buttons:
+the bottom navigation, four places and nothing hidden behind other buttons:
 
-- **Home** – net income for the year in one big number, with rent, deductions
-  and estimated tax under it; a short to-do list of what is still missing;
-  monthly chart; occupancy and yield; recent activity. For a co-owned apartment
+- **Home** – a glance, not a report: net income for the year in one big number,
+  with rent, deductions and estimated tax under it; the first three things still
+  missing (the rest are counted and lead to the Tax checklist), or — once nothing
+  is missing — a button to prepare the declaration; a monthly chart, occupancy
+  and yield, and the three latest entries. While nothing is logged for the year
+  it shows only the number and how to start. For a co-owned apartment
   a toggle switches between *your share* (what you declare) and the *whole
   apartment*.
 - **Rent & costs** – one place for what comes in and goes out, with a
@@ -49,14 +52,18 @@ the bottom navigation, five places and nothing hidden behind other buttons:
   **+** button adds a cost: amount, a category chip, optional description, date
   and receipt photo (camera or gallery). A basic improvement also asks how many
   years to spread it over.
-- **Tax** – the figures by Finnish form category for your share (or the whole
-  apartment), a checklist of anything to fix before filing — each item takes
-  you to where it is fixed — and **Download declaration (.zip)**.
-- **History** – every year of the apartment side by side, newest first, with
-  the combined net income of all years. Tap a year to open its tax summary.
-- **Settings** – this apartment's owners & shares, inviting co-owners, property
-  details — flat or property, how the financing charge is booked — building
-  depreciation (poisto) for a property, delete.
+- **Tax** – a **This year | All years** switch at the top. *This year*: the
+  figures by Finnish form category for your share (or the whole apartment), a
+  checklist of anything to fix before filing — each item takes you to where it
+  is fixed — and **Download declaration (.zip)**. *All years*: every year of the
+  apartment side by side, newest first, with the combined net income of all
+  years; tap a year to open its tax summary.
+- **Settings** – a short list of topics, each opening on its own with a ‹ back:
+  *Owners* (shares, inviting co-owners, leaving), *Property details* (flat or
+  property, how the financing charge is booked, price, usual rent) and
+  *Building depreciation* (poisto, for a property). Changes to the last two are
+  kept while you move between topics and saved from one bar. Deleting the
+  apartment is at the bottom of the list.
 
 The name printed on the declaration is the one given when the account was
 created (it is required there); there is nothing to fill in separately.

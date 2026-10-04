@@ -79,7 +79,7 @@ describe('choosing a language', () => {
     await userEvent.keyboard('{Escape}');
     await userEvent.click(screen.getByRole('button', { name: /^Alpha/ }));
     expect(screen.getByRole('button', { name: 'Hyror & kostnader' })).toBeTruthy();
-    expect(screen.getByText('Förbered deklarationen 2026')).toBeTruthy();
+    expect(screen.getByText('Inget loggat ännu.')).toBeTruthy();
     expect(screen.queryByText('Sign out')).toBeNull();
     expect(localStorage.getItem('rental-tracker:language')).toBe('sv');
     expect(document.documentElement.lang).toBe('sv');

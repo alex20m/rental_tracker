@@ -33,7 +33,6 @@ export const sv: Record<MessageKey, string> = {
   'nav.tax': 'Skatt',
   'nav.menu': 'Meny',
   'nav.ledger': 'Hyror & kostnader',
-  'nav.history': 'Historik',
   'nav.settings': 'Inställningar',
   'ledger.view': 'Hyra eller kostnader',
   'nav.allApartments': 'Alla lägenheter',
@@ -72,15 +71,13 @@ export const sv: Record<MessageKey, string> = {
   'home.netAbout': 'nettoinkomst',
   'home.netInfo': 'Mottagen hyra minus avdragsgilla kostnader och avskrivning – beloppet du beskattas för.',
   'home.deductions': 'Avdrag',
-  'home.deductionsAbout': 'avdrag',
-  'home.deductionsInfo':
-    'Avdragsgilla kostnader plus avskrivning. Kostnader som inte är avdragsgilla lämnas utanför.',
   'home.estTax': 'Beräknad skatt',
   'home.estTaxAbout': 'skatteberäkningen',
   'home.estTaxInfo':
     '30 % upp till 30 000 € kapitalinkomst, 34 % över{onYourShare}. En grov uppskattning – andra kapitalinkomster ingår inte.',
   'home.onYourShare': ', på din andel',
   'home.todo': 'Att göra',
+  'home.moreTodo': '{n} till att kontrollera',
   'home.allSet': 'Redo för deklarationen {year}',
   'home.byMonth': 'Hyra och kostnader per månad',
   'home.chartLabel': 'Mottagen hyra {rent} och kostnader {costs} under {year}, per månad',
@@ -107,7 +104,6 @@ export const sv: Record<MessageKey, string> = {
   'portfolio.net': 'Din nettoinkomst, alla lägenheter · {year}',
   'portfolio.netInfo':
     'Din andel av mottagen hyra minus din andel av avdragsgilla kostnader och avskrivning, sammanlagt för alla dina lägenheter.',
-  'portfolio.deductionsInfo': 'Avdragsgilla kostnader plus avskrivning.',
   'portfolio.estTaxInfo':
     '30 % upp till 30 000 € kapitalinkomst, 34 % över – beräknad på alla dina lägenheter tillsammans, eftersom skattesatsen beror på totalen. Andra kapitalinkomster ingår inte.',
   'portfolio.apartments': 'Lägenheter',
@@ -248,7 +244,9 @@ export const sv: Record<MessageKey, string> = {
   'check.invites.todo.other': '{n} inbjudna ägare har inte anslutit ännu – kontrollera att andelarna är slutgiltiga',
 
   // — history —
-  'history.title': 'Historik',
+  'tax.view': 'Skattevy',
+  'tax.thisYear': 'Det här året',
+  'tax.allYears': 'Alla år',
   'history.allYears': 'Nettoinkomst, alla år',
   'history.allYearsAbout': 'alla år',
   'history.allYearsInfo': 'Nettohyresinkomsten för varje år du har fört in, sammanlagt. År med förlust räknas som negativa.',
@@ -288,7 +286,13 @@ export const sv: Record<MessageKey, string> = {
   'settings.sharePlaceholder': 't.ex. 50',
   'settings.sharing': 'Delar…',
   'settings.shareApartment': 'Dela lägenhet',
-  'settings.details': 'Uppgifter',
+  'settings.details': 'Objektets uppgifter',
+  'settings.back': 'Tillbaka till inställningar',
+  'settings.ownersSolo': 'Bara du',
+  'settings.ownersShared': '{n} ägare · du äger {pct}',
+  'settings.depreciationNA': 'Används inte för en bostadsrätt',
+  'settings.depreciationOn': 'På · {rate} % per år',
+  'settings.depreciationOff': 'Av',
   'settings.name': 'Namn',
   'settings.address': 'Adress',
   'settings.company': 'Bostadsbolag',

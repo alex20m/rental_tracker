@@ -36,10 +36,6 @@ export default function History({ apt, thisYear, scope, onScope, onPick }: Props
 
   return (
     <>
-      <div className="pagehead">
-        <h1>{t('history.title')}</h1>
-      </div>
-
       <section className="hero">
         {shared && <ScopeToggle sharePct={apt.mySharePct} scope={scope} onScope={onScope} />}
         <div className="label" style={{ marginTop: shared ? 10 : 0 }}>
@@ -53,7 +49,7 @@ export default function History({ apt, thisYear, scope, onScope, onPick }: Props
 
       <section>
         <Heading>{t('history.years')}</Heading>
-        <ul className="list">
+        <ul className="list card">
           {rows.map(({ year, f }) => (
             <li key={year}>
               <button className="row-btn" onClick={() => onPick(year)}>
