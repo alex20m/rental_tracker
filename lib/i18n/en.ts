@@ -100,7 +100,7 @@ export const en = {
   'home.yieldAbout': 'yield',
   'home.yieldInfo': 'Gross yield is the rent received divided by the purchase price{net}.{addPrice}',
   'home.yieldNet': '; after deductible costs it is {n} %',
-  'home.yieldAddPrice': ' Add the purchase price in the apartment settings to see it.',
+  'home.yieldAddPrice': ' Add the purchase price under Advanced in the apartment settings to see it.',
   'home.recent': 'Recent',
   'home.recentRent': 'Rent {month}',
   'home.recentVacant': 'Vacant {month}',
@@ -337,7 +337,7 @@ export const en = {
 
   // — checklist —
   'check.price.ok': 'Purchase price set',
-  'check.price.todo': 'Add the purchase price (for depreciation and yield)',
+  'check.price.todo': 'Add the purchase price (for the building depreciation)',
   'check.logged.ok': 'Every month logged',
   'check.logged.todo.one': '{n} month not logged yet',
   'check.logged.todo.other': '{n} months not logged yet',
@@ -418,7 +418,7 @@ export const en = {
   'settings.purchaseDate': 'Purchase date',
   'settings.purchasePrice': 'Purchase price (€)',
   'settings.purchasePriceAbout': 'the purchase price',
-  'settings.purchasePriceInfo': 'The price of the whole apartment, not just your share.',
+  'settings.purchasePriceInfo': 'The price of the whole apartment, not just your share. It gives the yield on Home and is the base of a property’s building depreciation; a flat in a housing company is never depreciated.',
   'settings.monthlyRent': 'Usual monthly rent (€)',
   'settings.monthlyRentAbout': 'the usual rent',
   'settings.monthlyRentInfo': 'Pre-fills the amount when you log a month in the rent log.',

@@ -96,7 +96,7 @@ export const sv: Record<MessageKey, string> = {
   'home.yieldAbout': 'avkastning',
   'home.yieldInfo': 'Bruttoavkastningen är mottagen hyra delad med inköpspriset{net}.{addPrice}',
   'home.yieldNet': '; efter avdragsgilla kostnader är den {n} %',
-  'home.yieldAddPrice': ' Ange inköpspriset i lägenhetens inställningar för att se den.',
+  'home.yieldAddPrice': ' Ange inköpspriset under Avancerat i lägenhetens inställningar för att se den.',
   'home.recent': 'Senaste',
   'home.recentRent': 'Hyra {month}',
   'home.recentVacant': 'Vakant {month}',
@@ -334,7 +334,7 @@ export const sv: Record<MessageKey, string> = {
 
   // — checklist —
   'check.price.ok': 'Inköpspris angivet',
-  'check.price.todo': 'Ange inköpspriset (för avskrivning och avkastning)',
+  'check.price.todo': 'Ange inköpspriset (för byggnadsavskrivningen)',
   'check.logged.ok': 'Varje månad är loggad',
   'check.logged.todo.one': '{n} månad är inte loggad ännu',
   'check.logged.todo.other': '{n} månader är inte loggade ännu',
@@ -415,7 +415,7 @@ export const sv: Record<MessageKey, string> = {
   'settings.purchaseDate': 'Inköpsdatum',
   'settings.purchasePrice': 'Inköpspris (€)',
   'settings.purchasePriceAbout': 'inköpspriset',
-  'settings.purchasePriceInfo': 'Priset för hela lägenheten, inte bara din andel.',
+  'settings.purchasePriceInfo': 'Priset för hela lägenheten, inte bara din andel. Det ger avkastningen på Hem och är grunden för en fastighets byggnadsavskrivning; en lägenhet i ett bostadsaktiebolag skrivs aldrig av.',
   'settings.monthlyRent': 'Vanlig månadshyra (€)',
   'settings.monthlyRentAbout': 'den vanliga hyran',
   'settings.monthlyRentInfo': 'Fyller i beloppet när du loggar en månad i hyresloggen.',

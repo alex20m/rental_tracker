@@ -96,7 +96,8 @@ describe('dates in each language', () => {
 describe('the checklist in another language', () => {
   const apt: ApartmentView = {
     id: 'a1',
-    settings: { ...defaultSettings, name: 'Flat' },
+    // A depreciated property, the one kind that is asked for a purchase price.
+    settings: { ...defaultSettings, name: 'Flat', propertyType: 'property', useDepreciation: true },
     rents: [{ month: '2025-01', status: 'paid', amount: 700, receivedDate: '2025-01-03', note: '' }],
     costs: [],
     owners: [{ userId: 'u1', email: 'me@example.test', sharePct: 100 }],
@@ -110,6 +111,6 @@ describe('the checklist in another language', () => {
     const swedish = buildChecklist(args, translator('sv'));
     expect(swedish.map((i) => i.id)).toEqual(buildChecklist(args).map((i) => i.id));
     expect(swedish.find((i) => i.id === 'logged')!.text).toBe('11 månader är inte loggade ännu');
-    expect(swedish.find((i) => i.id === 'price')!.text).toBe('Ange inköpspriset (för avskrivning och avkastning)');
+    expect(swedish.find((i) => i.id === 'price')!.text).toBe('Ange inköpspriset (för byggnadsavskrivningen)');
   });
 });

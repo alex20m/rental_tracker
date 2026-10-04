@@ -436,27 +436,6 @@ function DetailsFields({ s, set }: Omit<FieldsProps, 'year'>) {
             </Switch>
           </>
         )}
-        <div className="cols">
-          <div>
-            <label htmlFor="s-date">{t('settings.purchaseDate')}</label>
-            <input id="s-date" type="date" value={s.purchaseDate} onChange={text('purchaseDate')} />
-          </div>
-          <div>
-            <Label
-              htmlFor="s-price"
-              info={<Info about={t('settings.purchasePriceAbout')}>{t('settings.purchasePriceInfo')}</Info>}
-            >
-              {t('settings.purchasePrice')}
-            </Label>
-            <input
-              id="s-price"
-              type="number"
-              inputMode="decimal"
-              value={s.purchasePrice || ''}
-              onChange={num('purchasePrice')}
-            />
-          </div>
-        </div>
         <Label
           htmlFor="s-rent"
           info={<Info about={t('settings.monthlyRentAbout')}>{t('settings.monthlyRentInfo')}</Info>}
@@ -479,6 +458,7 @@ function DetailsFields({ s, set }: Omit<FieldsProps, 'year'>) {
 function AdvancedFields({ s, set, year, apt }: FieldsProps & { apt: ApartmentView }) {
   const { t, lang } = useI18n();
   const num = (k: keyof ApartmentSettings) => numberField(set, k);
+  const text = (k: keyof ApartmentSettings) => textField(set, k);
   const params = ruleParams(year, lang);
   return (
     <>
@@ -499,6 +479,30 @@ function AdvancedFields({ s, set, year, apt }: FieldsProps & { apt: ApartmentVie
               {t(`settings.type.${k}`)}
             </button>
           ))}
+        </div>
+      </section>
+
+      <section>
+        <div className="cols" style={{ marginTop: 0 }}>
+          <div>
+            <label htmlFor="s-date">{t('settings.purchaseDate')}</label>
+            <input id="s-date" type="date" value={s.purchaseDate} onChange={text('purchaseDate')} />
+          </div>
+          <div>
+            <Label
+              htmlFor="s-price"
+              info={<Info about={t('settings.purchasePriceAbout')}>{t('settings.purchasePriceInfo')}</Info>}
+            >
+              {t('settings.purchasePrice')}
+            </Label>
+            <input
+              id="s-price"
+              type="number"
+              inputMode="decimal"
+              value={s.purchasePrice || ''}
+              onChange={num('purchasePrice')}
+            />
+          </div>
         </div>
       </section>
 

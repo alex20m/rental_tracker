@@ -24,12 +24,6 @@ export function buildChecklist(
   const { apt, tax } = args;
   const items: ChecklistItem[] = [
     {
-      id: 'price',
-      ok: apt.settings.purchasePrice > 0,
-      text: t(apt.settings.purchasePrice > 0 ? 'check.price.ok' : 'check.price.todo'),
-      to: 'settings',
-    },
-    {
       id: 'logged',
       ok: tax.unloggedMonths === 0,
       text: tax.unloggedMonths === 0 ? t('check.logged.ok') : tn('check.logged.todo', tax.unloggedMonths),
@@ -49,6 +43,11 @@ export function buildChecklist(
       to: 'costs',
     },
   ];
+  // The price is only needed for the depreciation of a property's building; a flat is never depreciated.
+  if (apt.settings.propertyType === 'property' && apt.settings.useDepreciation) {
+    const known = apt.settings.purchasePrice > 0;
+    items.unshift({ id: 'price', ok: known, text: t(known ? 'check.price.ok' : 'check.price.todo'), to: 'settings' });
+  }
   if (apt.invites.length > 0) {
     items.push({
       id: 'invites',
