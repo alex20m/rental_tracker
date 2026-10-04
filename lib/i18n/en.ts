@@ -42,7 +42,7 @@ export const en = {
   'nav.tax': 'Tax',
   'nav.menu': 'Menu',
   'nav.ledger': 'Rent & costs',
-  'nav.settings': 'Apartment settings',
+  'nav.settings': 'Settings',
   'nav.account': 'Account settings',
   'ledger.view': 'Rent or costs',
   'nav.allApartments': 'All apartments',

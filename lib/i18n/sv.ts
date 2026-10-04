@@ -37,7 +37,7 @@ export const sv: Record<MessageKey, string> = {
   'nav.tax': 'Skatt',
   'nav.menu': 'Meny',
   'nav.ledger': 'Hyror & kostnader',
-  'nav.settings': 'Lägenhetsinställningar',
+  'nav.settings': 'Inställningar',
   'nav.account': 'Kontoinställningar',
   'ledger.view': 'Hyra eller kostnader',
   'nav.allApartments': 'Alla lägenheter',

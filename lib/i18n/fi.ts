@@ -37,7 +37,7 @@ export const fi: Record<MessageKey, string> = {
   'nav.tax': 'Vero',
   'nav.menu': 'Valikko',
   'nav.ledger': 'Vuokrat ja kulut',
-  'nav.settings': 'Asunnon asetukset',
+  'nav.settings': 'Asetukset',
   'nav.account': 'Tilin asetukset',
   'ledger.view': 'Vuokrat tai kulut',
   'nav.allApartments': 'Kaikki asunnot',
