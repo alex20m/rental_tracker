@@ -44,6 +44,12 @@ describe('verifying a Neon Auth webhook', () => {
     expect(fetchMock).toHaveBeenCalledWith(`${AUTH}/.well-known/jwks.json`);
   });
 
+  it('fetches the key set from the right URL when the base URL has a trailing slash', async () => {
+    const fetchMock = stubJwks();
+    expect(await verifyNeonWebhook(body, signed(body), `${AUTH}/`)).toBe(true);
+    expect(fetchMock).toHaveBeenCalledWith(`${AUTH}/.well-known/jwks.json`);
+  });
+
   it('rejects a body changed after signing', async () => {
     stubJwks();
     const headers = signed(body);

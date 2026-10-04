@@ -316,6 +316,19 @@ exist but the deployment predates them. Redeploy.
 **Every page sends me to /sign-in, and signing in says "Auth is not
 configured"** — the same: auth variables missing from that deployment.
 
+**Signing up works but no code ever arrives** — with the `send.otp` webhook on,
+Neon sends nothing itself, so any failure in `/api/webhooks/neon-auth` means no
+email, and the sign-up page can still look successful. Read the deployment's
+runtime logs (`npx vercel logs <deployment-url>`) for the line it writes:
+*signature did not verify* (check `NEON_AUTH_BASE_URL` is this branch's base
+URL), *RESEND_API_KEY and MAIL_FROM must both be set* (`/api/health` →
+`emailConfigured`; redeploy after setting them), or *Resend refused … 403* with
+Resend's reason (sender domain not verified). No log line at all means Neon is
+not reaching the route: `neonctl neon-auth config webhook get` must show it
+enabled with the deployed URL (a Vercel preview behind deployment protection
+answers 401 to Neon). To get codes flowing again at once, switch back to Neon's
+own email: `neonctl neon-auth config webhook update --enabled false`.
+
 **A shared apartment never shows up for the other owner** — they are signed in
 with a different email than the one invited, or their email is not verified
 (the Home screen says so and links to verification). Check

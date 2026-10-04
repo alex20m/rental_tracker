@@ -94,3 +94,13 @@ describe('the sign-in code email', () => {
     expect(await sendAuthCodeEmail(code, configured)).toBe('failed');
   });
 });
+
+describe('what is logged when Resend refuses', () => {
+  it('includes the refusal reason Resend gave, such as an unverified sender domain', async () => {
+    const log = vi.spyOn(console, 'error').mockImplementation(() => {});
+    stubFetch(new Response('{"message":"The example.test domain is not verified"}', { status: 403 }));
+    await sendAuthCodeEmail({ to: 'bob@example.test', code: '1', type: 'email-verification' }, configured);
+    expect(log.mock.calls.flat().join(' ')).toContain('The example.test domain is not verified');
+    log.mockRestore();
+  });
+});

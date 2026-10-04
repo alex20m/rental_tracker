@@ -43,7 +43,9 @@ async function sendViaResend(message: Message, config: AppConfig, what: string):
       }),
     });
     if (!res.ok) {
-      console.error(`Resend refused the ${what} email: ${res.status}`);
+      // Resend says why (unverified domain, sandbox recipient limit); without it the status alone is a guess.
+      const reason = await res.text().catch(() => '');
+      console.error(`Resend refused the ${what} email: ${res.status} ${reason.slice(0, 300)}`.trim());
       return 'failed';
     }
     return 'sent';

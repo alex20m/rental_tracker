@@ -60,3 +60,28 @@ describe('the Neon Auth send.otp webhook', () => {
     expect((await POST(request(event()))).status).toBe(503);
   });
 });
+
+describe('why a sign-up code did not go out, as the deployment logs show it', () => {
+  const logged = () => vi.spyOn(console, 'error').mockImplementation(() => {});
+
+  it('logs a rejected signature, so a webhook Neon cannot get past is not a silent 401', async () => {
+    const log = logged();
+    setup({ valid: false });
+    await POST(request(event()));
+    expect(log.mock.calls.flat().join(' ')).toContain('signature');
+  });
+
+  it('logs that Resend is not configured, naming the missing variables', async () => {
+    const log = logged();
+    setup({ send: 'not_configured' });
+    await POST(request(event()));
+    expect(log.mock.calls.flat().join(' ')).toMatch(/RESEND_API_KEY.*MAIL_FROM/);
+  });
+
+  it('logs when the email could not be sent', async () => {
+    const log = logged();
+    setup({ send: 'failed' });
+    await POST(request(event()));
+    expect(log.mock.calls.flat().join(' ')).toContain('failed');
+  });
+});
