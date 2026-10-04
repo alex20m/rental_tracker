@@ -72,7 +72,7 @@ export const fi: Record<MessageKey, string> = {
   'home.estTax': 'Arvioitu vero',
   'home.estTaxAbout': 'veroarvio',
   'home.estTaxInfo':
-    '30 % pääomatuloista 30 000 euroon asti, 34 % sen ylittävältä osalta{onYourShare}. Karkea arvio – muut pääomatulot eivät ole mukana.',
+    '{capLow} % pääomatuloista {capLimit} euroon asti, {capHigh} % sen ylittävältä osalta{onYourShare}. Karkea arvio – muut pääomatulot eivät ole mukana.',
   'home.onYourShare': ', osuudestasi',
   'home.todo': 'Tehtävät',
   'home.moreTodo': '{n} muuta tarkistettavaa',
@@ -103,7 +103,7 @@ export const fi: Record<MessageKey, string> = {
   'portfolio.netInfo':
     'Osuutesi saaduista vuokrista vähennettynä osuudellasi vähennyskelpoisista kuluista ja poistoista, laskettuna yhteen kaikista asunnoistasi.',
   'portfolio.estTaxInfo':
-    '30 % pääomatuloista 30 000 euroon asti, 34 % sen ylittävältä osalta – arvioitu kaikista asunnoistasi yhdessä, koska verokanta riippuu kokonaissummasta. Muut pääomatulot eivät ole mukana.',
+    '{capLow} % pääomatuloista {capLimit} euroon asti, {capHigh} % sen ylittävältä osalta – arvioitu kaikista asunnoistasi yhdessä, koska verokanta riippuu kokonaissummasta. Muut pääomatulot eivät ole mukana.',
   'portfolio.apartments': 'Asunnot',
   'portfolio.youOwn': 'Omistat {pct}',
   'portfolio.owners': ' · {n} omistajaa',
@@ -149,15 +149,27 @@ export const fi: Record<MessageKey, string> = {
   'costs.description': 'Kuvaus',
   'costs.years': 'Jaksotetaan (vuotta)',
   'costs.yearsAbout': 'jaksotus',
-  'costs.yearsInfo': 'Perusparannus vähennetään yhtä suurina vuotuisina poistoina 10 vuoden aikana maksuvuodesta alkaen – tai lyhyemmässä ajassa, jos sen vaikutusaika on lyhyempi.',
-  'costs.shortLived': 'Käyttöikä alle 3 vuotta – vähennä heti',
+  'costs.yearsInfo':
+    'Asunto-osakkeen perusparannus vähennetään yhtä suurina osina maksuvuodesta alkaen niin monelle vuodelle kuin se kestää: {improvementMin}–{improvementMax} vuotta.',
+  'costs.shortLived': 'Käyttöikä alle {minLife} vuotta – vähennä heti',
   'costs.overYears': '{n} vuodelle',
-  'costs.furnitureRate': '25 % vuodessa',
+  'costs.furnitureRate': '{movableRate} % vuodessa',
   'costs.descriptionPlaceholder': 'Valinnainen – esim. keittiön hanan vaihto',
   'costs.date': 'Päivämäärä',
   'costs.processing': 'Käsitellään…',
   'costs.replacePhoto': 'Vaihda kuva',
   'costs.addPhoto': 'Lisää kuva',
+  'costs.addedToBuilding': 'lisätään rakennuksen menoon',
+  'costs.additionAbout': 'rakennuksen meno',
+  'costs.additionInfo':
+    'Kiinteistön rakennuksen perusparannusta ei vähennetä erikseen: se lisätään rakennuksen jäljellä olevaan menoon ja poistetaan sen mukana (ota rakennuksen poisto käyttöön asetuksissa), tai vähennetään myytäessä.',
+  'costs.reason.flatRate': 'Kuuluu asetuksissa valittuun kalusteiden kiinteään vähennykseen.',
+  'costs.reason.belowMarket': 'Korkoja ei voi vähentää, kun vuokra on käypää vuokraa alempi.',
+  'costs.kilometres': 'Ajetut kilometrit (valinnainen)',
+  'costs.kilometresAbout': 'kilometrikorvaus',
+  'costs.kilometresInfo':
+    'Oma auto: {mileage} € kilometriltä vuodelle {year} – Verohallinnon määrä vuokraukseen liittyville matkoille, ei se korkeampi verovapaa korvaus, jonka työnantaja saa maksaa.',
+  'costs.kilometresFilled': '{km} km × {mileage} € = {amount}',
 
   'cat.maintenance_charge.label': 'Hoitovastike',
   'cat.maintenance_charge.hint': 'Vähennetään maksuvuonna.',
@@ -171,10 +183,10 @@ export const fi: Record<MessageKey, string> = {
     'Vuosikorjaukset, jotka pitävät asunnon ennallaan, vähennetään maksuvuonna. Tasoa nostava korjaus on perusparannus.',
   'cat.improvement.label': 'Perusparannus',
   'cat.improvement.hint':
-    'Tasoa nostava työ, esim. uusi keittiö tai parvekelasitus. Vähennetään yhtä suurina osina 10 vuoden aikana maksuvuodesta alkaen, tai lyhyemmässä ajassa, jos vaikutusaika on lyhyempi.',
+    'Tasoa nostava työ, esim. uusi keittiö tai parvekelasitus. Asunto-osake: vähennetään yhtä suurina osina maksuvuodesta alkaen {improvementMin}–{improvementMax} vuoden aikana vaikutusajan mukaan. Kiinteistön rakennus: lisätään rakennuksen menoon ja poistetaan sen mukana.',
   'cat.furniture.label': 'Kalusteet ja kodinkoneet',
   'cat.furniture.hint':
-    'Enintään 1 200 € tai käyttöikä alle 3 vuotta: vähennetään heti. Kalliimmat: 25 % jäljellä olevasta arvosta vuosittain. Pidä luetteloa esineistä.',
+    'Enintään {limit} € tai käyttöikä alle {minLife} vuotta: vähennetään heti. Kalliimmat: {movableRate} % jäljellä olevasta arvosta vuosittain, ja koko loppuosa, kun jäljellä on enintään {limit} €. Pidä luetteloa esineistä. Ei vähennetä, jos käytät kalusteiden kiinteää vähennystä.',
   'cat.loan_interest.label': 'Lainan korot',
   'cat.loan_interest.hint':
     'Vuokra-asuntoa varten otetun lainan korot. Ne pienentävät pääomatuloa, mutta ilmoitetaan korkovähennyksissä, ei vuokratulolomakkeella.',
@@ -184,7 +196,7 @@ export const fi: Record<MessageKey, string> = {
   'cat.brokerage.hint': 'Vuokranvälittäjän palkkiot ja ilmoitukset vuokralaista etsittäessä.',
   'cat.travel.label': 'Matkakulut',
   'cat.travel.hint':
-    'Matkat asunnon esittelyyn, vuokralaisen tapaamiseen, huoltoon tai yhtiökokoukseen. Verohallinto vahvistaa kilometrikohtaisen määrän vuosittain (0,27 € vuodelle 2025).',
+    'Matkat asunnon esittelyyn, vuokralaisen tapaamiseen, huoltoon tai yhtiökokoukseen. Omalla autolla Verohallinnon määrä vuodelle {year} on {mileage} € kilometriltä – kirjoita kilometrit, niin summa täytetään. Myös muut todelliset kulut (liput, majoitus) ovat vähennyskelpoisia.',
   'cat.utilities.label': 'Omistajan maksamat käyttömaksut',
   'cat.utilities.hint': 'Sähkö, lämmitys tai internet, jonka maksat vuokra-asunnosta.',
   'cat.property_tax.label': 'Kiinteistövero',
@@ -199,7 +211,7 @@ export const fi: Record<MessageKey, string> = {
     'Jokainen omistaja ilmoittaa oman osuutensa. “Osuutesi” on se, mikä menee omaan veroilmoitukseesi; “Koko asunto” on vain vertailua varten.',
   'tax.estimated': 'Arvioitu vero',
   'tax.estimateInfo':
-    'Pääomatuloveroa: 30 % 30 000 euroon asti, 34 % sen ylittävältä osalta. Vain arvio – muita pääomatuloja ja vähennyksiä ei oteta huomioon. Kaikkien asuntojen näkymässä arvio lasketaan kaikesta omistamastasi yhteensä.',
+    'Pääomatuloveroa: {capLow} % {capLimit} euroon asti, {capHigh} % sen ylittävältä osalta. Vain arvio – muita pääomatuloja ja vähennyksiä ei oteta huomioon. Kaikkien asuntojen näkymässä arvio lasketaan kaikesta omistamastasi yhteensä. Samat verokannat koskevat ulkomailla asuvaa omistajaa (lähdevero {sourceTax} % koskee palkkaa, ei vuokraa), mutta asuinmaa voi verottaa vuokraakin.',
   'tax.beforeFiling': 'Ennen ilmoittamista',
   'tax.income': 'Tulot',
   'tax.rentReceived': 'Saadut vuokrat',
@@ -209,13 +221,25 @@ export const fi: Record<MessageKey, string> = {
   'tax.expenses': 'Menot',
   'tax.noCosts': 'Vuodelle {year} ei ole kirjattu kuluja.',
   'tax.depr.building': 'Rakennuksen poisto',
-  'tax.depr.buildingInfo': 'Poisto – tämän vuoden osuus rakennuksen jäljellä olevasta menosta, määritetään asunnon asetuksissa.',
+  'tax.depr.buildingInfo':
+    'Poisto – tämän vuoden osuus rakennuksen jäljellä olevasta menosta, johon perusparannukset kuuluvat. Määritetään asunnon asetuksissa.',
   'tax.depr.improvements': 'Perusparannukset, tämän vuoden osuus',
   'tax.depr.improvementsInfo': 'Kukin perusparannus vähennetään yhtä suurina osina jaksotusvuosien aikana maksuvuodesta alkaen.',
   'tax.depr.furniture': 'Kalusteet ja kodinkoneet, tämän vuoden osuus',
-  'tax.depr.furnitureInfo': 'Yli 1 200 euron esineistä vähennetään 25 % jäljellä olevasta arvosta vuosittain.',
+  'tax.depr.furnitureInfo':
+    'Yli {limit} euron esineistä vähennetään {movableRate} % jäljellä olevasta arvosta vuosittain, ja koko loppuosa, kun jäljellä on enintään {limit} €.',
   'tax.separately': 'ilmoitetaan erikseen',
   'tax.deductibleTotal': 'Vähennyskelpoiset yhteensä',
+  'tax.depr.flatRate': 'Kalustettu asunto, kiinteä määrä',
+  'tax.depr.flatRateInfo':
+    '{flatStudio} € kuukaudessa yksiöstä tai huoneesta, {flatLarger} € suuremmasta asunnosta jokaiselta kuukaudelta, jolloin asunto oli vuokrattu. Se korvaa kalusteiden todelliset kulut.',
+  'tax.limited': 'Rajattu saatuun vuokraan',
+  'tax.limitedInfo':
+    'Vuokra on käypää vuokraa alempi, joten kulut ja poistot yhteensä saa vähentää enintään vuokran määrään asti eikä tappiota synny.',
+  'tax.credit': 'Alijäämähyvitys, enintään',
+  'tax.creditAbout': 'alijäämähyvitys',
+  'tax.creditInfo':
+    'Vuokratappio pienentää pääomatulojasi. Jos sinulla ei ole muita pääomatuloja, joita vastaan sen voi vähentää, {creditRate} % alijäämästä vähennetään ansiotuloistasi menevästä verosta alijäämähyvityksenä, enintään {creditMax} € – {creditMaxOneChild} € yhdellä alaikäisellä lapsella ja {creditMaxChildren} € kahdella tai useammalla. Näytetty määrä on enintään mahdollinen: se riippuu myös muista pääomatuloistasi ja siitä, kuinka paljon ansiotulon veroa hyvitettäväksi on. Se, mikä ei mahdu, jää tappioksi, jonka voit vähentää pääomatuloista {carryYears} vuoden ajan.',
   'tax.declaration': 'Veroilmoitus',
   'tax.packageAbout': 'veroilmoituspaketti',
   'tax.packageInfo':
@@ -315,7 +339,7 @@ export const fi: Record<MessageKey, string> = {
   'settings.depreciation': 'Rakennuksen poisto',
   'settings.depreciationAbout': 'poistot',
   'settings.depreciationInfo':
-    'Poisto – vuosittainen vähennys rakennuksen kulumisesta, laskettuna sen jäljellä olevasta menosta. Asuinrakennukselle enintään 4 % ja muille rakennuksille 7 % vuodessa. Maapohjasta ei tehdä poistoja.',
+    'Poisto – vuosittainen vähennys rakennuksen kulumisesta, laskettuna sen jäljellä olevasta menosta: asuinrakennukselle enintään {buildingResidential} % ja myymälöille, varastoille, tehtaille ja työpajoille {buildingCommercial} % vuodessa. Perusparannukset lisätään rakennuksen menoon. Maapohjasta ei tehdä poistoja, eikä poistoa vähennetä myyntivuonna.',
   'settings.noBuildingDepreciation':
     'Asunto-osakkeen hankintahinnasta ei tehdä poistoja – se vähennetään, kun myyt. Perusparannukset ja kalliimmat kalusteet jaksotetaan kirjaamiesi kulujen perusteella.',
   'settings.useDepreciation': 'Vähennä rakennuksen poisto veroilmoituksessa',
@@ -323,12 +347,51 @@ export const fi: Record<MessageKey, string> = {
   'settings.buildingShareAbout': 'poistettava osuus',
   'settings.buildingShareInfo': 'Se osa ostohinnasta, joka on rakennusta eikä maata – vain rakennus poistetaan.',
   'settings.rate': 'Prosentti (% / vuosi)',
-  'settings.prior': 'Poistettu aiempina vuosina (€)',
+  'settings.prior': 'Poistettu ennen sitä vuotta (€)',
   'settings.priorAbout': 'aiemmat poistot',
-  'settings.priorInfo': 'Aiempina vuosina jo vähennetty yhteissumma koko asunnolle.',
+  'settings.priorInfo':
+    'Ennen kohdan ”Laske verovuodesta” verovuotta jo vähennetty yhteissumma koko asunnolle.',
   'settings.thisYear': 'Tänä vuonna',
   'settings.thisYearAbout': 'tämän vuoden poisto',
   'settings.thisYearInfo': 'Koko asunnolle; se jaetaan omistajien kesken heidän osuuksiensa mukaan.',
+  'settings.buildingKind': 'Rakennuksen laji',
+  'settings.buildingKindAbout': 'rakennuksen laji',
+  'settings.buildingKindInfo':
+    'Asuin- ja toimistorakennukset poistetaan enintään {buildingResidential} % ja myymälät, varastot, tehtaat ja työpajat enintään {buildingCommercial} % vuodessa.',
+  'settings.buildingKind.residential': 'Asuin- tai toimistorakennus',
+  'settings.buildingKind.commercial': 'Myymälä, varasto, tehdas, työpaja',
+  'settings.purchaseCosts': 'Ostokulut (€)',
+  'settings.purchaseCostsAbout': 'ostokulut',
+  'settings.purchaseCostsInfo':
+    'Varainsiirtovero, rekisteröinti sekä välittäjän ja juristin palkkiot, jotka maksoit ostettaessa. Rakennuksen osuus niistä lisätään sen menoon.',
+  'settings.rateAbout': 'prosentti',
+  'settings.rateInfo':
+    'Voit vähentää minkä tahansa määrän enintään rakennuksen lajin korkeimpaan prosenttiin ({max} %). Poisto ei koskaan tule automaattisesti: alenna prosenttia vuodelle, jona käytit rakennusta itse.',
+  'settings.fromYear': 'Laske verovuodesta',
+  'settings.fromYearAbout': 'ensimmäinen vuosi',
+  'settings.fromYearInfo':
+    'Ensimmäinen verovuosi, jolle sovellus laskee poiston. Jätä tyhjäksi, jos haluat ensimmäisen kirjaamasi vuokran vuoden. Poisto pienenee vuosi vuodelta jäljellä olevan menon mukana, olettaen että korkein mahdollinen on vähennetty joka vuosi tästä alkaen; aiemmin vähennetty syötetään seuraavaan kenttään.',
+  'settings.letting': 'Vuokraus',
+  'settings.lettingAbout': 'vuokraus',
+  'settings.lettingInfo':
+    'Jos vuokraat vain osan asunnosta tai vuokraat sen käypää vuokraa halvemmalla, vähennykset muuttuvat.',
+  'settings.letShare': 'Vuokratun osan osuus asunnosta (%)',
+  'settings.letShareAbout': 'vuokrattu osuus',
+  'settings.letShareInfo':
+    'Koko asunnon kulut – hoito- ja vesimaksut, rahoitusvastike, vakuutukset, käyttömaksut, kiinteistövero, lainankorot ja rakennuksen poisto – lasketaan vain tällä osuudella, pinta-alan tai henkilömäärän mukaan. Korjaukset, kalusteet, matkat, välityspalkkiot ja muut kulut lasketaan kokonaan, joten kirjaa vain vuokrattuun osaan kuuluva.',
+  'settings.belowMarket': 'Vuokra on alle asunnon käyvän vuokran',
+  'settings.belowMarketAbout': 'käypää alempi vuokra',
+  'settings.belowMarketInfo':
+    'Käypää vuokraa halvemmalla vuokraaminen ei ole tulonhankintaa: kulut ja poistot yhteensä saa vähentää enintään vuokran määrään asti, tappiota ei vahvisteta eikä asuntoa varten otetun lainan korkoja voi vähentää lainkaan. Vuokra ilmoitetaan silti. Asuntoedun verotusarvo on käyvän vuokran vertailukohta.',
+  'settings.furnishing': 'Kalusteet',
+  'settings.furnishingAbout': 'kalustevähennys',
+  'settings.furnishingInfo':
+    'Kalustetussa asunnossa valitset kiinteän vähennyksen – {flatStudio} € kuukaudessa yksiöstä tai huoneesta, {flatLarger} € suuremmasta asunnosta, vuokralaisten määrästä riippumatta, ja se kattaa kaikki kalusteet ja irtaimet kodinkoneet – ja kirjaamiesi kalusteiden todellisten kulujen välillä. Kiinteä määrä lasketaan jokaiselta kuukaudelta, joka on kirjattu maksetuksi tai maksamattomaksi, ei tyhjiltä kuukausilta. Kiinteät kodinkoneet (jääkaappi, liesi, astianpesukone) vähennetään sen lisäksi: kirjaa ne vuosikorjauksina. Pidä sama valinta vuodesta toiseen, ellei olosuhteet muutu.',
+  'settings.furnishing.actual': 'Todelliset kulut',
+  'settings.furnishing.flat': 'Kiinteä määrä',
+  'settings.roomClass': 'Asunnon koko',
+  'settings.roomClass.studio': 'Yksiö tai huone',
+  'settings.roomClass.larger': 'Suurempi',
   'settings.discard': 'Hylkää',
   'settings.saveChanges': 'Tallenna muutokset',
   'settings.deleteConfirm': 'Poistetaanko {name} ja kaikki sen tiedot? Tätä ei voi perua.',

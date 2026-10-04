@@ -1,11 +1,12 @@
 'use client';
 
 import { useState } from 'react';
-import { computeTax, eur, ownerShare, pct, portfolioTotals } from '@/lib/domain/tax';
+import { computeTax, deductionsOf, eur, ownerShare, pct, portfolioTotals } from '@/lib/domain/tax';
 import type { ApartmentView, PortfolioItem } from '@/lib/domain/types';
 import type { Account } from '@/components/RentalApp';
 import { VerifyNotice } from '@/components/Notices';
 import { eurWhole } from '@/lib/ui/format';
+import { ruleParams } from '@/lib/ui/ruleParams';
 import { useI18n } from '@/components/I18nProvider';
 import AddApartment from '@/components/AddApartment';
 import { Heading, Icon, Info, Money } from '@/components/ui';
@@ -22,13 +23,13 @@ type Props = {
 
 /** Your share of every apartment, added together — what your own tax return sees. */
 export default function Portfolio({ items, details, year, account, onOpen, onCreated }: Props) {
-  const { t } = useI18n();
+  const { t, lang } = useI18n();
   const [adding, setAdding] = useState(false);
   const shares = items.flatMap((i) => {
     const d = details[i.id];
     return d ? [{ item: i, share: ownerShare(computeTax(d, year), d.mySharePct) }] : [];
   });
-  const total = portfolioTotals(shares.map((s) => s.share));
+  const total = portfolioTotals(shares.map((s) => s.share), year);
 
   return (
     <>
@@ -48,14 +49,14 @@ export default function Portfolio({ items, details, year, account, onOpen, onCre
             <div className="l">{t('common.rent')}</div>
           </div>
           <div className="stat">
-            <div className="v">{eurWhole(total.deductibleCosts + total.depreciation)}</div>
+            <div className="v">{eurWhole(deductionsOf(total))}</div>
             <div className="l">{t('home.deductions')}</div>
           </div>
           <div className="stat">
             <div className="v">{eurWhole(total.estimatedTax)}</div>
             <div className="l">
               {t('home.estTax')}
-              <Info about={t('home.estTaxAbout')}>{t('portfolio.estTaxInfo')}</Info>
+              <Info about={t('home.estTaxAbout')}>{t('portfolio.estTaxInfo', ruleParams(year, lang))}</Info>
             </div>
           </div>
         </div>

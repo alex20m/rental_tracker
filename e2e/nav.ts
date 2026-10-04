@@ -70,3 +70,14 @@ export async function fillCode(page: Page, code: string) {
   await codeBoxes(page).first().focus();
   for (const digit of code) await page.keyboard.press(digit);
 }
+
+/**
+ * Opens an ⓘ popover. At phone height an icon low on the page starts under
+ * the floating bottom navigation; a person scrolls it clear before tapping,
+ * where Playwright would scroll mid-click — and that scroll closes the popover.
+ */
+export async function openInfo(page: Page, name: string) {
+  const about = page.getByRole('button', { name });
+  await about.evaluate((el) => el.scrollIntoView({ block: 'center' }));
+  await about.click();
+}

@@ -1,9 +1,10 @@
 'use client';
 
 import type { ApartmentView } from '@/lib/domain/types';
-import { computeTax, deductionOf, eur, ownerShare } from '@/lib/domain/tax';
+import { computeTax, deductionOf, deductionsOf, eur, ownerShare } from '@/lib/domain/tax';
 import { buildChecklist } from '@/lib/domain/checklist';
 import { eurWhole, monthsShort, monthTitle, shortDate } from '@/lib/ui/format';
+import { ruleParams } from '@/lib/ui/ruleParams';
 import { useI18n } from '@/components/I18nProvider';
 import type { Account, Go, Scope } from '@/components/RentalApp';
 import ScopeToggle from '@/components/ScopeToggle';
@@ -101,7 +102,7 @@ export default function Home({ apt, year, account, scope, onScope, go }: Props) 
             <div className="l">{t('common.rent')}</div>
           </div>
           <div className="stat">
-            <div className="v">{eurWhole(f.deductibleCosts + f.depreciation)}</div>
+            <div className="v">{eurWhole(deductionsOf(f))}</div>
             <div className="l">{t('home.deductions')}</div>
           </div>
           <div className="stat">
@@ -110,6 +111,7 @@ export default function Home({ apt, year, account, scope, onScope, go }: Props) 
               {t('home.estTax')}
               <Info about={t('home.estTaxAbout')}>
                 {t('home.estTaxInfo', {
+                  ...ruleParams(year, lang),
                   onYourShare: shared && scope === 'mine' ? t('home.onYourShare') : '',
                 })}
               </Info>

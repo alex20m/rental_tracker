@@ -181,14 +181,14 @@ describe('building depreciation', () => {
   it('never depreciates the purchase price of a housing-company share', () => {
     // vero.fi: the price of a flat or of shares in a housing company cannot be
     // deducted as depreciation — only a building one owns can.
-    const share = { settings: { ...ledger.settings, propertyType: 'share' as const } };
-    expect(computeDepreciation(share)).toBe(0);
+    const share = { ...ledger, settings: { ...ledger.settings, propertyType: 'share' as const } };
+    expect(computeDepreciation(share, 2025)).toBe(0);
   });
 
   it('is 4 % of the remaining building cost by default for a property', () => {
     const settings = { ...defaultSettings, propertyType: 'property' as const, purchasePrice: 200000, buildingSharePct: 75, useDepreciation: true };
     // (200 000 × 75 %) × 4 %
-    expect(computeDepreciation({ settings })).toBe(6000);
+    expect(computeDepreciation({ settings, rents: ledger.rents, costs: [] }, 2025)).toBe(6000);
   });
 
   it('starts every new apartment as a housing-company share', () => {
@@ -258,7 +258,8 @@ describe('expense rules', () => {
   it('depreciates dearer furniture by 25 % of what is left each year', () => {
     const l = withCosts([cost({ category: 'furniture', date: '2025-03-01', amount: 2000 })]);
     expect(computeTax(l, 2025, afterYearEnd).deductibleCosts).toBe(0);
-    expect([2024, 2025, 2026, 2027].map((y) => depr(l, y, 'furniture'))).toEqual([0, 500, 375, 281.25]);
+    // vero.fi's own example: 500, 375, and in the third year the 1 125 € that is left (it is under 1 200 €).
+    expect([2024, 2025, 2026, 2027, 2028].map((y) => depr(l, y, 'furniture'))).toEqual([0, 500, 375, 1125, 0]);
   });
 
   it('deducts dearer furniture at once when it lasts under three years', () => {
@@ -276,12 +277,12 @@ describe('expense rules', () => {
       { propertyType: 'property', purchasePrice: 50000, useDepreciation: true },
     );
     const s = ownerShare(computeTax(l, 2025, afterYearEnd), 25);
+    // The property's improvement is not spread: it joins the building's cost, (50 000 + 3 000) × 4 %, and is shared 25 %.
     expect(s.depreciationLines).toEqual([
-      { kind: 'building', amount: 500 },
-      { kind: 'improvements', amount: 75 },
+      { kind: 'building', amount: 530 },
       { kind: 'furniture', amount: 125 },
     ]);
-    expect(s.depreciation).toBe(700);
+    expect(s.depreciation).toBe(655);
   });
 });
 
@@ -315,6 +316,7 @@ describe('a portfolio of apartments', () => {
       depreciation: 0,
       netIncome: 0,
       estimatedTax: 0,
+      deficitCredit: 0,
     });
   });
 });

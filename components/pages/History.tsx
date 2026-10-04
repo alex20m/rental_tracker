@@ -1,7 +1,7 @@
 'use client';
 
 import type { ApartmentView } from '@/lib/domain/types';
-import { computeTax, eur, ownerShare } from '@/lib/domain/tax';
+import { computeTax, deductionsOf, eur, ownerShare } from '@/lib/domain/tax';
 import { eurWhole } from '@/lib/ui/format';
 import { useI18n } from '@/components/I18nProvider';
 import type { Scope } from '@/components/RentalApp';
@@ -58,7 +58,7 @@ export default function History({ apt, thisYear, scope, onScope, onPick }: Props
                   <div className="s">
                     {t('history.summary', {
                       rent: eurWhole(f.rentIncome),
-                      costs: eurWhole(f.deductibleCosts + f.depreciation),
+                      costs: eurWhole(deductionsOf(f)),
                     })}
                   </div>
                 </div>

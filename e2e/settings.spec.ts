@@ -1,8 +1,8 @@
 import type { Page } from '@playwright/test';
 import { expect, test } from './fixtures';
-import { coOwned } from './data';
+import { coOwned, ledger, YEAR } from './data';
 import { ME } from './fakeApi';
-import { alert, openApartment, openSettings, openTopic, section } from './nav';
+import { alert, openApartment, openInfo, openSettings, openTopic, section } from './nav';
 
 const owner = (page: Page, email: string) => page.locator('li.owner').filter({ hasText: email });
 
@@ -197,7 +197,9 @@ test.describe('apartment details', () => {
     await page.getByRole('switch', { name: 'Deduct building depreciation in the declaration' }).click();
     await page.getByLabel('Building share (%)').fill('80');
     await page.getByLabel('Rate (% / year)').fill('2.5');
-    await page.getByLabel('Depreciated in earlier years (€)').fill('1000');
+    // The count starts this year, with 1 000 € already deducted before it.
+    await page.getByLabel('Calculate from tax year').fill(String(YEAR));
+    await page.getByLabel('Depreciated before that year (€)').fill('1000');
     // (120 000 × 80 % − 1 000) × 2.5 %
     await expect(page.locator('.kv').filter({ hasText: 'This year' })).toContainText('2 375,00 €');
     await page.getByRole('button', { name: 'Save changes' }).click();
@@ -217,7 +219,103 @@ test.describe('apartment details', () => {
       useDepreciation: true,
       buildingSharePct: 80,
       depreciationPrior: 1000,
+      depreciationFromYear: YEAR,
     });
+  });
+
+  test('chooses the kind of building, which sets the highest rate, and adds the purchase costs to its cost', async ({ page, api }) => {
+    const apt = api.addApartment({ name: 'Shop', propertyType: 'property', useDepreciation: true, purchasePrice: 200000 });
+    await page.goto('/');
+    await openTopic(page, 'Building depreciation');
+    const thisYear = page.locator('.kv').filter({ hasText: 'This year' });
+    await expect(thisYear).toContainText('8 000,00 €');
+
+    await page.getByRole('radio', { name: 'Shop, warehouse, factory, workshop' }).click();
+    await expect(page.getByLabel('Rate (% / year)')).toHaveValue('7');
+    await expect(page.getByLabel('Rate (% / year)')).toHaveAttribute('max', '7');
+    await expect(thisYear).toContainText('14 000,00 €');
+    await openInfo(page, 'About the rate');
+    await expect(page.getByRole('note')).toContainText('up to the highest rate for the kind of building (7 %)');
+    await page.keyboard.press('Escape');
+
+    // (200 000 + 6 000) × 7 %
+    await page.getByLabel('Purchase costs (€)').fill('6000');
+    await expect(thisYear).toContainText('14 420,00 €');
+    // It may be claimed at less than the highest rate.
+    await page.getByLabel('Rate (% / year)').fill('5');
+    await expect(thisYear).toContainText('10 300,00 €');
+    await openInfo(page, 'About the kind of building');
+    await expect(page.getByRole('note')).toContainText('at most 4 % a year; shops, warehouses, factories and workshops by at most 7 %');
+    await page.keyboard.press('Escape');
+    await page.getByRole('button', { name: 'Save changes' }).click();
+
+    await expect(page.getByRole('button', { name: 'Save changes' })).toHaveCount(0);
+    expect(apt.settings).toMatchObject({ buildingKind: 'commercial', depreciationRate: 5, purchaseCosts: 6000 });
+
+    await page.getByRole('radio', { name: 'Residential or office' }).click();
+    await expect(page.getByLabel('Rate (% / year)')).toHaveValue('4');
+  });
+
+  test('shows the year depreciation is counted from, and carries what is left from year to year', async ({ page, api }) => {
+    api.addApartment(
+      { name: 'House', propertyType: 'property', useDepreciation: true, purchasePrice: 100000 },
+      { rents: [{ month: `${YEAR - 1}-12`, status: 'paid', amount: 800, receivedDate: `${YEAR - 1}-12-03`, note: '' }] },
+    );
+    await page.goto('/');
+    await openTopic(page, 'Building depreciation');
+
+    await expect(page.getByLabel('Calculate from tax year')).toHaveAttribute('placeholder', String(YEAR - 1));
+    // 4 000 € last year leaves 96 000 €, and 4 % of that is this year's.
+    await expect(page.locator('.kv').filter({ hasText: 'This year' })).toContainText('3 840,00 €');
+    await openInfo(page, 'About the first year');
+    await expect(page.getByRole('note')).toContainText('assuming the highest was claimed every year');
+  });
+
+  test('records that only part of the home is let, and that the rent is below the usual', async ({ page, api }) => {
+    const apt = api.addApartment({ name: 'Flat' });
+    await page.goto('/');
+    await openTopic(page, 'Property details');
+
+    // Clearing the field leaves it empty rather than showing a 0 that nothing could be let at.
+    await page.getByLabel('Share of the home that is let (%)').fill('');
+    await expect(page.getByLabel('Share of the home that is let (%)')).toHaveValue('');
+    await page.getByLabel('Share of the home that is let (%)').fill('60');
+    await openInfo(page, 'About the let share');
+    await expect(page.getByRole('note')).toContainText('count only by this share');
+    await page.keyboard.press('Escape');
+    await page.getByRole('switch', { name: 'The rent is below the usual rent for the flat' }).click();
+    await openInfo(page, 'About below-market rent');
+    await expect(page.getByRole('note')).toContainText('interest on the loan for the flat is not deductible at all');
+    await page.keyboard.press('Escape');
+    await openInfo(page, 'About letting');
+    await expect(page.getByRole('note')).toContainText('let only part of the home');
+    await page.keyboard.press('Escape');
+    await page.getByRole('button', { name: 'Save changes' }).click();
+
+    await expect(page.getByRole('button', { name: 'Save changes' })).toHaveCount(0);
+    expect(apt.settings).toMatchObject({ letSharePct: 60, belowMarketRent: true });
+  });
+
+  test('chooses the flat-rate furniture deduction and the size of the flat', async ({ page, api }) => {
+    const apt = api.addApartment({ name: 'Flat' }, ledger());
+    await page.goto('/');
+    await openTopic(page, 'Property details');
+    await expect(page.getByRole('radiogroup', { name: 'Size of the flat' })).toHaveCount(0);
+    await expect(page.getByRole('radio', { name: 'Actual costs' })).toHaveAttribute('aria-checked', 'true');
+
+    await page.getByRole('radio', { name: 'Flat rate' }).click();
+    await expect(page.getByRole('radio', { name: 'Larger' })).toHaveAttribute('aria-checked', 'true');
+    await page.getByRole('radio', { name: 'Studio or one room' }).click();
+    await openInfo(page, 'About the furniture deduction');
+    await expect(page.getByRole('note')).toContainText('€40 a month for a studio or one room, €60 for a larger flat');
+    await page.keyboard.press('Escape');
+    await page.getByRole('button', { name: 'Save changes' }).click();
+
+    await expect(page.getByRole('button', { name: 'Save changes' })).toHaveCount(0);
+    expect(apt.settings).toMatchObject({ furnishing: 'flat', roomClass: 'studio' });
+
+    await page.getByRole('radio', { name: 'Actual costs' }).click();
+    await expect(page.getByRole('radiogroup', { name: 'Size of the flat' })).toHaveCount(0);
   });
 
   test('says a flat is not depreciated, and records whether its financing charge is deductible', async ({ page, api }) => {

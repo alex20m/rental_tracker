@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { expect, test } from './fixtures';
 import { coOwned, ledger, m, YEAR } from './data';
-import { alert, section } from './nav';
+import { alert, openInfo, section } from './nav';
 
 const photo = `${__dirname}/receipt.jpg`;
 
@@ -266,10 +266,12 @@ test.describe('costs and receipts', () => {
     await sheet.getByRole('radio', { name: 'Basic improvement' }).click();
     await expect(sheet.getByLabel('Spread over (years)')).toHaveValue('10');
     await sheet.getByRole('button', { name: 'About spreading' }).click();
-    await expect(page.getByRole('note')).toContainText('equal parts over 10 years');
+    await expect(page.getByRole('note')).toContainText('over as many years as it lasts: from 3 to 10 years');
     await page.keyboard.press('Escape');
-    // Eleven years is more than the law allows, so it cannot be saved.
+    // Eleven years is more than the law allows, and two is less than an improvement lasts: neither can be saved.
     await sheet.getByLabel('Spread over (years)').fill('11');
+    await expect(sheet.getByRole('button', { name: 'Save' })).toBeDisabled();
+    await sheet.getByLabel('Spread over (years)').fill('2');
     await expect(sheet.getByRole('button', { name: 'Save' })).toBeDisabled();
     await sheet.getByLabel('Spread over (years)').fill('4');
     await sheet.getByLabel('Description').fill('New kitchen');
@@ -324,6 +326,95 @@ test.describe('costs and receipts', () => {
     // 120 repair + 96 insurance + 80 financing charge.
     await expect(page.locator('.hero .big')).toHaveText('296,00 €');
     await expect(page.locator('li').filter({ hasText: 'Rahoitusvastike' })).not.toContainText('not deductible');
+  });
+
+  test('adds a property’s improvement to the building’s cost instead of spreading it', async ({ page, api }) => {
+    const apt = api.addApartment({ name: 'House', propertyType: 'property', useDepreciation: true, purchasePrice: 100000 });
+    await page.clock.setFixedTime(new Date(`${YEAR}-12-15T12:00:00`));
+    await page.goto('/');
+    await section(page, 'Costs');
+    await page.getByRole('button', { name: 'Add cost' }).click();
+    const sheet = page.getByRole('dialog', { name: 'Add cost' });
+    await sheet.getByLabel('Amount (€)').fill('20000');
+    await sheet.getByRole('radio', { name: 'Basic improvement' }).click();
+
+    await expect(sheet.getByLabel('Spread over (years)')).toHaveCount(0);
+    await expect(sheet.getByText('added to building cost')).toBeVisible();
+    await openInfo(page, 'About the building’s cost');
+    await expect(page.getByRole('note')).toContainText('added to the building’s remaining cost and depreciated with it');
+    await page.keyboard.press('Escape');
+    await sheet.getByLabel('Description').fill('New roof');
+    await sheet.getByLabel('Date').fill(`${m(5)}-02`);
+    await sheet.getByRole('button', { name: 'Save' }).click();
+
+    await expect(page.locator('.list li')).toContainText('added to building cost');
+    // It is not a cost of the year: it raises the building's cost, which Tax then depreciates.
+    await expect(page.locator('.hero .big')).toHaveText('0,00 €');
+    expect(apt.costs[0]).toMatchObject({ category: 'improvement', amount: 20000 });
+  });
+
+  test('refuses furniture the flat-rate deduction already covers, saying why', async ({ page, api }) => {
+    api.addApartment({ name: 'Flat', furnishing: 'flat' });
+    await page.goto('/');
+    await section(page, 'Costs');
+    await page.getByRole('button', { name: 'Add cost' }).click();
+    const sheet = page.getByRole('dialog', { name: 'Add cost' });
+    await sheet.getByLabel('Amount (€)').fill('2000');
+    await sheet.getByRole('radio', { name: 'Furniture & appliances' }).click();
+
+    await expect(sheet.getByText('Not deductible', { exact: true })).toBeVisible();
+    // Nothing to decide about how long it lasts: it is not deducted either way.
+    await expect(sheet.getByRole('switch', { name: /Lasts under/ })).toHaveCount(0);
+    await openInfo(page, 'About not deductible');
+    await expect(page.getByRole('note')).toContainText('Covered by the flat-rate furniture deduction chosen in Settings.');
+    await page.keyboard.press('Escape');
+    await sheet.getByLabel('Description').fill('Sofa');
+    await sheet.getByRole('button', { name: 'Save' }).click();
+
+    await expect(page.locator('.list li')).toContainText('not deductible');
+    await expect(page.locator('.hero .big')).toHaveText('0,00 €');
+  });
+
+  test('refuses loan interest when the rent is below the usual, saying why', async ({ page, api }) => {
+    api.addApartment({ name: 'Flat', belowMarketRent: true });
+    await page.goto('/');
+    await section(page, 'Costs');
+    await page.getByRole('button', { name: 'Add cost' }).click();
+    const sheet = page.getByRole('dialog', { name: 'Add cost' });
+    await sheet.getByLabel('Amount (€)').fill('300');
+    await sheet.getByRole('radio', { name: 'Loan interest' }).click();
+
+    await expect(sheet.getByText('Not deductible', { exact: true })).toBeVisible();
+    await openInfo(page, 'About not deductible');
+    await expect(page.getByRole('note')).toContainText('Interest is not deductible when the rent is below the usual rent.');
+  });
+
+  test('works out a trip in one’s own car from the kilometres, at the rate of the year', async ({ page, api }) => {
+    const apt = api.addApartment({ name: 'Flat' });
+    await page.clock.setFixedTime(new Date(`${YEAR}-12-15T12:00:00`));
+    await page.goto('/');
+    await section(page, 'Costs');
+    await page.getByRole('button', { name: 'Add cost' }).click();
+    const sheet = page.getByRole('dialog', { name: 'Add cost' });
+    await expect(sheet.getByLabel('Kilometres driven (optional)')).toHaveCount(0);
+    await sheet.getByRole('radio', { name: 'Travel' }).click();
+
+    await sheet.getByLabel('Kilometres driven (optional)').fill('120');
+    await expect(sheet.getByLabel('Amount (€)')).toHaveValue('32.4');
+    await expect(sheet.getByText('120 km × €0.27 = 32,40 €')).toBeVisible();
+    await openInfo(page, 'About the kilometre rate');
+    await expect(page.getByRole('note')).toContainText(`Your own car: €0.27 per kilometre for ${YEAR}`);
+    await page.keyboard.press('Escape');
+    // Clearing the kilometres leaves the amount as it was.
+    await sheet.getByLabel('Kilometres driven (optional)').fill('');
+    await expect(sheet.getByText(/ km × /)).toHaveCount(0);
+    await expect(sheet.getByLabel('Amount (€)')).toHaveValue('32.4');
+    await sheet.getByLabel('Kilometres driven (optional)').fill('200');
+    await expect(sheet.getByLabel('Amount (€)')).toHaveValue('54');
+    await sheet.getByLabel('Date').fill(`${m(5)}-02`);
+    await sheet.getByRole('button', { name: 'Save' }).click();
+
+    expect(apt.costs[0]).toMatchObject({ category: 'travel', amount: 54 });
   });
 
   test('names the category on the Finnish form', async ({ page, api }) => {

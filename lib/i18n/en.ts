@@ -76,7 +76,8 @@ export const en = {
   'home.deductions': 'Deductions',
   'home.estTax': 'Est. tax',
   'home.estTaxAbout': 'the tax estimate',
-  'home.estTaxInfo': '30 % up to €30 000 of capital income, 34 % above{onYourShare}. A rough estimate — other capital income isn’t included.',
+  'home.estTaxInfo':
+    '{capLow} % up to €{capLimit} of capital income, {capHigh} % above{onYourShare}. A rough estimate — other capital income isn’t included.',
   'home.onYourShare': ', on your share',
   'home.todo': 'To do',
   'home.moreTodo': '{n} more to check',
@@ -106,7 +107,7 @@ export const en = {
   'portfolio.netInfo':
     'Your share of the rent received, minus your share of deductible costs and depreciation, added across all your apartments.',
   'portfolio.estTaxInfo':
-    '30 % up to €30 000 of capital income, 34 % above — estimated on all your apartments together, because the rate depends on the total. Other capital income isn’t included.',
+    '{capLow} % up to €{capLimit} of capital income, {capHigh} % above — estimated on all your apartments together, because the rate depends on the total. Other capital income isn’t included.',
   'portfolio.apartments': 'Apartments',
   'portfolio.youOwn': 'You own {pct}',
   'portfolio.owners': ' · {n} owners',
@@ -152,15 +153,27 @@ export const en = {
   'costs.description': 'Description',
   'costs.years': 'Spread over (years)',
   'costs.yearsAbout': 'spreading',
-  'costs.yearsInfo': 'A basic improvement is deducted in equal parts over 10 years from the year it is paid — or over fewer years if it lasts less.',
-  'costs.shortLived': 'Lasts under 3 years — deduct at once',
+  'costs.yearsInfo':
+    'A basic improvement of a flat is deducted in equal parts from the year it is paid, over as many years as it lasts: from {improvementMin} to {improvementMax} years.',
+  'costs.shortLived': 'Lasts under {minLife} years — deduct at once',
   'costs.overYears': 'over {n} years',
-  'costs.furnitureRate': '25 % a year',
+  'costs.furnitureRate': '{movableRate} % a year',
   'costs.descriptionPlaceholder': 'Optional — e.g. Kitchen tap replacement',
   'costs.date': 'Date',
   'costs.processing': 'Processing…',
   'costs.replacePhoto': 'Replace photo',
   'costs.addPhoto': 'Add photo',
+  'costs.addedToBuilding': 'added to building cost',
+  'costs.additionAbout': 'the building’s cost',
+  'costs.additionInfo':
+    'An improvement to a property’s building is not deducted on its own: it is added to the building’s remaining cost and depreciated with it (switch building depreciation on in Settings), or deducted when you sell.',
+  'costs.reason.flatRate': 'Covered by the flat-rate furniture deduction chosen in Settings.',
+  'costs.reason.belowMarket': 'Interest is not deductible when the rent is below the usual rent.',
+  'costs.kilometres': 'Kilometres driven (optional)',
+  'costs.kilometresAbout': 'the kilometre rate',
+  'costs.kilometresInfo':
+    'Your own car: €{mileage} per kilometre for {year} — the Tax Administration’s rate for trips connected to letting, not the higher tax-free reimbursement an employer may pay.',
+  'costs.kilometresFilled': '{km} km × €{mileage} = {amount}',
 
   'cat.maintenance_charge.label': 'Maintenance charge',
   'cat.maintenance_charge.hint': 'Deducted in the year it is paid.',
@@ -174,10 +187,10 @@ export const en = {
     'Annual repairs that keep the flat as it was are deducted in the year paid. A repair that raises the standard is a basic improvement.',
   'cat.improvement.label': 'Basic improvement',
   'cat.improvement.hint':
-    'Work that raises the standard, e.g. a new kitchen or balcony glazing. Deducted in equal parts over 10 years from the year paid, or over fewer if it lasts less.',
+    'Work that raises the standard, e.g. a new kitchen or balcony glazing. For a flat: deducted in equal parts from the year paid, over {improvementMin}–{improvementMax} years depending on how long it lasts. For a property’s building: added to the building’s cost and depreciated with it.',
   'cat.furniture.label': 'Furniture & appliances',
   'cat.furniture.hint':
-    'Up to €1 200, or lasting under 3 years: deducted at once. Dearer: 25 % of what is left of its value each year. Keep a list of the items.',
+    'Up to €{limit}, or lasting under {minLife} years: deducted at once. Dearer: {movableRate} % of what is left of its value each year, and all of it once no more than €{limit} is left. Keep a list of the items. Not deducted when you take the flat-rate furniture deduction.',
   'cat.loan_interest.label': 'Loan interest',
   'cat.loan_interest.hint':
     'Interest on a loan taken for the rental flat. It lowers your capital income, but is declared with the interest deductions, not on the rental income form.',
@@ -187,7 +200,7 @@ export const en = {
   'cat.brokerage.hint': 'Letting agent fees and adverts when looking for a tenant.',
   'cat.travel.label': 'Travel',
   'cat.travel.hint':
-    'Trips to show the flat, meet a tenant, do maintenance or attend the housing company’s AGM. Vero sets the rate per kilometre each year (€0.27 for 2025).',
+    'Trips to show the flat, meet a tenant, do maintenance or attend the housing company’s AGM. In your own car the Tax Administration’s rate for {year} is €{mileage} per kilometre — enter the kilometres and the amount is filled in. Other actual costs (tickets, lodging) are deductible too.',
   'cat.utilities.label': 'Utilities paid by owner',
   'cat.utilities.hint': 'Electricity, heating or internet you pay for the rented flat.',
   'cat.property_tax.label': 'Property tax',
@@ -202,7 +215,7 @@ export const en = {
     'Each owner declares their own share. “Your share” is what goes in your declaration; “Whole apartment” is for reference.',
   'tax.estimated': 'Estimated tax',
   'tax.estimateInfo':
-    'Capital income tax: 30 % up to €30 000, 34 % above. An estimate only — other capital income and deductions aren’t included. The all-apartments view estimates it on everything you own together.',
+    'Capital income tax: {capLow} % up to €{capLimit}, {capHigh} % above. An estimate only — other capital income and deductions aren’t included. The all-apartments view estimates it on everything you own together. The same rates apply to an owner who lives abroad (the {sourceTax} % source tax is on wages, not on rent), but the country you live in may tax the rent too.',
   'tax.beforeFiling': 'Before you file',
   'tax.income': 'Income',
   'tax.rentReceived': 'Rent received',
@@ -212,13 +225,25 @@ export const en = {
   'tax.expenses': 'Expenses',
   'tax.noCosts': 'No costs logged for {year}.',
   'tax.depr.building': 'Building depreciation',
-  'tax.depr.buildingInfo': 'Poisto — this year’s part of the building’s remaining cost, set in the apartment settings.',
+  'tax.depr.buildingInfo':
+    'Poisto — this year’s part of the building’s remaining cost, which includes its improvements. Set in the apartment settings.',
   'tax.depr.improvements': 'Basic improvements, this year’s part',
   'tax.depr.improvementsInfo': 'Each improvement is deducted in equal parts over the years it is spread over, starting the year it was paid.',
   'tax.depr.furniture': 'Furniture & appliances, this year’s part',
-  'tax.depr.furnitureInfo': 'Items over €1 200 are deducted at 25 % of what is left of their value each year.',
+  'tax.depr.furnitureInfo':
+    'Items over €{limit} are deducted at {movableRate} % of what is left of their value each year, and all of it once no more than €{limit} is left.',
   'tax.separately': 'declared separately',
   'tax.deductibleTotal': 'Deductible total',
+  'tax.depr.flatRate': 'Furnished flat, flat rate',
+  'tax.depr.flatRateInfo':
+    '€{flatStudio} a month for a studio or one room, €{flatLarger} for a larger flat, for each month the flat was let. It takes the place of the furniture’s actual costs.',
+  'tax.limited': 'Limited to the rent received',
+  'tax.limitedInfo':
+    'The rent is below the usual rent, so costs and depreciation together may be deducted only up to the rent, and no loss arises.',
+  'tax.credit': 'Deficit credit, up to',
+  'tax.creditAbout': 'the deficit credit',
+  'tax.creditInfo':
+    'A rental loss lowers your capital income. If you have no other capital income to set it against, {creditRate} % of the deficit comes off the tax on your earned income as a credit (alijäämähyvitys), at most €{creditMax} — €{creditMaxOneChild} with one minor child and €{creditMaxChildren} with two or more. The figure shown is the most it can be: it also depends on your other capital income and on how much tax on earned income there is to take it from. What it cannot take stays a loss you can set against capital income for {carryYears} years.',
   'tax.declaration': 'Declaration',
   'tax.packageAbout': 'the declaration package',
   'tax.packageInfo':
@@ -318,7 +343,7 @@ export const en = {
   'settings.depreciation': 'Building depreciation',
   'settings.depreciationAbout': 'depreciation',
   'settings.depreciationInfo':
-    'Poisto — a yearly deduction for the building’s wear, calculated on its remaining cost. At most 4 % a year for a residential building and 7 % for other buildings. The land is never depreciated.',
+    'Poisto — a yearly deduction for the building’s wear, calculated on its remaining cost: at most {buildingResidential} % a year for a residential building and {buildingCommercial} % for shops, warehouses, factories and workshops. Improvements add to the building’s cost. The land is never depreciated, and nothing is deducted in the year you sell.',
   'settings.noBuildingDepreciation':
     'The price of a housing-company flat is not depreciated — it is deducted when you sell. Basic improvements and dearer furniture are spread over the years from the costs you log.',
   'settings.useDepreciation': 'Deduct building depreciation in the declaration',
@@ -327,12 +352,51 @@ export const en = {
   'settings.buildingShareInfo':
     'The part of the purchase price that is the building, not the land — only the building depreciates.',
   'settings.rate': 'Rate (% / year)',
-  'settings.prior': 'Depreciated in earlier years (€)',
+  'settings.prior': 'Depreciated before that year (€)',
   'settings.priorAbout': 'earlier depreciation',
-  'settings.priorInfo': 'Total already deducted in earlier years, for the whole apartment.',
+  'settings.priorInfo':
+    'Total already deducted before the tax year in “Calculate from tax year”, for the whole apartment.',
   'settings.thisYear': 'This year',
   'settings.thisYearAbout': 'this year’s depreciation',
   'settings.thisYearInfo': 'For the whole apartment; it is split between the owners by their shares.',
+  'settings.buildingKind': 'Kind of building',
+  'settings.buildingKindAbout': 'the kind of building',
+  'settings.buildingKindInfo':
+    'Residential and office buildings depreciate by at most {buildingResidential} % a year; shops, warehouses, factories and workshops by at most {buildingCommercial} %.',
+  'settings.buildingKind.residential': 'Residential or office',
+  'settings.buildingKind.commercial': 'Shop, warehouse, factory, workshop',
+  'settings.purchaseCosts': 'Purchase costs (€)',
+  'settings.purchaseCostsAbout': 'the purchase costs',
+  'settings.purchaseCostsInfo':
+    'Transfer tax, registration, agent and lawyer fees paid when you bought it. The building’s part of them is added to its cost.',
+  'settings.rateAbout': 'the rate',
+  'settings.rateInfo':
+    'You may deduct any amount up to the highest rate for the kind of building ({max} %). Depreciation is never automatic: lower the rate for a year you used the building yourself.',
+  'settings.fromYear': 'Calculate from tax year',
+  'settings.fromYearAbout': 'the first year',
+  'settings.fromYearInfo':
+    'The first tax year the app works out depreciation for. Leave it empty for the year of the first rent you logged. Depreciation goes down year by year with what is left, assuming the highest was claimed every year from this one; what was deducted before goes in the next field.',
+  'settings.letting': 'Letting',
+  'settings.lettingAbout': 'letting',
+  'settings.lettingInfo':
+    'If you let only part of the home, or let it for less than the usual rent, the deductions change.',
+  'settings.letShare': 'Share of the home that is let (%)',
+  'settings.letShareAbout': 'the let share',
+  'settings.letShareInfo':
+    'The costs of the whole home — maintenance and water charges, financing charge, insurance, utilities, property tax, loan interest and building depreciation — count only by this share, worked out by area or by the number of people. Repairs, furniture, travel, agent fees and other costs count in full, so log only what belongs to the let part.',
+  'settings.belowMarket': 'The rent is below the usual rent for the flat',
+  'settings.belowMarketAbout': 'below-market rent',
+  'settings.belowMarketInfo':
+    'Letting for less than the usual rent is not done to earn income: costs and depreciation together may be deducted only up to the rent, no loss is established, and interest on the loan for the flat is not deductible at all. You still declare the rent. The taxable value of the housing benefit is the reference for the usual rent.',
+  'settings.furnishing': 'Furniture',
+  'settings.furnishingAbout': 'the furniture deduction',
+  'settings.furnishingInfo':
+    'For a furnished flat you choose between the flat rate — €{flatStudio} a month for a studio or one room, €{flatLarger} for a larger flat, whatever the number of tenants, covering all furniture and loose appliances — and the actual cost of the furniture you log. The flat rate is counted for each month logged as paid or unpaid, not for vacant months. Fixed appliances (fridge, stove, dishwasher) are deducted on top of it: log them as Repairs & upkeep. Keep the same choice from year to year unless things change.',
+  'settings.furnishing.actual': 'Actual costs',
+  'settings.furnishing.flat': 'Flat rate',
+  'settings.roomClass': 'Size of the flat',
+  'settings.roomClass.studio': 'Studio or one room',
+  'settings.roomClass.larger': 'Larger',
   'settings.discard': 'Discard',
   'settings.saveChanges': 'Save changes',
   'settings.deleteConfirm': 'Delete {name} and everything in it? This cannot be undone.',
