@@ -74,7 +74,7 @@ export const sv: Record<MessageKey, string> = {
   'home.estTax': 'Beräknad skatt',
   'home.estTaxAbout': 'skatteberäkningen',
   'home.estTaxInfo':
-    '30 % upp till 30 000 € kapitalinkomst, 34 % över{onYourShare}. En grov uppskattning – andra kapitalinkomster ingår inte.',
+    '{capLow} % upp till {capLimit} € kapitalinkomst, {capHigh} % över{onYourShare}. En grov uppskattning – andra kapitalinkomster ingår inte.',
   'home.onYourShare': ', på din andel',
   'home.todo': 'Att göra',
   'home.moreTodo': '{n} till att kontrollera',
@@ -105,7 +105,7 @@ export const sv: Record<MessageKey, string> = {
   'portfolio.netInfo':
     'Din andel av mottagen hyra minus din andel av avdragsgilla kostnader och avskrivning, sammanlagt för alla dina lägenheter.',
   'portfolio.estTaxInfo':
-    '30 % upp till 30 000 € kapitalinkomst, 34 % över – beräknad på alla dina lägenheter tillsammans, eftersom skattesatsen beror på totalen. Andra kapitalinkomster ingår inte.',
+    '{capLow} % upp till {capLimit} € kapitalinkomst, {capHigh} % över – beräknad på alla dina lägenheter tillsammans, eftersom skattesatsen beror på totalen. Andra kapitalinkomster ingår inte.',
   'portfolio.apartments': 'Lägenheter',
   'portfolio.youOwn': 'Du äger {pct}',
   'portfolio.owners': ' · {n} ägare',
@@ -152,15 +152,27 @@ export const sv: Record<MessageKey, string> = {
   'costs.description': 'Beskrivning',
   'costs.years': 'Fördelas över (år)',
   'costs.yearsAbout': 'fördelningen',
-  'costs.yearsInfo': 'En grundförbättring dras av i lika stora delar under 10 år från betalningsåret – eller under färre år om den håller kortare tid.',
-  'costs.shortLived': 'Håller under 3 år – dra av direkt',
+  'costs.yearsInfo':
+    'En grundförbättring av en bostadsaktie dras av i lika stora delar från betalningsåret, under lika många år som den håller: {improvementMin}–{improvementMax} år.',
+  'costs.shortLived': 'Håller under {minLife} år – dra av direkt',
   'costs.overYears': 'under {n} år',
-  'costs.furnitureRate': '25 % per år',
+  'costs.furnitureRate': '{movableRate} % per år',
   'costs.descriptionPlaceholder': 'Valfritt – t.ex. byte av köksblandare',
   'costs.date': 'Datum',
   'costs.processing': 'Bearbetar…',
   'costs.replacePhoto': 'Byt bild',
   'costs.addPhoto': 'Lägg till bild',
+  'costs.addedToBuilding': 'läggs till byggnadens utgift',
+  'costs.additionAbout': 'byggnadens utgift',
+  'costs.additionInfo':
+    'En förbättring av en fastighets byggnad dras inte av för sig: den läggs till byggnadens återstående utgift och skrivs av med den (slå på avskrivning på byggnaden i inställningarna), eller dras av när du säljer.',
+  'costs.reason.flatRate': 'Täcks av schablonavdraget för möbler som valts i inställningarna.',
+  'costs.reason.belowMarket': 'Ränta är inte avdragsgill när hyran är lägre än gängse hyra.',
+  'costs.kilometres': 'Körda kilometer (valfritt)',
+  'costs.kilometresAbout': 'kilometersatsen',
+  'costs.kilometresInfo':
+    'Egen bil: {mileage} € per kilometer för {year} – Skatteförvaltningens sats för resor som hör till uthyrningen, inte den högre skattefria ersättning som en arbetsgivare får betala.',
+  'costs.kilometresFilled': '{km} km × {mileage} € = {amount}',
 
   'cat.maintenance_charge.label': 'Skötselvederlag',
   'cat.maintenance_charge.hint': 'Dras av det år det betalas.',
@@ -174,10 +186,10 @@ export const sv: Record<MessageKey, string> = {
     'Årsreparationer som håller bostaden i samma skick dras av det år de betalas. En reparation som höjer standarden är en grundförbättring.',
   'cat.improvement.label': 'Grundförbättring',
   'cat.improvement.hint':
-    'Arbete som höjer standarden, t.ex. nytt kök eller inglasad balkong. Dras av i lika stora delar under 10 år från betalningsåret, eller färre om den håller kortare tid.',
+    'Arbete som höjer standarden, t.ex. nytt kök eller inglasad balkong. Bostadsaktie: dras av i lika stora delar från betalningsåret under {improvementMin}–{improvementMax} år beroende på hur länge den håller. Fastighetens byggnad: läggs till byggnadens utgift och skrivs av med den.',
   'cat.furniture.label': 'Möbler och hushållsmaskiner',
   'cat.furniture.hint':
-    'Högst 1 200 €, eller som håller under 3 år: dras av direkt. Dyrare: 25 % av det återstående värdet varje år. Spara en förteckning över föremålen.',
+    'Högst {limit} €, eller som håller under {minLife} år: dras av direkt. Dyrare: {movableRate} % av det återstående värdet varje år, och hela resten när högst {limit} € återstår. Spara en förteckning över föremålen. Dras inte av om du tar schablonavdraget för möbler.',
   'cat.loan_interest.label': 'Låneräntor',
   'cat.loan_interest.hint':
     'Ränta på lån som tagits för hyresbostaden. Den minskar din kapitalinkomst, men deklareras bland ränteavdragen, inte på blanketten för hyresinkomster.',
@@ -187,7 +199,7 @@ export const sv: Record<MessageKey, string> = {
   'cat.brokerage.hint': 'Arvoden till hyresförmedlare och annonser när du söker hyresgäst.',
   'cat.travel.label': 'Resor',
   'cat.travel.hint':
-    'Resor för att visa bostaden, träffa en hyresgäst, sköta underhåll eller delta i bolagsstämman. Skatteförvaltningen fastställer kilometersatsen varje år (0,27 € för 2025).',
+    'Resor för att visa bostaden, träffa en hyresgäst, sköta underhåll eller delta i bolagsstämman. Med egen bil är Skatteförvaltningens sats för {year} {mileage} € per kilometer – ange kilometerna så fylls beloppet i. Andra faktiska kostnader (biljetter, logi) går också att dra av.',
   'cat.utilities.label': 'Av ägaren betalda förbrukningsavgifter',
   'cat.utilities.hint': 'El, uppvärmning eller internet som du betalar för den uthyrda bostaden.',
   'cat.property_tax.label': 'Fastighetsskatt',
@@ -202,7 +214,7 @@ export const sv: Record<MessageKey, string> = {
     'Varje ägare deklarerar sin egen andel. “Din andel” är det som hamnar i din deklaration; “Hela lägenheten” är till för jämförelse.',
   'tax.estimated': 'Beräknad skatt',
   'tax.estimateInfo':
-    'Skatt på kapitalinkomst: 30 % upp till 30 000 €, 34 % över. Enbart en uppskattning – andra kapitalinkomster och avdrag ingår inte. Vyn för alla lägenheter beräknar den på allt du äger tillsammans.',
+    'Skatt på kapitalinkomst: {capLow} % upp till {capLimit} €, {capHigh} % över. Enbart en uppskattning – andra kapitalinkomster och avdrag ingår inte. Vyn för alla lägenheter beräknar den på allt du äger tillsammans. Samma satser gäller en ägare som bor utomlands (källskatten på {sourceTax} % gäller lön, inte hyra), men bosättningslandet kan också beskatta hyran.',
   'tax.beforeFiling': 'Innan du deklarerar',
   'tax.income': 'Inkomster',
   'tax.rentReceived': 'Mottagen hyra',
@@ -212,13 +224,25 @@ export const sv: Record<MessageKey, string> = {
   'tax.expenses': 'Utgifter',
   'tax.noCosts': 'Inga kostnader loggade för {year}.',
   'tax.depr.building': 'Avskrivning på byggnaden',
-  'tax.depr.buildingInfo': 'Poisto – årets andel av byggnadens återstående utgift, anges i lägenhetens inställningar.',
+  'tax.depr.buildingInfo':
+    'Poisto – årets andel av byggnadens återstående utgift, där förbättringar ingår. Anges i lägenhetens inställningar.',
   'tax.depr.improvements': 'Grundförbättringar, årets andel',
   'tax.depr.improvementsInfo': 'Varje grundförbättring dras av i lika stora delar under de år den fördelas över, från betalningsåret.',
   'tax.depr.furniture': 'Möbler och hushållsmaskiner, årets andel',
-  'tax.depr.furnitureInfo': 'Föremål över 1 200 € dras av med 25 % av det återstående värdet varje år.',
+  'tax.depr.furnitureInfo':
+    'Föremål över {limit} € dras av med {movableRate} % av det återstående värdet varje år, och hela resten när högst {limit} € återstår.',
   'tax.separately': 'deklareras separat',
   'tax.deductibleTotal': 'Avdragsgilla totalt',
+  'tax.depr.flatRate': 'Möblerad bostad, schablon',
+  'tax.depr.flatRateInfo':
+    '{flatStudio} € i månaden för en etta eller ett rum, {flatLarger} € för en större bostad, för varje månad bostaden var uthyrd. Den ersätter möblernas faktiska kostnader.',
+  'tax.limited': 'Begränsat till den erhållna hyran',
+  'tax.limitedInfo':
+    'Hyran är lägre än gängse hyra, så kostnader och avskrivning tillsammans får dras av högst upp till hyran och ingen förlust uppstår.',
+  'tax.credit': 'Underskottsgottgörelse, högst',
+  'tax.creditAbout': 'underskottsgottgörelsen',
+  'tax.creditInfo':
+    'En hyresförlust sänker din kapitalinkomst. Har du inga andra kapitalinkomster att jämka mot dras {creditRate} % av underskottet av från skatten på dina förvärvsinkomster som en gottgörelse (underskottsgottgörelse), högst {creditMax} € – {creditMaxOneChild} € med ett minderårigt barn och {creditMaxChildren} € med två eller fler. Beloppet som visas är det högsta möjliga: det beror också på dina övriga kapitalinkomster och på hur mycket skatt på förvärvsinkomst det finns att dra av från. Det som inte rymms blir en förlust som du kan jämka mot kapitalinkomster i {carryYears} år.',
   'tax.declaration': 'Deklaration',
   'tax.packageAbout': 'deklarationspaketet',
   'tax.packageInfo':
@@ -318,7 +342,7 @@ export const sv: Record<MessageKey, string> = {
   'settings.depreciation': 'Avskrivning på byggnaden',
   'settings.depreciationAbout': 'avskrivning',
   'settings.depreciationInfo':
-    'Poisto – ett årligt avdrag för byggnadens slitage, beräknat på dess återstående utgift. Högst 4 % per år för en bostadsbyggnad och 7 % för andra byggnader. Tomten skrivs aldrig av.',
+    'Poisto – ett årligt avdrag för byggnadens slitage, beräknat på dess återstående utgift: högst {buildingResidential} % per år för en bostadsbyggnad och {buildingCommercial} % för butiker, lager, fabriker och verkstäder. Förbättringar läggs till byggnadens utgift. Tomten skrivs aldrig av, och inget avdrag görs det år du säljer.',
   'settings.noBuildingDepreciation':
     'Priset på en bostadsaktie skrivs inte av – det dras av när du säljer. Grundförbättringar och dyrare möbler fördelas över åren utifrån kostnaderna du loggar.',
   'settings.useDepreciation': 'Dra av avskrivning på byggnaden i deklarationen',
@@ -327,12 +351,51 @@ export const sv: Record<MessageKey, string> = {
   'settings.buildingShareInfo':
     'Den del av inköpspriset som är byggnaden, inte marken – bara byggnaden skrivs av.',
   'settings.rate': 'Sats (% / år)',
-  'settings.prior': 'Avskrivet tidigare år (€)',
+  'settings.prior': 'Avskrivet före det året (€)',
   'settings.priorAbout': 'tidigare avskrivning',
-  'settings.priorInfo': 'Totalt belopp som dragits av tidigare år, för hela lägenheten.',
+  'settings.priorInfo':
+    'Totalt belopp som dragits av före skatteåret i ”Beräkna från skatteår”, för hela lägenheten.',
   'settings.thisYear': 'I år',
   'settings.thisYearAbout': 'årets avskrivning',
   'settings.thisYearInfo': 'För hela lägenheten; den fördelas mellan ägarna enligt deras andelar.',
+  'settings.buildingKind': 'Typ av byggnad',
+  'settings.buildingKindAbout': 'typen av byggnad',
+  'settings.buildingKindInfo':
+    'Bostads- och kontorsbyggnader skrivs av med högst {buildingResidential} % per år, butiker, lager, fabriker och verkstäder med högst {buildingCommercial} %.',
+  'settings.buildingKind.residential': 'Bostad eller kontor',
+  'settings.buildingKind.commercial': 'Butik, lager, fabrik, verkstad',
+  'settings.purchaseCosts': 'Köpkostnader (€)',
+  'settings.purchaseCostsAbout': 'köpkostnaderna',
+  'settings.purchaseCostsInfo':
+    'Överlåtelseskatt, registrering samt mäklar- och juristarvoden som du betalade vid köpet. Byggnadens andel av dem läggs till dess utgift.',
+  'settings.rateAbout': 'satsen',
+  'settings.rateInfo':
+    'Du får dra av vilket belopp som helst upp till högsta satsen för byggnadstypen ({max} %). Avskrivning görs aldrig automatiskt: sänk satsen för ett år då du själv använde byggnaden.',
+  'settings.fromYear': 'Beräkna från skatteår',
+  'settings.fromYearAbout': 'det första året',
+  'settings.fromYearInfo':
+    'Det första skatteåret som appen räknar ut avskrivning för. Lämna tomt för året då du loggade din första hyra. Avskrivningen sjunker år för år med det som återstår, under antagande att högsta möjliga dragits av varje år från detta år; det som dragits av tidigare anges i nästa fält.',
+  'settings.letting': 'Uthyrning',
+  'settings.lettingAbout': 'uthyrningen',
+  'settings.lettingInfo':
+    'Om du bara hyr ut en del av bostaden, eller hyr ut den under gängse hyra, ändras avdragen.',
+  'settings.letShare': 'Andel av bostaden som hyrs ut (%)',
+  'settings.letShareAbout': 'den uthyrda andelen',
+  'settings.letShareInfo':
+    'Kostnaderna för hela bostaden – skötsel- och vattenavgifter, finansieringsvederlag, försäkring, förbrukningsavgifter, fastighetsskatt, låneräntor och avskrivning på byggnaden – räknas bara med denna andel, uträknad efter yta eller antal personer. Reparationer, möbler, resor, förmedlingsarvoden och övriga kostnader räknas fullt ut, så logga bara det som hör till den uthyrda delen.',
+  'settings.belowMarket': 'Hyran är lägre än gängse hyra för bostaden',
+  'settings.belowMarketAbout': 'hyra under gängse nivå',
+  'settings.belowMarketInfo':
+    'Uthyrning till underpris sker inte i förvärvssyfte: kostnader och avskrivning tillsammans får dras av högst upp till hyran, ingen förlust fastställs och ränta på lånet för bostaden är inte avdragsgill alls. Hyran deklareras ändå. Bostadsförmånens beskattningsvärde är riktmärke för gängse hyra.',
+  'settings.furnishing': 'Möbler',
+  'settings.furnishingAbout': 'avdraget för möbler',
+  'settings.furnishingInfo':
+    'För en möblerad bostad väljer du mellan schablonavdraget – {flatStudio} € i månaden för en etta eller ett rum, {flatLarger} € för en större bostad, oavsett antal hyresgäster, och som täcker alla möbler och lösa hushållsmaskiner – och de faktiska kostnaderna för möblerna du loggar. Schablonen räknas för varje månad som loggats som betald eller obetald, inte för vakanta månader. Fasta hushållsmaskiner (kylskåp, spis, diskmaskin) dras av utöver den: logga dem som Reparationer och underhåll. Behåll samma val från år till år om inget ändras.',
+  'settings.furnishing.actual': 'Faktiska kostnader',
+  'settings.furnishing.flat': 'Schablon',
+  'settings.roomClass': 'Bostadens storlek',
+  'settings.roomClass.studio': 'Etta eller ett rum',
+  'settings.roomClass.larger': 'Större',
   'settings.discard': 'Förkasta',
   'settings.saveChanges': 'Spara ändringar',
   'settings.deleteConfirm': 'Ta bort {name} och allt i den? Detta kan inte ångras.',

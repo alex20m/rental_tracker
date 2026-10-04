@@ -71,11 +71,18 @@ describe('a portfolio', () => {
       financingChargeDeductible: true,
       purchaseDate: '2020-05-04',
       purchasePrice: 95000.5,
+      purchaseCosts: 6000.5,
       buildingSharePct: 80,
+      buildingKind: 'commercial' as const,
       depreciationRate: 2.5,
       depreciationPrior: 1234.56,
+      depreciationFromYear: 2025,
       useDepreciation: true,
       monthlyRent: 780,
+      furnishing: 'flat' as const,
+      roomClass: 'studio' as const,
+      belowMarketRent: true,
+      letSharePct: 62.5,
     };
     const id = await p.create(alice, settings);
 

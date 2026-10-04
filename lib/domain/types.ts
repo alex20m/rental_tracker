@@ -34,8 +34,9 @@ export interface CostEntry {
   hasReceipt: boolean;
   /**
    * Over how many years the cost is deducted. Read only for a basic improvement
-   * (1–10, default 10) and for furniture over the 1 200 € limit, where 1 means
-   * it lasts under three years and is deducted at once.
+   * of a housing-company flat (the law's range, see `taxRules.improvement`,
+   * default the longest) and for furniture over the at-once limit, where 1
+   * means it lasts under three years and is deducted at once.
    */
   spreadYears?: number;
 }
@@ -47,6 +48,25 @@ export interface CostEntry {
 export type PropertyType = 'share' | 'property';
 
 export const PROPERTY_TYPES: readonly PropertyType[] = ['share', 'property'];
+
+/** The building decides the highest depreciation rate: residential and office, or shop, warehouse, factory, workshop and the like. */
+export type BuildingKind = 'residential' | 'commercial';
+
+export const BUILDING_KINDS: readonly BuildingKind[] = ['residential', 'commercial'];
+
+/**
+ * How a furnished flat's furniture is deducted: the actual costs logged (the
+ * default), or the Tax Administration's flat rate per month, which covers all
+ * furniture and loose appliances.
+ */
+export type Furnishing = 'actual' | 'flat';
+
+export const FURNISHINGS: readonly Furnishing[] = ['actual', 'flat'];
+
+/** The flat-rate deduction depends on the size: a studio or one room, or something larger. */
+export type RoomClass = 'studio' | 'larger';
+
+export const ROOM_CLASSES: readonly RoomClass[] = ['studio', 'larger'];
 
 /** What describes one apartment. Shared by all of its owners. */
 export interface ApartmentSettings {
@@ -62,11 +82,22 @@ export interface ApartmentSettings {
   financingChargeDeductible: boolean;
   purchaseDate: string; // YYYY-MM-DD or ''
   purchasePrice: number; // the whole apartment's price, not one owner's part of it
+  /** Costs of the purchase (transfer tax, registration, agent, lawyer) — the building's part adds to its cost. Property only. */
+  purchaseCosts: number;
   buildingSharePct: number; // % of purchase price that is depreciable (building part) — property only
-  depreciationRate: number; // % per year of the remaining cost, at most 4 for a residential building
-  depreciationPrior: number; // EUR already depreciated in earlier years
+  buildingKind: BuildingKind; // sets the highest depreciation rate — property only
+  depreciationRate: number; // % per year of the remaining cost, at most the highest rate of the building kind
+  depreciationPrior: number; // EUR depreciated before `depreciationFromYear`
+  /** The first tax year the app calculates depreciation for; 0 = the year of the first rent logged. */
+  depreciationFromYear: number;
   useDepreciation: boolean; // building depreciation; never applies to a housing-company share
   monthlyRent: number;
+  furnishing: Furnishing;
+  roomClass: RoomClass;
+  /** The rent is below what is usual for the flat: costs may not exceed the rent, and loan interest is not deductible. */
+  belowMarketRent: boolean;
+  /** The share of the home that is let, in percent; the costs of the whole home count only by this much. */
+  letSharePct: number;
 }
 
 /** Everything the tax calculation needs about one apartment. */
@@ -114,37 +145,50 @@ export const defaultSettings: ApartmentSettings = {
   financingChargeDeductible: false,
   purchaseDate: '',
   purchasePrice: 0,
+  purchaseCosts: 0,
   buildingSharePct: 100,
+  buildingKind: 'residential',
   depreciationRate: 4,
   depreciationPrior: 0,
+  depreciationFromYear: 0,
   useDepreciation: false,
   monthlyRent: 0,
+  furnishing: 'actual',
+  roomClass: 'larger',
+  belowMarketRent: false,
+  letSharePct: 100,
 };
 
 /**
  * How a cost is deducted:
  * - `expense`: in full, in the year it was paid;
  * - `financing`: like an expense, but only if the housing company books it as income;
- * - `improvement`: a basic improvement (perusparannus), in equal parts over up to ten years;
+ * - `improvement`: a basic improvement (perusparannus) — of a flat in equal parts over up to ten years,
+ *   of a property's building added to its cost and depreciated with it;
  * - `furniture`: up to 1 200 € at once, above that 25 % of the remaining value a year;
  * - `interest`: an expense, but declared with capital income deductions, not on the rental form.
  */
 export type Treatment = 'expense' | 'financing' | 'improvement' | 'furniture' | 'interest';
 
-export const CATEGORIES: Record<CostCategory, { label: string; fi: string; treatment: Treatment }> = {
-  maintenance_charge: { label: 'Maintenance charge', fi: 'Hoitovastike', treatment: 'expense' },
-  water_charge: { label: 'Water charge', fi: 'Vesimaksu', treatment: 'expense' },
-  financing_charge: { label: 'Financing charge', fi: 'Rahoitusvastike', treatment: 'financing' },
-  repairs: { label: 'Repairs & upkeep', fi: 'Vuosikorjaukset', treatment: 'expense' },
-  improvement: { label: 'Basic improvement', fi: 'Perusparannus', treatment: 'improvement' },
-  furniture: { label: 'Furniture & appliances', fi: 'Kalusteet ja kodinkoneet', treatment: 'furniture' },
-  loan_interest: { label: 'Loan interest', fi: 'Lainan korot', treatment: 'interest' },
-  insurance: { label: 'Insurance', fi: 'Vakuutukset', treatment: 'expense' },
-  brokerage: { label: 'Letting agent fee', fi: 'Vuokranvälitys ja ilmoitukset', treatment: 'expense' },
-  travel: { label: 'Travel', fi: 'Matkakulut', treatment: 'expense' },
-  utilities: { label: 'Utilities paid by owner', fi: 'Sähkö, lämmitys, internet', treatment: 'expense' },
-  property_tax: { label: 'Property tax', fi: 'Kiinteistövero', treatment: 'expense' },
-  other: { label: 'Other deductible', fi: 'Muut vähennyskelpoiset menot', treatment: 'expense' },
+/**
+ * `shared`: a cost of the whole home, of which only the let part is deductible
+ * (the `letSharePct` setting). The others — repairs, furniture, agent fees,
+ * travel, anything else — are taken in full: log only what belongs to the let part.
+ */
+export const CATEGORIES: Record<CostCategory, { label: string; fi: string; treatment: Treatment; shared: boolean }> = {
+  maintenance_charge: { label: 'Maintenance charge', fi: 'Hoitovastike', treatment: 'expense', shared: true },
+  water_charge: { label: 'Water charge', fi: 'Vesimaksu', treatment: 'expense', shared: true },
+  financing_charge: { label: 'Financing charge', fi: 'Rahoitusvastike', treatment: 'financing', shared: true },
+  repairs: { label: 'Repairs & upkeep', fi: 'Vuosikorjaukset', treatment: 'expense', shared: false },
+  improvement: { label: 'Basic improvement', fi: 'Perusparannus', treatment: 'improvement', shared: false },
+  furniture: { label: 'Furniture & appliances', fi: 'Kalusteet ja kodinkoneet', treatment: 'furniture', shared: false },
+  loan_interest: { label: 'Loan interest', fi: 'Lainan korot', treatment: 'interest', shared: true },
+  insurance: { label: 'Insurance', fi: 'Vakuutukset', treatment: 'expense', shared: true },
+  brokerage: { label: 'Letting agent fee', fi: 'Vuokranvälitys ja ilmoitukset', treatment: 'expense', shared: false },
+  travel: { label: 'Travel', fi: 'Matkakulut', treatment: 'expense', shared: false },
+  utilities: { label: 'Utilities paid by owner', fi: 'Sähkö, lämmitys, internet', treatment: 'expense', shared: true },
+  property_tax: { label: 'Property tax', fi: 'Kiinteistövero', treatment: 'expense', shared: true },
+  other: { label: 'Other deductible', fi: 'Muut vähennyskelpoiset menot', treatment: 'expense', shared: false },
 };
 
 export const COST_CATEGORIES = Object.keys(CATEGORIES) as CostCategory[];

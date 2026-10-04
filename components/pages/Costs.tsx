@@ -4,8 +4,10 @@ import { useRef, useState } from 'react';
 import type { ApartmentView, CostCategory, CostEntry } from '@/lib/domain/types';
 import { CATEGORIES, COST_CATEGORIES } from '@/lib/domain/types';
 import { api, compressImage } from '@/lib/client/api';
-import { computeTax, deductionOf, eur, FURNITURE_LIMIT, improvementYears, IMPROVEMENT_YEARS } from '@/lib/domain/tax';
+import { computeTax, deductionOf, eur, improvementYears, mileageAmount } from '@/lib/domain/tax';
+import { rulesFor } from '@/lib/domain/taxRules';
 import { shortDate } from '@/lib/ui/format';
+import { ruleParams } from '@/lib/ui/ruleParams';
 import { useI18n } from '@/components/I18nProvider';
 import { ErrorNote, Icon, Info, Label, Money, Sheet, Switch } from '@/components/ui';
 
@@ -43,7 +45,8 @@ export default function Costs({ apt, year, onChanged }: Props) {
   // of the ones spread over several years (not the building, which is no cost).
   const tax = computeTax(apt, year);
   const total =
-    tax.deductibleCosts + tax.depreciationLines.filter((d) => d.kind !== 'building').reduce((a, d) => a + d.amount, 0);
+    tax.deductibleCosts +
+    tax.depreciationLines.filter((d) => d.kind === 'improvements' || d.kind === 'furniture').reduce((a, d) => a + d.amount, 0);
   const coOwned = apt.owners.length > 1 || apt.invites.length > 0;
 
   return (
@@ -82,7 +85,10 @@ export default function Costs({ apt, year, onChanged }: Props) {
                         {how === 'improvement' && (
                           <span className="chip">{t('costs.overYears', { n: improvementYears(c) })}</span>
                         )}
-                        {how === 'furniture' && <span className="chip">{t('costs.furnitureRate')}</span>}
+                        {how === 'addition' && <span className="chip">{t('costs.addedToBuilding')}</span>}
+                        {how === 'furniture' && (
+                          <span className="chip">{t('costs.furnitureRate', ruleParams(Number(c.date.slice(0, 4)), lang))}</span>
+                        )}
                       </div>
                     </div>
                     <div className={'strong num ' + (how === 'none' ? 'dim' : '')}>{eur(c.amount)}</div>
@@ -120,12 +126,16 @@ function CostForm({
   onClose: () => void;
   onChanged: () => Promise<void>;
 }) {
-  const { t } = useI18n();
+  const { t, lang } = useI18n();
   const [date, setDate] = useState(cost?.date ?? todayIso());
   const [category, setCategory] = useState<CostCategory>(cost?.category ?? 'maintenance_charge');
   const [description, setDescription] = useState(cost?.description ?? '');
   const [amount, setAmount] = useState(cost ? String(cost.amount) : '');
-  const [spreadYears, setSpreadYears] = useState(cost?.spreadYears ?? IMPROVEMENT_YEARS);
+  const [kilometres, setKilometres] = useState('');
+  // The rules of the year the cost is dated in decide every limit on this form.
+  const costYear = Number(date.slice(0, 4));
+  const rules = rulesFor(costYear);
+  const [spreadYears, setSpreadYears] = useState(cost?.spreadYears ?? rules.improvement.maxYears);
   const [newImage, setNewImage] = useState<string>();
   const [removeImage, setRemoveImage] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -172,8 +182,19 @@ function CostForm({
   const remove = () => run(() => api.deleteCost(apt.id, cost!.id));
 
   const cat = CATEGORIES[category];
-  const how = deductionOf({ category, amount: Number(amount), spreadYears }, apt.settings);
-  const validYears = Number.isInteger(spreadYears) && spreadYears >= 1 && spreadYears <= IMPROVEMENT_YEARS;
+  const how = deductionOf({ category, amount: Number(amount), spreadYears, date }, apt.settings);
+  const params = { ...ruleParams(costYear, lang), year: costYear };
+  // Only an improvement of a flat is spread over years; a property's joins the building's cost.
+  const spreads = cat.treatment === 'improvement' && apt.settings.propertyType === 'share';
+  const { minYears, maxYears } = rules.improvement;
+  const validYears = !spreads || (Number.isInteger(spreadYears) && spreadYears >= minYears && spreadYears <= maxYears);
+  const why =
+    cat.treatment === 'furniture'
+      ? t('costs.reason.flatRate')
+      : cat.treatment === 'interest'
+        ? t('costs.reason.belowMarket')
+        : t(`cat.${category}.hint`, params);
+  const kmFilled = Number(kilometres) > 0;
 
   return (
     <Sheet title={cost ? t('costs.edit') : t('costs.add')} onClose={onClose}>
@@ -196,7 +217,7 @@ function CostForm({
         id="cost-category"
         info={
           <Info about={t('costs.categoryAbout')}>
-            {t('costs.categoryInfo', { fi: cat.fi })} {t(`cat.${category}.hint`)}
+            {t('costs.categoryInfo', { fi: cat.fi })} {t(`cat.${category}.hint`, params)}
           </Info>
         }
       >
@@ -219,32 +240,65 @@ function CostForm({
       {how === 'none' && (
         <div style={{ marginTop: 8 }}>
           <span className="chip warn">{t('common.notDeductibleCap')}</span>
-          <Info about={t('costs.notDeductibleAbout')}>{t(`cat.${category}.hint`)}</Info>
+          <Info about={t('costs.notDeductibleAbout')}>{why}</Info>
         </div>
       )}
-      {cat.treatment === 'improvement' && (
+      {how === 'addition' && (
+        <div style={{ marginTop: 8 }}>
+          <span className="chip">{t('costs.addedToBuilding')}</span>
+          <Info about={t('costs.additionAbout')}>{t('costs.additionInfo')}</Info>
+        </div>
+      )}
+      {spreads && (
         <>
-          <Label htmlFor="cost-years" info={<Info about={t('costs.yearsAbout')}>{t('costs.yearsInfo')}</Info>}>
+          <Label htmlFor="cost-years" info={<Info about={t('costs.yearsAbout')}>{t('costs.yearsInfo', params)}</Info>}>
             {t('costs.years')}
           </Label>
           <input
             id="cost-years"
             type="number"
             inputMode="numeric"
-            min="1"
-            max={IMPROVEMENT_YEARS}
+            min={minYears}
+            max={maxYears}
             step="1"
             value={spreadYears}
             onChange={(e) => setSpreadYears(Number(e.target.value))}
           />
         </>
       )}
-      {cat.treatment === 'furniture' && Number(amount) > FURNITURE_LIMIT && (
+      {cat.treatment === 'furniture' && how !== 'none' && Number(amount) > rules.movable.atOnceLimit && (
         <div style={{ marginTop: 12 }}>
-          <Switch checked={spreadYears === 1} onChange={(v) => setSpreadYears(v ? 1 : IMPROVEMENT_YEARS)}>
-            {t('costs.shortLived')}
+          <Switch checked={spreadYears === 1} onChange={(v) => setSpreadYears(v ? 1 : maxYears)}>
+            {t('costs.shortLived', params)}
           </Switch>
         </div>
+      )}
+      {category === 'travel' && (
+        <>
+          <Label
+            htmlFor="cost-km"
+            info={<Info about={t('costs.kilometresAbout')}>{t('costs.kilometresInfo', params)}</Info>}
+          >
+            {t('costs.kilometres')}
+          </Label>
+          <input
+            id="cost-km"
+            type="number"
+            inputMode="decimal"
+            min="0"
+            step="1"
+            value={kilometres}
+            onChange={(e) => {
+              setKilometres(e.target.value);
+              if (Number(e.target.value) > 0) setAmount(String(mileageAmount(Number(e.target.value), costYear)));
+            }}
+          />
+          {kmFilled && (
+            <p className="msg">
+              {t('costs.kilometresFilled', { ...params, km: kilometres, amount: eur(mileageAmount(Number(kilometres), costYear)) })}
+            </p>
+          )}
+        </>
       )}
 
       <label htmlFor="cost-description">{t('costs.description')}</label>

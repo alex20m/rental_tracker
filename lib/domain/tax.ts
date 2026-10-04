@@ -1,26 +1,26 @@
 import { CATEGORIES, COST_CATEGORIES } from './types';
 import type { ApartmentSettings, CostCategory, CostEntry, Ledger } from './types';
+import { LATEST_RULES_YEAR, rulesFor } from './taxRules';
 
-export const CAPITAL_TAX_LOW = 0.3; // up to 30 000 EUR of capital income
-export const CAPITAL_TAX_HIGH = 0.34; // above 30 000 EUR
-export const CAPITAL_TAX_LIMIT = 30000;
-
-/** A basic improvement is spread over at most ten years (vero.fi). */
-export const IMPROVEMENT_YEARS = 10;
-/** Furniture and appliances up to this price are deducted at once (vero.fi). */
-export const FURNITURE_LIMIT = 1200;
-/** Dearer furniture is depreciated by at most 25 % of its remaining value a year (vero.fi). */
-export const FURNITURE_RATE = 0.25;
+// Every rate, limit and amount the law sets lives in ./taxRules, by tax year.
+// Nothing below writes one out.
 
 export interface TaxLine {
   category: CostCategory;
   label: string;
   fi: string;
   deductible: boolean;
+  /** What is deducted: for a cost of the whole home, only the let share of it. */
   amount: number;
 }
 
-export type DepreciationKind = 'building' | 'improvements' | 'furniture';
+/**
+ * What is deducted other than as a whole cost in the year it was paid:
+ * `building` (poisto), `improvements` and `furniture` (this year's part of
+ * costs deducted over several years) and `flatRate` (a furnished flat's
+ * deduction per month, which takes the place of the furniture's own costs).
+ */
+export type DepreciationKind = 'building' | 'improvements' | 'furniture' | 'flatRate';
 
 export interface DepreciationLine {
   kind: DepreciationKind;
@@ -29,6 +29,8 @@ export interface DepreciationLine {
 
 /** The figures that are money, as opposed to bookkeeping counts. */
 export interface TaxFigures {
+  /** The tax year; its rules decide the rates. */
+  year: number;
   rentIncome: number;
   /** Costs paid this year that are deducted (or refused) as a whole, by category. */
   lines: TaxLine[];
@@ -38,13 +40,18 @@ export interface TaxFigures {
   depreciationLines: DepreciationLine[];
   /** The sum of `depreciationLines`. */
   depreciation: number;
+  /** Rent below the usual: the deductions may not exceed the rent. */
+  rentLimited: boolean;
+  /** The part of the deductions that the rent cannot take, when `rentLimited`. */
+  limitAdjustment: number;
   netIncome: number;
   estimatedTax: number;
+  /** The most the year's deficit gives back as a credit on tax on earned income (alijäämähyvitys), before children are counted. */
+  deficitCredit: number;
 }
 
 /** One apartment, one year, the whole apartment (every owner together). */
 export interface TaxResult extends TaxFigures {
-  year: number;
   paidMonths: number;
   vacantMonths: number;
   unpaidMonths: number;
@@ -63,72 +70,217 @@ export interface PortfolioTotals {
   depreciation: number;
   netIncome: number;
   estimatedTax: number;
+  deficitCredit: number;
 }
 
 export const round2 = (n: number) => Math.round((n + Number.EPSILON) * 100) / 100;
 
-export function estimateCapitalTax(net: number): number {
+const yearOf = (date: string) => Number(date.slice(0, 4));
+
+export function estimateCapitalTax(net: number, year: number = LATEST_RULES_YEAR): number {
   if (net <= 0) return 0;
-  const low = Math.min(net, CAPITAL_TAX_LIMIT) * CAPITAL_TAX_LOW;
-  const high = Math.max(net - CAPITAL_TAX_LIMIT, 0) * CAPITAL_TAX_HIGH;
+  const { lowRate, highRate, limit } = rulesFor(year).capitalIncome;
+  const low = Math.min(net, limit) * lowRate;
+  const high = Math.max(net - limit, 0) * highRate;
   return round2(low + high);
 }
 
 /**
- * Building depreciation (poisto) — reducing-balance on the building part of the
- * acquisition cost. Only for a property of one's own: the price of a share in a
- * housing company is never depreciated, it is deducted when the share is sold.
+ * What a deficit gives back as a credit on tax on earned income: its share at
+ * the capital income rate, at most the maximum. The maximum is higher for a
+ * taxpayer with minor children, which the app does not know, and the credit
+ * can only take as much as that tax holds — so this is the most it can be.
  */
-export function computeDepreciation(ledger: Pick<Ledger, 'settings'>): number {
-  const s = ledger.settings;
-  if (s.propertyType !== 'property' || !s.useDepreciation || s.purchasePrice <= 0) return 0;
-  const base = (s.purchasePrice * s.buildingSharePct) / 100;
-  const remaining = Math.max(base - s.depreciationPrior, 0);
-  return round2(remaining * (s.depreciationRate / 100));
+export function deficitCreditOf(net: number, year: number = LATEST_RULES_YEAR): number {
+  if (net >= 0) return 0;
+  const { rate, max } = rulesFor(year).deficitCredit;
+  return Math.min(round2(-net * rate), max);
 }
 
-export type CostDeduction = 'expense' | 'none' | 'improvement' | 'furniture' | 'interest';
+/** The deduction for kilometres driven in one's own car in a year. */
+export const mileageAmount = (km: number, year: number) => round2(km * rulesFor(year).mileagePerKm);
 
-/** How one logged cost is deducted for this apartment. */
+/** What the deductions took off the rent: the rent less the net income. */
+export const deductionsOf = (f: Pick<TaxFigures, 'rentIncome' | 'netIncome'>) => round2(f.rentIncome - f.netIncome);
+
+/** The first tax year building depreciation is calculated for: the one chosen, else the year of the first rent logged. */
+export function depreciationStartYear(ledger: Pick<Ledger, 'settings' | 'rents'>, viewed: number): number {
+  const s = ledger.settings;
+  if (s.depreciationFromYear > 0) return s.depreciationFromYear;
+  const firstLogged = ledger.rents.map((r) => r.month).sort()[0];
+  if (firstLogged) return yearOf(firstLogged);
+  return s.purchaseDate ? yearOf(s.purchaseDate) : viewed;
+}
+
+/** The rows of form 7K's depreciation table for the building, for one tax year (the whole apartment). */
+export interface DepreciationDetail {
+  /** 4.1 The let building's part of the property's acquisition cost: the price and purchase costs, by the building and let shares. */
+  cost: number;
+  /** 4.2 Unwritten-off cost at the start of the year. */
+  start: number;
+  /** 4.3 Additions during the year: improvements paid. */
+  added: number;
+  /** 4.4 Unwritten-off cost after additions. */
+  base: number;
+  /** 4.5 The year's depreciation. */
+  part: number;
+  /** 4.6 Unwritten-off cost at the end of the year. */
+  end: number;
+  /** The rate used, in percent: the one chosen, at most the highest for the kind of building. */
+  rate: number;
+}
+
+/**
+ * Building depreciation (poisto) of a property's let building in a tax year:
+ * the highest rate of the building kind, on the cost that is left — the
+ * building's part of the price and purchase costs, plus what improvements it
+ * got, less what was deducted before. Worked through every year from the
+ * first, assuming the highest was claimed each time. Never for a share in a
+ * housing company: that price is deducted when the share is sold. Null when
+ * there is none to calculate.
+ */
+export function depreciationDetail(ledger: Ledger, year: number): DepreciationDetail | null {
+  const s = ledger.settings;
+  if (s.propertyType !== 'property' || !s.useDepreciation) return null;
+  const first = depreciationStartYear(ledger, year);
+  if (year < first) return null;
+  const letPart = s.letSharePct / 100;
+  const cost = round2(((s.purchasePrice + s.purchaseCosts) * s.buildingSharePct * letPart) / 100);
+  let left = Math.max(cost - s.depreciationPrior, 0);
+  let detail!: DepreciationDetail;
+  for (let y = first; y <= year; y++) {
+    const rules = rulesFor(y);
+    const added = round2(
+      ledger.costs.filter((c) => c.category === 'improvement' && yearOf(c.date) === y).reduce((a, c) => a + c.amount, 0),
+    );
+    const start = round2(left);
+    const base = round2(start + added);
+    const rate = Math.min(s.depreciationRate, rules.buildingRate[s.buildingKind]);
+    // What was claimed before and is under the at-once limit is deducted whole.
+    const wholeNow = (y > first || s.depreciationPrior > 0) && base > 0 && base <= rules.movable.atOnceLimit;
+    const part = wholeNow ? base : round2((base * rate) / 100);
+    left = round2(base - part);
+    detail = { cost, start, added, base, part, end: left, rate };
+  }
+  return detail;
+}
+
+/** The year's building depreciation: row 4.5, or nothing. */
+export const computeDepreciation = (ledger: Ledger, year: number): number => depreciationDetail(ledger, year)?.part ?? 0;
+
+/** One piece of furniture or appliance that is depreciated over several years, in one tax year. */
+export interface MovableItem {
+  id: string;
+  date: string;
+  description: string;
+  price: number;
+  /** What is left of it at the start of the year; 0 in the year it is bought. */
+  start: number;
+  added: number;
+  part: number;
+  end: number;
+}
+
+/** The loose-property rows of form 7K, and the inventory list the law asks for: every item still being depreciated this year. */
+export interface MovableDetail {
+  start: number;
+  added: number;
+  part: number;
+  end: number;
+  items: MovableItem[];
+}
+
+export function movableDetail(ledger: Pick<Ledger, 'settings' | 'costs'>, year: number): MovableDetail {
+  const items: MovableItem[] = [];
+  for (const c of ledger.costs) {
+    if (deductionOf(c, ledger.settings) !== 'furniture' || yearOf(c.date) > year) continue;
+    const part = furniturePart(c, year);
+    let before = 0;
+    for (let y = yearOf(c.date); y < year; y++) before = round2(before + furniturePart(c, y));
+    const bought = yearOf(c.date) === year;
+    const start = bought ? 0 : round2(c.amount - before);
+    // Fully deducted in an earlier year: no longer on the list.
+    if (!bought && start <= 0) continue;
+    const added = bought ? c.amount : 0;
+    items.push({
+      id: c.id,
+      date: c.date,
+      description: c.description,
+      price: c.amount,
+      start,
+      added,
+      part,
+      end: round2(start + added - part),
+    });
+  }
+  items.sort((a, b) => a.date.localeCompare(b.date));
+  const sum = (pick: (i: MovableItem) => number) => round2(items.reduce((a, i) => a + pick(i), 0));
+  return { start: sum((i) => i.start), added: sum((i) => i.added), part: sum((i) => i.part), end: sum((i) => i.end), items };
+}
+
+export type CostDeduction = 'expense' | 'none' | 'improvement' | 'addition' | 'furniture' | 'interest';
+
+/**
+ * How one logged cost is deducted for this apartment:
+ * `expense`, `interest` — as a whole, in the year paid (interest on the other form);
+ * `improvement`, `furniture` — this year's part of a cost spread over years;
+ * `addition` — a property's improvement, which joins the building's cost;
+ * `none` — not deducted.
+ */
 export function deductionOf(
-  cost: Pick<CostEntry, 'category' | 'amount' | 'spreadYears'>,
-  settings: Pick<ApartmentSettings, 'financingChargeDeductible'>,
+  cost: Pick<CostEntry, 'category' | 'amount' | 'spreadYears'> & Partial<Pick<CostEntry, 'date'>>,
+  settings: Pick<ApartmentSettings, 'financingChargeDeductible' | 'furnishing' | 'propertyType' | 'belowMarketRent'>,
 ): CostDeduction {
+  const rules = rulesFor(cost.date ? yearOf(cost.date) : LATEST_RULES_YEAR);
   switch (CATEGORIES[cost.category].treatment) {
     case 'financing':
       return settings.financingChargeDeductible ? 'expense' : 'none';
     case 'furniture':
-      return cost.amount <= FURNITURE_LIMIT || cost.spreadYears === 1 ? 'expense' : 'furniture';
+      // The flat rate already covers all furniture and loose appliances.
+      if (settings.furnishing === 'flat') return 'none';
+      return cost.amount <= rules.movable.atOnceLimit || cost.spreadYears === 1 ? 'expense' : 'furniture';
     case 'improvement':
-      return 'improvement';
+      return settings.propertyType === 'property' ? 'addition' : 'improvement';
     case 'interest':
-      return 'interest';
+      return settings.belowMarketRent ? 'none' : 'interest';
     default:
       return 'expense';
   }
 }
 
-/** The years an improvement is spread over, within the 1–10 the law allows. */
-export const improvementYears = (c: Pick<CostEntry, 'spreadYears'>) =>
-  Math.min(Math.max(Math.round(c.spreadYears ?? IMPROVEMENT_YEARS), 1), IMPROVEMENT_YEARS);
+/** The years an improvement of a flat is spread over, within what the law allows. */
+export const improvementYears = (c: Pick<CostEntry, 'date' | 'spreadYears'>) => {
+  const { minYears, maxYears } = rulesFor(yearOf(c.date)).improvement;
+  return Math.min(Math.max(Math.round(c.spreadYears ?? maxYears), minYears), maxYears);
+};
 
 /**
- * The part of a basic improvement deducted in `year`: equal parts from the year
- * it was paid, the last part taking the rounding so the parts add up exactly.
+ * The part of an improvement of a flat deducted in `year`: equal parts from the
+ * year it was paid, the last part taking the rounding so the parts add up exactly.
  */
 export function improvementPart(c: Pick<CostEntry, 'date' | 'amount' | 'spreadYears'>, year: number): number {
   const n = improvementYears(c);
-  const k = year - Number(c.date.slice(0, 4));
+  const k = year - yearOf(c.date);
   if (k < 0 || k >= n) return 0;
   const part = round2(c.amount / n);
   return k === n - 1 ? round2(c.amount - part * (n - 1)) : part;
 }
 
-/** The part of a dear piece of furniture deducted in `year`: 25 % of what is left of it. */
+/**
+ * The part of a dear piece of furniture deducted in `year`: a share of what is
+ * left of it, and the whole of what is left once that is no more than the
+ * at-once limit at the start of a year.
+ */
 export function furniturePart(c: Pick<CostEntry, 'date' | 'amount'>, year: number): number {
-  const k = year - Number(c.date.slice(0, 4));
-  if (k < 0) return 0;
-  return round2(c.amount * FURNITURE_RATE * (1 - FURNITURE_RATE) ** k);
+  const first = yearOf(c.date);
+  let left = c.amount;
+  for (let y = first; y <= year; y++) {
+    const { atOnceLimit, rate } = rulesFor(y).movable;
+    const part = y > first && left <= atOnceLimit ? left : round2(left * rate);
+    if (y === year) return part;
+    left = round2(left - part);
+  }
+  return 0;
 }
 
 export function computeTax(ledger: Ledger, year: number, today: Date = new Date()): TaxResult {
@@ -166,27 +318,32 @@ export function computeTax(ledger: Ledger, year: number, today: Date = new Date(
   });
   const lines: TaxLine[] = COST_CATEGORIES.map((cat) => {
     const ofCat = wholeCosts.filter((c) => c.category === cat);
+    const deductible = ofCat.every((c) => deductionOf(c, s) !== 'none');
+    const paid = round2(ofCat.reduce((a, c) => a + c.amount, 0));
     return {
       category: cat,
       label: CATEGORIES[cat].label,
       fi: CATEGORIES[cat].fi,
-      deductible: ofCat.every((c) => deductionOf(c, s) !== 'none'),
-      amount: round2(ofCat.reduce((a, c) => a + c.amount, 0)),
+      deductible,
+      // A cost of the whole home counts by the let share; a refused one is shown as paid.
+      amount: deductible && CATEGORIES[cat].shared ? round2((paid * s.letSharePct) / 100) : paid,
     };
   }).filter((l) => l.amount !== 0);
 
   const sumOf = (kind: CostDeduction, part: (c: CostEntry) => number) =>
     round2(ledger.costs.filter((c) => deductionOf(c, s) === kind).reduce((a, c) => a + part(c), 0));
+  const { studio, larger } = rulesFor(year).furnishedFlatRate;
+  const letMonths = monthRows.filter((r) => r.status !== 'vacant').length;
   const depreciationLines = depreciationFrom({
-    building: computeDepreciation(ledger),
+    building: computeDepreciation(ledger, year),
     improvements: sumOf('improvement', (c) => improvementPart(c, year)),
     furniture: sumOf('furniture', (c) => furniturePart(c, year)),
+    flatRate: s.furnishing === 'flat' ? round2(letMonths * (s.roomClass === 'studio' ? studio : larger)) : 0,
   });
 
-  const figures = figuresFrom(rentIncome, lines, depreciationLines);
+  const figures = figuresFrom(year, rentIncome, lines, depreciationLines, s.belowMarketRent);
 
   return {
-    year,
     paidMonths,
     vacantMonths,
     unpaidMonths,
@@ -207,7 +364,7 @@ export function ownerShare(t: TaxFigures, sharePct: number): OwnerShare {
   const lines = t.lines.map((l) => ({ ...l, amount: part(l.amount) }));
   // Kept line for line, like `lines`, so each of the apartment's lines has the owner's part beside it.
   const depreciation = t.depreciationLines.map((d) => ({ ...d, amount: part(d.amount) }));
-  return { sharePct, ...figuresFrom(part(t.rentIncome), lines, depreciation) };
+  return { sharePct, ...figuresFrom(t.year, part(t.rentIncome), lines, depreciation, t.rentLimited) };
 }
 
 /**
@@ -217,6 +374,7 @@ export function ownerShare(t: TaxFigures, sharePct: number): OwnerShare {
  */
 export function portfolioTotals(
   shares: Pick<TaxFigures, 'rentIncome' | 'deductibleCosts' | 'depreciation' | 'netIncome'>[],
+  year: number = LATEST_RULES_YEAR,
 ): PortfolioTotals {
   const sum = (pick: (s: (typeof shares)[number]) => number) => round2(shares.reduce((a, s) => a + pick(s), 0));
   const netIncome = sum((s) => s.netIncome);
@@ -225,7 +383,8 @@ export function portfolioTotals(
     deductibleCosts: sum((s) => s.deductibleCosts),
     depreciation: sum((s) => s.depreciation),
     netIncome,
-    estimatedTax: estimateCapitalTax(netIncome),
+    estimatedTax: estimateCapitalTax(netIncome, year),
+    deficitCredit: deficitCreditOf(netIncome, year),
   };
 }
 
@@ -235,20 +394,32 @@ function depreciationFrom(parts: Record<DepreciationKind, number>): Depreciation
     .filter((d) => d.amount !== 0);
 }
 
-function figuresFrom(rentIncome: number, lines: TaxLine[], depreciationLines: DepreciationLine[]): TaxFigures {
+function figuresFrom(
+  year: number,
+  rentIncome: number,
+  lines: TaxLine[],
+  depreciationLines: DepreciationLine[],
+  rentLimited: boolean,
+): TaxFigures {
   const depreciation = round2(depreciationLines.reduce((a, d) => a + d.amount, 0));
   const deductibleCosts = round2(lines.filter((l) => l.deductible).reduce((a, l) => a + l.amount, 0));
   const nonDeductibleCosts = round2(lines.filter((l) => !l.deductible).reduce((a, l) => a + l.amount, 0));
-  const netIncome = round2(rentIncome - deductibleCosts - depreciation);
+  // Below-market rent: costs and depreciation together may not exceed the rent.
+  const limitAdjustment = rentLimited ? Math.max(round2(deductibleCosts + depreciation - rentIncome), 0) : 0;
+  const netIncome = round2(rentIncome - deductibleCosts - depreciation + limitAdjustment);
   return {
+    year,
     rentIncome,
     lines,
     deductibleCosts,
     nonDeductibleCosts,
     depreciationLines,
     depreciation,
+    rentLimited,
+    limitAdjustment,
     netIncome,
-    estimatedTax: estimateCapitalTax(netIncome),
+    estimatedTax: estimateCapitalTax(netIncome, year),
+    deficitCredit: deficitCreditOf(netIncome, year),
   };
 }
 

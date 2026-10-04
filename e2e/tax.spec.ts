@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs';
 import JSZip from 'jszip';
 import { expect, test } from './fixtures';
 import { coOwned, ledger, m, YEAR } from './data';
-import { alert, section } from './nav';
+import { alert, openApartment, openInfo, section } from './nav';
 
 test.describe('the tax page', () => {
   test("shows the viewer's share of every line, or the whole apartment's", async ({ page, api }) => {
@@ -175,10 +175,12 @@ test.describe('the tax page', () => {
 
     const [pdf] = await Promise.all([page.waitForEvent('download'), page.getByRole('button', { name: 'PDF summary only' }).click()]);
     const text = readFileSync(await pdf.path()).toString('latin1');
-    expect(text).toContain('summary for tax form 7H / OmaVero');
+    expect(text).toContain('figures for tax form 7H / OmaVero');
     expect(text).toContain('Declared separately');
-    expect(text).toContain('Each basic improvement is deducted in equal parts');
-    expect(text).toContain('Furniture and appliances over 1 200 EUR: 25%');
+    expect(text).toContain('Basic improvements deducted over several years');
+    expect(text).toContain('Balcony glazing');
+    expect(text).toContain('Inventory of furniture and appliances');
+    expect(text).toContain('Items over 1 200 EUR: 25% of what is left a year.');
   });
 
   test('describes co-owners in the PDF when nobody is still invited, and leaves out an empty section', async ({ page, api }) => {
@@ -202,5 +204,124 @@ test.describe('the tax page', () => {
     const text = readFileSync(await pdf.path()).toString('latin1');
     expect(text).toContain('The apartment has 2 owners. Each owner declares');
     expect(text).not.toContain('Not deductible');
+  });
+
+  const paidRent = (n: number, amount = 800) => ({ month: m(n), status: 'paid' as const, amount, receivedDate: `${m(n)}-03`, note: '' });
+  const repair = (amount: number) => ({ id: 'k-repair', date: `${m(2)}-10`, category: 'repairs' as const, description: '', amount, hasReceipt: false });
+
+  test('shows the deficit credit under a rental loss, at most the maximum', async ({ page, api }) => {
+    api.addApartment({ name: 'Loss' }, { rents: [paidRent(1)], costs: [repair(3000)] });
+    api.addApartment({ name: 'Big loss' }, { rents: [paidRent(1)], costs: [repair(10000)] });
+    await page.goto('/');
+    await section(page, 'Tax');
+
+    await expect(page.getByText(`Rental loss · ${YEAR}`)).toBeVisible();
+    // 800 − 3 000 = −2 200 €, and 30 % of that.
+    await expect(page.locator('.hero')).toContainText('Deficit credit, up to 660,00 €');
+    await openInfo(page, 'About the deficit credit');
+    await expect(page.getByRole('note')).toContainText('at most €1 400 — €1 800 with one minor child and €2 200 with two or more');
+    await expect(page.getByRole('note')).toContainText('loss you can set against capital income for 10 years');
+    await page.keyboard.press('Escape');
+
+    await openApartment(page, 'Big loss');
+    await section(page, 'Tax');
+    await expect(page.locator('.hero')).toContainText('Deficit credit, up to 1 400,00 €');
+  });
+
+  test('shows no deficit credit while there is a profit', async ({ page, api }) => {
+    api.addApartment({ name: 'Profit' }, { rents: [paidRent(1)], costs: [repair(100)] });
+    await page.goto('/');
+    await section(page, 'Tax');
+
+    await expect(page.getByText(`Taxable rental income · ${YEAR}`)).toBeVisible();
+    await expect(page.locator('.hero')).not.toContainText('Deficit credit');
+  });
+
+  test('shows the flat-rate furniture deduction for a furnished flat, per month it was let', async ({ page, api }) => {
+    api.addApartment({ name: 'Studio', furnishing: 'flat', roomClass: 'studio' }, ledger());
+    await page.goto('/');
+    await section(page, 'Tax');
+
+    // Three months of rent paid and one vacant: 3 × 40 €.
+    await expect(page.locator('.kv').filter({ hasText: 'Furnished flat, flat rate' })).toContainText('120,00 €');
+    await openInfo(page, 'About Furnished flat, flat rate');
+    await expect(page.getByRole('note')).toContainText('€40 a month for a studio or one room, €60 for a larger flat');
+  });
+
+  test('limits the deductions to the rent when the rent is below the usual, so there is no loss', async ({ page, api }) => {
+    api.addApartment(
+      { name: 'Relative', belowMarketRent: true },
+      { rents: ledger().rents, costs: [{ id: 'k-m', date: `${m(2)}-10`, category: 'maintenance_charge', description: '', amount: 3000, hasReceipt: false }] },
+    );
+    await page.goto('/');
+    await section(page, 'Tax');
+
+    await expect(page.getByText(`Taxable rental income · ${YEAR}`)).toBeVisible();
+    await expect(page.locator('.hero .big')).toHaveText('0,00 €');
+    // 2 400 € of rent against 3 000 € of costs.
+    await expect(page.locator('.kv').filter({ hasText: 'Limited to the rent received' })).toContainText('600,00 €');
+    await expect(page.locator('.kv').filter({ hasText: 'Deductible total' })).toContainText('2 400,00 €');
+    await openInfo(page, 'About Limited to the rent received');
+    await expect(page.getByRole('note')).toContainText('no loss arises');
+  });
+
+  test('lays the declaration out like form 7K for a property, with its depreciation tables', async ({ page, api }) => {
+    api.addApartment(
+      { name: 'House', propertyType: 'property', useDepreciation: true, purchasePrice: 100000, depreciationPrior: 20000, purchaseDate: `${YEAR - 1}-01-02` },
+      {
+        rents: [paidRent(1, 12000)],
+        costs: [
+          repair(500),
+          { id: 'k-tax', date: `${m(9)}-01`, category: 'property_tax', description: '', amount: 200, hasReceipt: false },
+          { id: 'k-roof', date: `${m(5)}-01`, category: 'improvement', description: 'New roof', amount: 20000, hasReceipt: false },
+          { id: 'k-sofa', date: `${m(3)}-01`, category: 'furniture', description: 'Sofa', amount: 2000, hasReceipt: false },
+          { id: 'k-int', date: `${m(4)}-01`, category: 'loan_interest', description: '', amount: 900, hasReceipt: false },
+        ],
+      },
+    );
+    await page.goto('/');
+    await section(page, 'Tax');
+
+    const [pdf] = await Promise.all([page.waitForEvent('download'), page.getByRole('button', { name: 'PDF summary only' }).click()]);
+    const text = readFileSync(await pdf.path()).toString('latin1');
+    expect(text).toContain('figures for tax form 7K / OmaVero');
+    expect(text).toContain('Form 7K - Hyresinkomster - fastighet');
+    // 3.3 is the building's 4 000 € and the sofa's 500 €; 3.4 is what the rent leaves before interest.
+    expect(text).toMatch(/\(3\.3\) Tj[\s\S]*?\(4 500,00 EUR\) Tj/);
+    expect(text).toMatch(/\(3\.4\) Tj[\s\S]*?\(6 800,00 EUR\) Tj/);
+    // The building's table: 80 000 left + 20 000 of improvement, 4 %, 96 000 left.
+    expect(text).toContain('(Verovuoden poisto) Tj');
+    expect(text).toMatch(/\(4\.6\) Tj[\s\S]*?\(96 000,00 EUR\) Tj/);
+    expect(text).toContain('Depreciation of loose property');
+    expect(text).toContain('Inventory of furniture and appliances');
+    expect(text).toContain('Declared separately');
+  });
+
+  test('tells in the PDF how the rows come down for a rent below the usual, and what is let', async ({ page, api }) => {
+    api.addApartment(
+      { name: 'Relative', belowMarketRent: true, letSharePct: 60, furnishing: 'flat' },
+      { rents: ledger().rents, costs: [{ id: 'k-m', date: `${m(2)}-10`, category: 'maintenance_charge', description: '', amount: 5000, hasReceipt: false }] },
+    );
+    await page.goto('/');
+    await section(page, 'Tax');
+
+    const [pdf] = await Promise.all([page.waitForEvent('download'), page.getByRole('button', { name: 'PDF summary only' }).click()]);
+    const text = readFileSync(await pdf.path()).toString('latin1');
+    expect(text).toContain('(below the usual rent) Tj');
+    expect(text).toContain('(Share of the home that is let) Tj');
+    expect(text).toContain('Furnished flat, flat-rate deduction');
+    // 60 % of 5 000 € and 180 € of flat rate against 2 400 € of rent.
+    expect(text).toMatch(/Reduce the rows above by\) Tj[\s\S]*?\(780,00 EUR\) Tj/);
+  });
+
+  test('tells in the PDF about the deficit credit under a loss', async ({ page, api }) => {
+    api.addApartment({ name: 'Loss' }, { rents: [paidRent(1)], costs: [repair(3000)] });
+    await page.goto('/');
+    await section(page, 'Tax');
+
+    const [pdf] = await Promise.all([page.waitForEvent('download'), page.getByRole('button', { name: 'PDF summary only' }).click()]);
+    const text = readFileSync(await pdf.path()).toString('latin1');
+    expect(text).toMatch(/\(Deficit credit, up to\) Tj[\s\S]*?\(660,00 EUR\) Tj/);
+    expect(text).toContain('alij');
   });
 });

@@ -57,11 +57,18 @@ const SETTINGS_COLUMNS = `
   a.financing_charge_deductible as "financingChargeDeductible",
   coalesce(a.purchase_date::text, '') as "purchaseDate",
   a.purchase_price::float8     as "purchasePrice",
+  a.purchase_costs::float8     as "purchaseCosts",
   a.building_share_pct::float8 as "buildingSharePct",
+  a.building_kind         as "buildingKind",
   a.depreciation_rate::float8  as "depreciationRate",
   a.depreciation_prior::float8 as "depreciationPrior",
+  a.depreciation_from_year::int as "depreciationFromYear",
   a.use_depreciation      as "useDepreciation",
-  a.monthly_rent::float8  as "monthlyRent"`;
+  a.monthly_rent::float8  as "monthlyRent",
+  a.furnishing,
+  a.room_class            as "roomClass",
+  a.below_market_rent     as "belowMarketRent",
+  a.let_share_pct::float8 as "letSharePct"`;
 
 const SETTINGS_FIELDS: Record<keyof ApartmentSettings, string> = {
   name: 'name',
@@ -71,11 +78,18 @@ const SETTINGS_FIELDS: Record<keyof ApartmentSettings, string> = {
   financingChargeDeductible: 'financing_charge_deductible',
   purchaseDate: 'purchase_date',
   purchasePrice: 'purchase_price',
+  purchaseCosts: 'purchase_costs',
   buildingSharePct: 'building_share_pct',
+  buildingKind: 'building_kind',
   depreciationRate: 'depreciation_rate',
   depreciationPrior: 'depreciation_prior',
+  depreciationFromYear: 'depreciation_from_year',
   useDepreciation: 'use_depreciation',
   monthlyRent: 'monthly_rent',
+  furnishing: 'furnishing',
+  roomClass: 'room_class',
+  belowMarketRent: 'below_market_rent',
+  letSharePct: 'let_share_pct',
 };
 
 const toDbValue = (key: keyof ApartmentSettings, value: unknown) =>
