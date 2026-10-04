@@ -641,7 +641,7 @@ describe('settings topics', () => {
   it('keeps the uncommon choices off the details page, behind Advanced', async () => {
     serve([view('a1', 'Alpha')]);
     render(<RentalApp />);
-    await user().click(await screen.findByRole('button', { name: 'Apartment settings' }));
+    await user().click(await screen.findByRole('button', { name: 'Settings' }));
     expect(screen.getByRole('button', { name: /^Advanced.*Standard: a whole apartment in a housing company/ })).toBeTruthy();
     expect(screen.queryByRole('button', { name: /^Building depreciation/ })).toBeNull();
 
