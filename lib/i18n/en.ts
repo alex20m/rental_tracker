@@ -506,6 +506,7 @@ export const en = {
   'auth.code': 'Code from the email',
   'auth.codeDigit': 'Digit {n} of 6',
   'auth.wait': 'Please wait…',
+  'auth.tagline': 'Track your Finnish rental apartments and prepare your tax declaration.',
   'auth.signIn': 'Sign in',
   'auth.create': 'Create account',
   'auth.toSignUp': 'New here? Create an account',

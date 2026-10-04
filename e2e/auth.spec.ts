@@ -12,6 +12,24 @@ test.describe('signing in', () => {
     await expect(page.getByRole('heading', { name: 'Sign in' })).toBeVisible();
   });
 
+  test('says what the app is on the sign-in and sign-up forms, but not on the code step', async ({ page, api }) => {
+    api.accounts.set('me@example.test', { password: 'correct horse', verified: false, userId: 'usr_me' });
+    const tagline = page.getByText('Track your Finnish rental apartments and prepare your tax declaration.');
+    await page.goto('/sign-in');
+    await expect(tagline).toBeVisible();
+
+    await page.getByRole('button', { name: 'New here? Create an account' }).click();
+    await expect(page.getByRole('heading', { name: 'Create your account' })).toBeVisible();
+    await expect(tagline).toBeVisible();
+
+    await page.getByRole('button', { name: 'Have an account? Sign in' }).click();
+    await page.getByLabel('Email', { exact: true }).fill('me@example.test');
+    await page.getByLabel('Password').fill('correct horse');
+    await page.getByRole('button', { name: 'Sign in' }).click();
+    await expect(page.getByRole('heading', { name: 'Check your email' })).toBeVisible();
+    await expect(tagline).toHaveCount(0);
+  });
+
   test('signs in with a verified account and lands on the portfolio', async ({ page, api }) => {
     api.accounts.set('me@example.test', { password: 'correct horse', verified: true, userId: 'usr_me' });
     await page.goto('/sign-in');

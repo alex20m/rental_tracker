@@ -504,6 +504,7 @@ export const sv: Record<MessageKey, string> = {
   'auth.code': 'Koden från e-postmeddelandet',
   'auth.codeDigit': 'Siffra {n} av 6',
   'auth.wait': 'Vänta…',
+  'auth.tagline': 'Håll koll på dina finländska hyresbostäder och förbered din skattedeklaration.',
   'auth.signIn': 'Logga in',
   'auth.create': 'Skapa konto',
   'auth.toSignUp': 'Ny här? Skapa ett konto',

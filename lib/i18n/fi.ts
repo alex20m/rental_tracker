@@ -502,6 +502,7 @@ export const fi: Record<MessageKey, string> = {
   'auth.code': 'Sähköpostin koodi',
   'auth.codeDigit': 'Numero {n}/6',
   'auth.wait': 'Odota…',
+  'auth.tagline': 'Seuraa vuokra-asuntojasi ja valmistele verotuksen ilmoituksesi.',
   'auth.signIn': 'Kirjaudu sisään',
   'auth.create': 'Luo tili',
   'auth.toSignUp': 'Uusi täällä? Luo tili',
