@@ -28,6 +28,7 @@ export async function POST(request: Request): Promise<Response> {
 
   const raw = await request.text();
   if (!(await verifyNeonWebhook(raw, request.headers, authBaseUrl))) {
+    console.error('Neon Auth webhook rejected: signature did not verify, so no sign-in code was sent');
     return Response.json({ error: 'invalid signature' }, { status: 401 });
   }
 
@@ -46,6 +47,11 @@ export async function POST(request: Request): Promise<Response> {
   }
 
   const result = await sendAuthCode({ to, code, type: type as AuthCodeType });
+  if (result === 'not_configured') {
+    console.error('Sign-in code not sent: RESEND_API_KEY and MAIL_FROM must both be set on this deployment');
+  } else if (result === 'failed') {
+    console.error('Sign-in code not sent: sending through Resend failed (see the Resend error above)');
+  }
   if (result !== 'sent') return Response.json({ error: `email ${result}` }, { status: 500 });
   return Response.json({});
 }
