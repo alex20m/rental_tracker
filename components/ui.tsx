@@ -464,6 +464,15 @@ export const Icon = {
   building: svg(
     <path d="M4 21V5a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v16M16 10h2a2 2 0 0 1 2 2v9M2 21h20M8 7h4M8 11h4M8 15h4" />,
   ),
+  // The app logo mark (public/icon.svg without its tile): filled, so it takes the tile's ink colour.
+  logo: (
+    <svg className="i" viewBox="144 96 224 320" fill="currentColor" aria-hidden="true">
+      <path
+        fillRule="evenodd"
+        d="M164 96h184a20 20 0 0 1 20 20v280a20 20 0 0 1-20 20H164a20 20 0 0 1-20-20V116a20 20 0 0 1 20-20zM190 136h28a6 6 0 0 1 6 6v28a6 6 0 0 1-6 6h-28a6 6 0 0 1-6-6v-28a6 6 0 0 1 6-6zM294 136h28a6 6 0 0 1 6 6v28a6 6 0 0 1-6 6h-28a6 6 0 0 1-6-6v-28a6 6 0 0 1 6-6zM190 208h28a6 6 0 0 1 6 6v28a6 6 0 0 1-6 6h-28a6 6 0 0 1-6-6v-28a6 6 0 0 1 6-6zM294 208h28a6 6 0 0 1 6 6v28a6 6 0 0 1-6 6h-28a6 6 0 0 1-6-6v-28a6 6 0 0 1 6-6zM190 280h28a6 6 0 0 1 6 6v28a6 6 0 0 1-6 6h-28a6 6 0 0 1-6-6v-28a6 6 0 0 1 6-6zM294 280h28a6 6 0 0 1 6 6v28a6 6 0 0 1-6 6h-28a6 6 0 0 1-6-6v-28a6 6 0 0 1 6-6zM232 416v-60a24 24 0 0 1 48 0v60z"
+      />
+    </svg>
+  ),
   stack: svg(<path d="m12 3 9 5-9 5-9-5zM3 13l9 5 9-5" />),
   download: svg(<path d="M12 3v12m0 0-4-4m4 4 4-4M4 20h16" />),
   signout: svg(<path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9" />),

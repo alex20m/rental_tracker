@@ -215,7 +215,7 @@ export default function RentalApp() {
 
       {welcome && (
         <div className="welcome">
-          <div className="logo">{Icon.building}</div>
+          <div className="logo">{Icon.logo}</div>
           <div>
             <h1>{t('welcome.title')}</h1>
             <p className="lead" style={{ marginTop: 8 }}>
