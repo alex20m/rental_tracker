@@ -514,7 +514,7 @@ export const en = {
   'auth.sendCode': 'Send a new code',
   'auth.pressSend': 'Press “Send a new code”, then enter the code from the email.',
   'auth.codeSent': 'We sent a code to {email}.',
-  'auth.codeSentSignUp': 'We sent a code to {email}. Enter it to finish creating your account. No code? You may already have an account: go back and sign in.',
+  'auth.codeSentSignUp': 'We sent a code to {email}. Didn\'t get one? That address may already have an account. Go back to sign in, or reset your password.',
   'auth.verified': 'Email verified. Sign in to continue.',
   'auth.errGeneric': 'Something went wrong.',
   'auth.errSend': 'Could not send a code.',
