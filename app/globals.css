@@ -58,9 +58,7 @@ svg.i { width: 20px; height: 20px; flex: none; }
 .topbar .grow { flex: 1; min-width: 0; }
 .brand { font-size: 20px; font-weight: 700; letter-spacing: -0.02em; }
 
-.pill { display: inline-flex; align-items: center; gap: 4px; max-width: 100%; border: 0; background: var(--tint); border-radius: 6px; padding: 8px 10px 8px 14px; font-weight: 600; font-size: 15px; }
-.pill span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.pill svg.i { width: 16px; height: 16px; color: var(--muted); }
+.aptname { font-size: 18px; font-weight: 700; letter-spacing: -0.02em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .stepper { display: inline-flex; align-items: center; font-size: 15px; font-weight: 600; font-variant-numeric: tabular-nums; background: var(--tint); border-radius: 6px; }
 .stepper .iconbtn { padding: 8px 3px; }
 .stepper .iconbtn:first-child { padding-left: 8px; }
@@ -253,7 +251,7 @@ label { display: flex; align-items: center; min-height: 24px; font-size: 14px; c
 /* ── Responsive ──
    Phone first: one column with a floating bottom bar. Wider screens get a
    roomier column and centred dialogs; from 960px a sidebar and two-column pages. */
-.nav-brand { display: none; }
+.nav-brand, .side-brand { display: none; }
 .nav button span { white-space: nowrap; }
 .page { min-width: 0; }
 .btn, .month, .iconbtn, .choice { transition: background-color 0.12s, border-color 0.12s, opacity 0.12s; }
@@ -304,9 +302,10 @@ label { display: flex; align-items: center; min-height: 24px; font-size: 14px; c
   .shell > .topbar, .shell > .page, .shell > .alert { max-width: 1040px; margin-left: auto; margin-right: auto; }
   .shell > .topbar { padding: 24px 0 16px; }
 
-  .nav { display: flex; position: fixed; top: 0; bottom: 0; left: 0; width: 232px; background: var(--card); border-right: 1px solid var(--line); }
+  .nav, .side-brand { display: flex; position: fixed; top: 0; bottom: 0; left: 0; width: 232px; background: var(--card); border-right: 1px solid var(--line); }
   .nav { flex-direction: column; justify-content: flex-start; padding: 0 12px; overflow-y: auto; pointer-events: auto; }
-  .nav-brand { display: block; padding: 28px 12px 20px; font-size: 18px; font-weight: 700; letter-spacing: -0.02em; color: var(--brand); }
+  .nav-brand, .side-brand { display: block; padding: 28px 12px 20px; font-size: 18px; font-weight: 700; letter-spacing: -0.02em; color: var(--brand); }
+  .side-brand { padding: 28px 24px 20px; }
   .nav-inner { flex-direction: column; max-width: none; padding: 0; gap: 4px; background: none; border: 0; border-radius: 0; box-shadow: none; backdrop-filter: none; }
   .nav button { flex: none; flex-direction: row; justify-content: flex-start; gap: 12px; padding: 11px 12px; border-radius: 12px; font-size: 14.5px; }
   .nav button svg.i { width: 20px; height: 20px; }

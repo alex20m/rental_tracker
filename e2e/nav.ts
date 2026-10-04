@@ -3,10 +3,15 @@ import type { Page } from '@playwright/test';
 /** The app's own error message (Next's route announcer also has role="alert"). */
 export const alert = (page: Page) => page.locator('.alert[role=alert]');
 
-/** The apartment switcher: the pill at the top, then a row in its sheet. */
+/** From inside an apartment back to the portfolio, the page that lists them all. */
+export async function openPortfolio(page: Page) {
+  await page.getByRole('button', { name: 'All apartments', exact: true }).click();
+}
+
+/** Opens one apartment from the portfolio (going there first), at its Home. */
 export async function openApartment(page: Page, name: string) {
-  await page.locator('button.pill').click();
-  await page.getByRole('dialog', { name: 'Apartments' }).getByRole('button', { name: new RegExp(`^${name}`) }).click();
+  await openPortfolio(page);
+  await page.getByRole('button', { name: new RegExp(`^${name}`) }).click();
 }
 
 /**
@@ -23,23 +28,22 @@ export async function section(page: Page, name: 'Home' | 'Rent' | 'Costs' | 'Tax
   }
 }
 
-/** The account menu shown before there is a first apartment (afterwards the account lives in Settings). */
+/** The account menu: the round button on the portfolio page (or on the welcome screen before any apartment). */
 export async function openMenu(page: Page) {
   await page.getByRole('button', { name: 'Menu', exact: true }).click();
   return page.getByRole('dialog', { name: 'Menu' });
 }
 
-/** Settings, Apartment side. */
+/** The menu, reached from inside an apartment by way of the portfolio. */
+export async function openAccount(page: Page) {
+  await openPortfolio(page);
+  return openMenu(page);
+}
+
+/** Settings of the apartment being looked at. */
 export async function openSettings(page: Page) {
   await section(page, 'Settings');
   await page.getByRole('heading', { name: 'Settings' }).waitFor();
-}
-
-/** Settings, Account side: who you are, language, signing out. */
-export async function openAccount(page: Page) {
-  await section(page, 'Settings');
-  await page.getByRole('radiogroup', { name: 'Settings for' }).getByRole('radio', { name: 'Account' }).click();
-  return page.getByRole('region', { name: 'Account' });
 }
 
 /** The six one-time-code boxes. */

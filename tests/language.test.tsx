@@ -70,14 +70,16 @@ afterEach(() => {
 describe('choosing a language', () => {
   it('switches the whole screen to Swedish from the menu and remembers the choice', async () => {
     app();
-    await userEvent.click(await screen.findByRole('button', { name: 'Settings' }));
-    await userEvent.click(screen.getByRole('radio', { name: 'Account' }));
+    await userEvent.click(await screen.findByRole('button', { name: 'All apartments' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Menu' }));
     await userEvent.click(screen.getByRole('radio', { name: 'Svenska' }));
 
-    // The open settings, the navigation around them and the page all change language.
-    expect(screen.getByRole('region', { name: 'Konto' })).toBeTruthy();
+    // The open menu changes language, and so does the apartment behind it.
+    expect(screen.getByRole('dialog', { name: 'Meny' })).toBeTruthy();
+    await userEvent.keyboard('{Escape}');
+    await userEvent.click(screen.getByRole('button', { name: /^Alpha/ }));
     expect(screen.getByRole('button', { name: 'Hyror & kostnader' })).toBeTruthy();
-    expect(screen.getByRole('heading', { name: 'Inställningar' })).toBeTruthy();
+    expect(screen.getByText('Förbered deklarationen 2026')).toBeTruthy();
     expect(screen.queryByText('Sign out')).toBeNull();
     expect(localStorage.getItem('rental-tracker:language')).toBe('sv');
     expect(document.documentElement.lang).toBe('sv');
@@ -85,9 +87,11 @@ describe('choosing a language', () => {
 
   it('switches to Finnish, including pluralised and dated text', async () => {
     app();
-    await userEvent.click(await screen.findByRole('button', { name: 'Settings' }));
-    await userEvent.click(screen.getByRole('radio', { name: 'Account' }));
+    await userEvent.click(await screen.findByRole('button', { name: 'All apartments' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Menu' }));
     await userEvent.click(screen.getByRole('radio', { name: 'Suomi' }));
+    await userEvent.keyboard('{Escape}');
+    await userEvent.click(screen.getByRole('button', { name: /^Alpha/ }));
     await userEvent.click(screen.getByRole('button', { name: 'Vuokrat ja kulut' }));
 
     // The month grid is in Finnish.

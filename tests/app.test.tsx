@@ -120,7 +120,7 @@ describe('first run', () => {
     await user().click(screen.getByRole('button', { name: 'Add apartment' }));
 
     expect(m.createApartment).toHaveBeenCalledWith({ name: 'Flat 1' });
-    expect(await screen.findByRole('button', { name: 'Flat 1' })).toBeTruthy(); // the apartment pill
+    expect(await screen.findByRole('heading', { name: 'Flat 1' })).toBeTruthy();
   });
 
   it('does not offer to add an apartment without a name', async () => {
@@ -132,64 +132,70 @@ describe('first run', () => {
 });
 
 describe('moving between apartments', () => {
-  it('shows the apartment pill and switches apartment from it', async () => {
-    serve([view('a1', 'Alpha'), view('a2', 'Beta', { rents: [paid('2026-01', 1234)] })]);
-    render(<RentalApp />);
+  const toPortfolio = async () => user().click(await screen.findByRole('button', { name: 'All apartments' }));
 
-    await user().click(await screen.findByRole('button', { name: 'Alpha' }));
-    await user().click(
-      within(screen.getByRole('dialog', { name: 'Apartments' })).getByRole('button', { name: /Beta/ }),
-    );
-
-    expect(screen.getByRole('button', { name: 'Beta' })).toBeTruthy();
-    expect(screen.getByTestId('net-income').textContent).toMatch(/1\s?234,00/);
-    expect(screen.queryByRole('dialog')).toBeNull();
-  });
-
-  it('keeps you on the same section when you switch apartment', async () => {
+  it('names the apartment at the top and goes back to the portfolio from it', async () => {
     serve([view('a1', 'Alpha'), view('a2', 'Beta')]);
     render(<RentalApp />);
-    await openLedger('Costs');
+    expect(await screen.findByRole('heading', { name: 'Alpha' })).toBeTruthy();
 
-    await user().click(screen.getByRole('button', { name: 'Alpha' }));
-    await user().click(
-      within(screen.getByRole('dialog', { name: 'Apartments' })).getByRole('button', { name: /Beta/ }),
-    );
-
-    expect(screen.getByRole('button', { name: 'Beta' })).toBeTruthy();
-    expect(screen.getByRole('button', { name: 'Rent & costs' }).getAttribute('aria-current')).toBe('page');
-    expect(screen.getByRole('radio', { name: 'Costs' }).getAttribute('aria-checked')).toBe('true');
+    await toPortfolio();
+    expect(screen.queryByRole('heading', { name: 'Alpha' })).toBeNull();
+    expect(screen.getByRole('button', { name: /^Alpha/ })).toBeTruthy();
+    expect(screen.getByRole('button', { name: /^Beta/ })).toBeTruthy();
+    // The apartment's own tabs are not offered until one is opened.
+    expect(screen.queryByRole('navigation', { name: 'Sections' })).toBeNull();
   });
 
-  it('offers the all-apartments overview only when there is more than one apartment', async () => {
+  it('opens another apartment at its Home from the portfolio', async () => {
+    serve([view('a1', 'Alpha'), view('a2', 'Beta', { rents: [paid('2026-01', 1234)] })]);
+    render(<RentalApp />);
+    await openLedger('Costs');
+    await toPortfolio();
+    await user().click(screen.getByRole('button', { name: /^Beta/ }));
+
+    expect(screen.getByRole('heading', { name: 'Beta' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Home' }).getAttribute('aria-current')).toBe('page');
+    expect(screen.getByTestId('net-income').textContent).toMatch(/1\s?234,00/);
+  });
+
+  it('adds an apartment only from the portfolio, and opens it', async () => {
+    const created = view('a2', 'Beta');
     serve([view('a1', 'Alpha')]);
     render(<RentalApp />);
-    await user().click(await screen.findByRole('button', { name: 'Alpha' }));
-    expect(screen.queryByRole('button', { name: /All apartments/ })).toBeNull();
+    await screen.findByRole('heading', { name: 'Alpha' });
+    expect(screen.queryByRole('button', { name: 'New apartment' })).toBeNull();
+
+    await toPortfolio();
+    m.createApartment.mockImplementation(async () => {
+      serve([view('a1', 'Alpha'), created]);
+      return { id: 'a2' };
+    });
+    await user().click(screen.getByRole('button', { name: 'New apartment' }));
+    await user().type(screen.getByLabelText('Apartment name'), 'Beta');
+    await user().click(screen.getByRole('button', { name: 'Add apartment' }));
+
+    expect(m.createApartment).toHaveBeenCalledWith({ name: 'Beta' });
+    expect(await screen.findByRole('heading', { name: 'Beta' })).toBeTruthy();
   });
 
-  it('adds up your share of every apartment in the all-apartments overview', async () => {
+  it('adds up your share of every apartment in the portfolio, with the account one tap away', async () => {
     serve([view('a1', 'Alpha'), view('a2', 'Beta', { rents: [paid('2026-01', 300)] })]);
     render(<RentalApp />);
-    await user().click(await screen.findByRole('button', { name: 'Alpha' }));
-    await user().click(screen.getByRole('button', { name: /All apartments/ }));
+    await toPortfolio();
 
     // 6 × 700 + 300 rent, nothing deducted
     expect(await screen.findByTestId('net-income')).toBeTruthy();
     expect(screen.getByTestId('net-income').textContent).toMatch(/4\s?500,00/);
 
-    // The navigation stays, with nothing marked; a tap leads into the apartment that was selected.
-    const nav = screen.getByRole('navigation', { name: 'Sections' });
-    expect(within(nav).queryByRole('button', { current: 'page' })).toBeNull();
-    await user().click(within(nav).getByRole('button', { name: 'History' }));
-    expect(screen.getByRole('button', { name: 'Alpha' })).toBeTruthy();
-    expect(screen.getByRole('heading', { name: 'History' })).toBeTruthy();
+    await user().click(screen.getByRole('button', { name: 'Menu' }));
+    expect(screen.getByRole('region', { name: 'Account' })).toBeTruthy();
   });
 
   it('steps the tax year with the arrows', async () => {
     serve([view('a1', 'Alpha')]);
     render(<RentalApp />);
-    await screen.findByRole('button', { name: 'Alpha' });
+    await screen.findByRole('heading', { name: 'Alpha' });
     expect(screen.getByLabelText('Tax year').textContent).toBe('2026');
 
     await user().click(screen.getByRole('button', { name: 'Previous year' }));
@@ -214,7 +220,7 @@ describe('a co-owned apartment', () => {
   it('shows your share first and the whole apartment on request', async () => {
     serve([shared()]);
     render(<RentalApp />);
-    await screen.findByRole('button', { name: 'Alpha' });
+    await screen.findByRole('heading', { name: 'Alpha' });
     // 6 × 700 = 4 200 for the apartment, half of it is mine
     expect(screen.getByTestId('net-income').textContent).toMatch(/2\s?100,00/);
 
@@ -228,7 +234,7 @@ describe('a co-owned apartment', () => {
   it('has no share toggle when you own all of it', async () => {
     serve([view('a1', 'Alpha')]);
     render(<RentalApp />);
-    await screen.findByRole('button', { name: 'Alpha' });
+    await screen.findByRole('heading', { name: 'Alpha' });
     expect(screen.queryByRole('radio', { name: 'Whole apartment' })).toBeNull();
   });
 });
@@ -455,19 +461,5 @@ describe('history', () => {
     render(<RentalApp />);
     await user().click(await screen.findByRole('button', { name: 'History' }));
     expect(screen.getByText(/Earlier years appear here/)).toBeTruthy();
-  });
-});
-
-describe('settings sections', () => {
-  it('shows the apartment first and the account on the other side of one switch', async () => {
-    serve([view('a1', 'Alpha')]);
-    render(<RentalApp />);
-    await user().click(await screen.findByRole('button', { name: 'Settings' }));
-    expect(screen.getByLabelText('Address')).toBeTruthy();
-    expect(screen.queryByRole('region', { name: 'Account' })).toBeNull();
-
-    await user().click(screen.getByRole('radio', { name: 'Account' }));
-    expect(screen.getByRole('region', { name: 'Account' })).toBeTruthy();
-    expect(screen.queryByLabelText('Address')).toBeNull();
   });
 });

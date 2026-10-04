@@ -37,12 +37,9 @@ export const sv: Record<MessageKey, string> = {
   'nav.settings': 'Inställningar',
   'ledger.view': 'Hyra eller kostnader',
   'nav.allApartments': 'Alla lägenheter',
-  'nav.allApartmentsHint': 'Din andel, sammanlagt',
-  'nav.apartments': 'Lägenheter',
   'nav.newApartment': 'Ny lägenhet',
   'nav.loadFailed': 'Det gick inte att ladda lägenheten.',
   'nav.tryAgain': 'Försök igen',
-  'nav.shareYours': '{pct} är din',
 
   // — first run —
   'welcome.title': 'Lägg till din första lägenhet',
@@ -263,8 +260,6 @@ export const sv: Record<MessageKey, string> = {
 
   // — settings —
   'settings.title': 'Inställningar',
-  'settings.view': 'Inställningar för',
-  'settings.apartment': 'Lägenhet',
   'settings.account': 'Konto',
   'settings.owners': 'Ägare',
   'settings.ownersAbout': 'ägare och andelar',
