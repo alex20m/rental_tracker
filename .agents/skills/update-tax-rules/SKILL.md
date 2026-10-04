@@ -52,6 +52,11 @@ languages + the e2e gate).
   data (`self.__next_f.push([1,"…"])` strings in the HTML), not in the tags.
   Collect those strings, JSON-decode them, and take the `"className":"highlightable","children":"…"`
   values in order — that is the Act, section by section, greppable.
+- **What the declaration PDF names**: its stages and field names are the
+  `pdf.*` messages (sv/fi/en), taken from the vero.fi Deklarera and Avdrag pages
+  — re-read them when the year changes, the stage names are the first thing a
+  redesign of the service renames. A name no page prints (rent received, annual
+  repairs) is marked as such in the PDF; do not invent one.
 - **The forms**: the PDF linked from a form's page can be an old version (the 7K
   PDF is still the 2018 layout). Compare its row numbers with the instruction page,
   which is kept current.

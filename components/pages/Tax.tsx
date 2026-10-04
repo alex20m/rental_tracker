@@ -39,7 +39,7 @@ export default function Tax({ apt, year, taxpayerName, scope, onScope, go }: Pro
     setBusy(true);
     setError('');
     try {
-      download(await buildPackage(apt, year, taxpayerName), `rental-tax-${year}.zip`);
+      download(await buildPackage(apt, year, taxpayerName, i18n), `rental-tax-${year}.zip`);
     } catch (e) {
       setError(t('tax.packageFailed', { message: (e as Error).message }));
     }
@@ -180,7 +180,7 @@ export default function Tax({ apt, year, taxpayerName, scope, onScope, go }: Pro
         <button
           className="btn quiet block"
           style={{ marginTop: 8 }}
-          onClick={() => download(buildPdf(apt, tax, mine, taxpayerName), `vuokratulot-ja-menot-${year}.pdf`)}
+          onClick={() => download(buildPdf(apt, tax, mine, taxpayerName, i18n), `vuokratulot-ja-menot-${year}.pdf`)}
         >
           {t('tax.pdfOnly')}
         </button>
