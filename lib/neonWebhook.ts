@@ -31,7 +31,7 @@ export async function verifyNeonWebhook(rawBody: string, headers: Headers, authB
   if (!header || payload !== '' || !signatureB64) return false;
 
   try {
-    const res = await fetch(`${authBaseUrl}/.well-known/jwks.json`);
+    const res = await fetch(`${authBaseUrl.replace(/\/+$/, '')}/.well-known/jwks.json`);
     if (!res.ok) return false;
     const { keys } = (await res.json()) as { keys: (crypto.JsonWebKey & { kid?: string })[] };
     const jwk = keys.find((key) => key.kid === kid);
