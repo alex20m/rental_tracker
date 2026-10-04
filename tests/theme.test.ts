@@ -36,7 +36,7 @@ function contrast(a: string, b: string): number {
   return (hi + 0.05) / (lo + 0.05);
 }
 
-describe('the colour theme', () => {
+describe('the Mono Ink theme', () => {
   it('draws the same dark palette when the device is dark as when Dark is chosen', () => {
     const tokens = (block: string) => block.match(/--[\w-]+:[^;]+;/g)?.map((t) => t.replace(/\s+/g, ' ')) ?? [];
     const forced = tokens(rule(":root[data-theme='dark']"));
@@ -50,9 +50,17 @@ describe('the colour theme', () => {
     expect(luminance(token('bg', 'dark'))).toBeLessThan(0.05);
   });
 
-  it('marks what can be done with an accent that is not the text colour', () => {
+  it('is Mono Ink: black and white, with colour kept for status', () => {
+    expect(token('bg', 'light')).toBe('#ffffff');
+    expect(token('brand', 'light')).toBe('#0a0a0a');
+    expect(token('bg', 'dark')).toBe('#000000');
+    expect(token('brand', 'dark')).toBe('#ffffff');
+    // The accent is the text colour itself: nothing in the chrome is tinted.
     for (const scheme of ['light', 'dark'] as const) {
-      expect(token('brand', scheme)).not.toBe(token('text', scheme));
+      for (const name of ['bg', 'card', 'text', 'text-2', 'muted', 'line', 'tint', 'brand', 'brand-soft']) {
+        const hex = token(name, scheme);
+        expect(hex.slice(1, 3) === hex.slice(3, 5) && hex.slice(3, 5) === hex.slice(5, 7), `${name} ${scheme} is grey`).toBe(true);
+      }
     }
   });
 

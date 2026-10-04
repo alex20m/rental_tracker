@@ -4,8 +4,8 @@ import { openAccount } from './nav';
 const background = (page: import('@playwright/test').Page) =>
   page.evaluate(() => getComputedStyle(document.body).backgroundColor);
 
-const LIGHT = 'rgb(246, 247, 249)';
-const DARK = 'rgb(15, 18, 22)';
+const LIGHT = 'rgb(255, 255, 255)';
+const DARK = 'rgb(0, 0, 0)';
 
 test.describe('theme', () => {
   test.describe('with a dark device', () => {
