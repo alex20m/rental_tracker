@@ -111,4 +111,13 @@ describe('the Mono Ink theme', () => {
       expect(Number(rule?.[1]), selector).toBeGreaterThanOrEqual(48);
     }
   });
+
+  it('keeps date and month fields inside their column: iOS gives both an intrinsic width', () => {
+    for (const type of ['date', 'month']) {
+      const match = new RegExp(`input\\[type="${type}"\\][^{]*\\{([^}]*)\\}`).exec(css);
+      expect(match, `no rule for ${type} inputs`).not.toBeNull();
+      expect(match?.[1], type).toMatch(/appearance:\s*none/);
+      expect(match?.[1], type).toMatch(/max-width:\s*100%/);
+    }
+  });
 });
