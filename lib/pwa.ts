@@ -3,7 +3,7 @@
  *
  * The browsers disagree about this more than any other feature here. Chromium
  * fires `beforeinstallprompt`, which can be saved and replayed from a button of
- * our own. Safari fires nothing and exposes no API: on iOS the only route is
+ * our own. Safari fires nothing and exposes no API (and every iOS browser is WebKit underneath): on iOS the only route is
  * Share ▸ Add to Home Screen, a menu item almost nobody finds by accident.
  *
  * So the rule is that the offer is always visible somewhere, and only its
@@ -36,18 +36,41 @@ export function installState({ standalone, promptAvailable, platform }: InstallE
   return { kind: 'manual', platform };
 }
 
-/** The by-hand route: message keys (see lib/i18n) so it reads in the visitor's language. */
+/** The picture beside a manual step: the very control the visitor has to find, drawn as the browser draws it. */
+export type StepIcon = 'share' | 'addToHome' | 'dots' | 'installPhone' | 'installDesktop' | 'check' | 'window';
+
+export interface ManualStep {
+  text: MessageKey;
+  icon: StepIcon;
+}
+
+/** The by-hand route: message keys (see lib/i18n) so it reads in the visitor's language, each with the icon to look for. */
 export const MANUAL_STEPS = {
-  ios: { title: 'install.ios.title', steps: ['install.ios.step1', 'install.ios.step2', 'install.ios.step3'] },
+  ios: {
+    title: 'install.ios.title',
+    steps: [
+      { text: 'install.ios.step1', icon: 'share' },
+      { text: 'install.ios.step2', icon: 'addToHome' },
+      { text: 'install.ios.step3', icon: 'check' },
+    ],
+  },
   android: {
     title: 'install.android.title',
-    steps: ['install.android.step1', 'install.android.step2', 'install.android.step3'],
+    steps: [
+      { text: 'install.android.step1', icon: 'dots' },
+      { text: 'install.android.step2', icon: 'installPhone' },
+      { text: 'install.android.step3', icon: 'check' },
+    ],
   },
   desktop: {
     title: 'install.desktop.title',
-    steps: ['install.desktop.step1', 'install.desktop.step2', 'install.desktop.step3'],
+    steps: [
+      { text: 'install.desktop.step1', icon: 'installDesktop' },
+      { text: 'install.desktop.step2', icon: 'dots' },
+      { text: 'install.desktop.step3', icon: 'window' },
+    ],
   },
-} as const satisfies Record<Platform, { title: MessageKey; steps: readonly MessageKey[] }>;
+} as const satisfies Record<Platform, { title: MessageKey; steps: readonly ManualStep[] }>;
 
 /**
  * Which platform this is.

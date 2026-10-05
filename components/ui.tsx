@@ -442,6 +442,39 @@ export const Icon = {
   right: svg(<path d="m9 18 6-6-6-6" />),
   plus: svg(<path d="M12 5v14M5 12h14" />),
   install: svg(<path d="M12 3v12m0 0-4-4m4 4 4-4M5 21h14" />),
+  // — the controls named in the install steps, drawn as the browsers draw them —
+  share: svg(<path d="M12 15V3m0 0L8 7m4-4 4 4M6 11H5a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-8a1 1 0 0 0-1-1h-1" />),
+  addToHome: svg(
+    <>
+      <rect x="3.5" y="3.5" width="17" height="17" rx="4" />
+      <path d="M12 8v8M8 12h8" />
+    </>,
+  ),
+  dots: svg(
+    <>
+      <circle cx="12" cy="5" r="1.2" fill="currentColor" />
+      <circle cx="12" cy="12" r="1.2" fill="currentColor" />
+      <circle cx="12" cy="19" r="1.2" fill="currentColor" />
+    </>,
+  ),
+  installPhone: svg(
+    <>
+      <rect x="6.5" y="2.5" width="11" height="19" rx="2.5" />
+      <path d="M12 8v6m0 0-2.5-2.5M12 14l2.5-2.5" />
+    </>,
+  ),
+  installDesktop: svg(
+    <>
+      <rect x="3" y="4" width="18" height="12" rx="2" />
+      <path d="M12 7v5m0 0-2-2m2 2 2-2M8 20h8M12 16v4" />
+    </>,
+  ),
+  window: svg(
+    <>
+      <rect x="3" y="5" width="18" height="14" rx="2" />
+      <path d="M3 9h18" />
+    </>,
+  ),
   close: svg(<path d="M6 6l12 12M18 6 6 18" />),
   check: svg(<path d="m5 12 5 5 9-10" />),
   alert: svg(

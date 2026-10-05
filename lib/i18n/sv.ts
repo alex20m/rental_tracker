@@ -533,7 +533,7 @@ export const sv: Record<MessageKey, string> = {
   'install.notNow': 'Inte nu',
   'install.never': 'Visa inte igen',
   'install.ios.title': 'Lägg till på hemskärmen',
-  'install.ios.step1': 'Tryck på Dela-knappen i Safari.',
+  'install.ios.step1': 'Tryck på Dela-ikonen i webbläsarens verktygsfält eller meny.',
   'install.ios.step2': 'Scrolla ner och välj ”Lägg till på hemskärmen”.',
   'install.ios.step3': 'Tryck på Lägg till. Rental Tracker öppnas som vilken app som helst.',
   'install.android.title': 'Lägg till på hemskärmen',

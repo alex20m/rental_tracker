@@ -531,7 +531,7 @@ export const fi: Record<MessageKey, string> = {
   'install.notNow': 'Ei nyt',
   'install.never': 'Älä näytä uudelleen',
   'install.ios.title': 'Lisää aloitusnäytölle',
-  'install.ios.step1': 'Napauta Safarin Jaa-painiketta.',
+  'install.ios.step1': 'Napauta selaimen työkalupalkin tai valikon Jaa-kuvaketta.',
   'install.ios.step2': 'Vieritä alas ja valitse ”Lisää Koti-valikkoon”.',
   'install.ios.step3': 'Napauta Lisää. Rental Tracker avautuu kuten mikä tahansa sovellus.',
   'install.android.title': 'Lisää aloitusnäytölle',

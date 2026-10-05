@@ -262,6 +262,10 @@ test.describe('home', () => {
   test('closes a popover with Escape without leaving the page it is on', async ({ page }) => {
     await page.goto('/');
     const menu = await openMenu(page);
+    // The account page is taller than a phone screen (it lists how to install the app), and a popover
+    // closes on any scroll. Playwright scrolls a button it finds still animating into place, and that
+    // scroll would land on the open popover: let the page finish arriving before tapping.
+    await page.evaluate(() => Promise.all(document.getAnimations().map((a) => a.finished)));
     await menu.getByRole('button', { name: 'About your account' }).click();
     await expect(page.getByRole('note')).toContainText('permanently deletes your account');
 

@@ -535,7 +535,7 @@ export const en = {
   'install.notNow': 'Not now',
   'install.never': 'Don’t show again',
   'install.ios.title': 'Add to your Home Screen',
-  'install.ios.step1': 'Tap the Share button in Safari.',
+  'install.ios.step1': 'Tap the Share icon in your browser’s toolbar or menu.',
   'install.ios.step2': 'Scroll down and choose “Add to Home Screen”.',
   'install.ios.step3': 'Tap Add. Rental Tracker opens like any other app.',
   'install.android.title': 'Add to your Home screen',
