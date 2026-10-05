@@ -2,7 +2,7 @@ import { CATEGORIES } from './types';
 import type { ApartmentView, CostCategory } from './types';
 import { declarationFigures, tenancyPeriod } from './forms';
 import type { DeclarationFigures, OtherPart } from './forms';
-import { improvementPart, improvementYears, movableDetail } from './tax';
+import { improvementPart, improvementYears, movableDetail, round2 } from './tax';
 import type { OwnerShare, TaxResult } from './tax';
 import { deductionOf } from './tax';
 import { rulesFor } from './taxRules';
@@ -218,7 +218,7 @@ function records(apt: ApartmentView, t: TaxResult, share: OwnerShare, tr: Transl
     }
   }
   monthly.forEach((v, i) => {
-    if (v) add({ type: 'amount', left: `${monthName(tr.lang, i)} ${year}`, total: v, mine: Math.round(v * share.sharePct) / 100 });
+    if (v) add({ type: 'amount', left: `${monthName(tr.lang, i)} ${year}`, total: v, mine: round2((v * share.sharePct) / 100) });
   });
   add(
     { type: 'amount', left: m('pdf.rentTotal'), total: t.rentIncome, mine: share.rentIncome, bold: true },

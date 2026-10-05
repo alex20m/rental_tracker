@@ -177,7 +177,7 @@ To keep a skill worth having:
 
 Existing skills follow this: `merge-on-green`, `test-first`,
 `isolated-task-branch`, `cli-first-provisioning`, `deploy-gate`,
-`capture-a-discovery`, `attach-a-repo`, `deadline-fair-batch`,
+`capture-a-discovery`, `attach-a-repo`, `deadline-fair-batch`, `money-arithmetic`,
 `e2e-ui-coverage`. Improve one
 rather than writing a near-duplicate — if a new situation is a variation on something already
 covered, extend that skill.
