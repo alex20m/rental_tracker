@@ -63,8 +63,6 @@ export default function AccountPanel({ account }: { account: Account }) {
         <ThemePicker />
       </section>
 
-      <InstallSection />
-
       <button className="btn block" onClick={signOut}>
         {Icon.signout}
         {t('menu.signOut')}
@@ -76,6 +74,9 @@ export default function AccountPanel({ account }: { account: Account }) {
         </button>
         <Info about={t('menu.deleteAccountAbout')}>{t('menu.deleteAccountInfo')}</Info>
       </div>
+
+      {/* Last: it appears only after hydration, and anything above it would be pushed under a click. */}
+      <InstallSection />
 
       {deleting && (
         <div className="sheet-bg busy" role="alertdialog" aria-modal="true" aria-labelledby="deleting-title" aria-describedby="deleting-about">
