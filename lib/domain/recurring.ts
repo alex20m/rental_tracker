@@ -15,3 +15,6 @@ export function nextMonth(month: string): string {
   const [y, m] = month.split('-').map(Number) as [number, number];
   return m === 12 ? `${y + 1}-01` : `${y}-${String(m + 1).padStart(2, '0')}`;
 }
+
+/** The day a registered date repeats on: its own, but at most the 28th so every month has it. */
+export const repeatDay = (date: string): number => Math.min(Number(date.slice(8, 10)), 28);

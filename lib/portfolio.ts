@@ -26,7 +26,7 @@ import type {
   RentEntry,
   RentStatus,
 } from '@/lib/domain/types';
-import { nextMonth } from '@/lib/domain/recurring';
+import { nextMonth, repeatDay } from '@/lib/domain/recurring';
 
 /** Just enough of a Postgres client: Neon's HTTP driver in the app, PGlite in tests. */
 export interface Queryable {
@@ -45,10 +45,12 @@ export type RecurringInput = {
   category?: CostCategory;
   description: string;
   amount: number;
+  /** 1–28: the day of each month it books on. */
+  dayOfMonth: number;
   /** The first month to book, YYYY-MM; any month up to the current one books the months since. */
   firstMonth: string;
 };
-export type RecurringPatch = { category?: CostCategory; description: string; amount: number };
+export type RecurringPatch = { category?: CostCategory; description: string; amount: number; dayOfMonth: number };
 /** `repeat`: also book the same again every month, from the month after this one. */
 export type RepeatOption = { repeat?: boolean };
 export type Receipt = { contentType: string; base64: string };
@@ -129,38 +131,45 @@ export function portfolio(db: Queryable, clock: () => Date = () => new Date()) {
    * month the user logged themselves is left as they logged it.
    */
   async function bookDue(apartmentId: string) {
-    const current = clock().toISOString().slice(0, 7);
-    const months = `generate_series(to_date(r.next_month || '-01', 'YYYY-MM-DD'), to_date($2 || '-01', 'YYYY-MM-DD'), interval '1 month') m`;
+    const now = clock();
+    const current = now.toISOString().slice(0, 7);
+    // The last month an entry has come due: this one once its day has come, else the one before.
+    const through = `case when day_of_month <= $3 then $2 else to_char(to_date($2 || '-01', 'YYYY-MM-DD') - interval '1 month', 'YYYY-MM') end`;
+    const due = `(select r.*, ${through} as through from recurring_entries r where r.apartment_id = $1) r`;
+    const months = `generate_series(to_date(r.next_month || '-01', 'YYYY-MM-DD'), to_date(r.through || '-01', 'YYYY-MM-DD'), interval '1 month') m`;
+    const params = [apartmentId, current, now.getUTCDate()];
     await db.query(
       `insert into costs (apartment_id, date, category, description, amount, recurring_id)
-       select r.apartment_id, m::date, r.category, r.description, r.amount, r.id
-         from recurring_entries r, ${months}
-        where r.apartment_id = $1 and r.kind = 'cost' and r.next_month <= $2
+       select r.apartment_id, m::date + (r.day_of_month - 1), r.category, r.description, r.amount, r.id
+         from ${due}, ${months}
+        where r.kind = 'cost' and r.next_month <= r.through
        on conflict do nothing`,
-      [apartmentId, current],
+      params,
     );
     await db.query(
       `insert into rents (apartment_id, month, status, amount, received_date)
-       select r.apartment_id, to_char(m, 'YYYY-MM'), 'paid', r.amount, m::date
-         from recurring_entries r, ${months}
-        where r.apartment_id = $1 and r.kind = 'rent' and r.next_month <= $2
+       select r.apartment_id, to_char(m, 'YYYY-MM'), 'paid', r.amount, m::date + (r.day_of_month - 1)
+         from ${due}, ${months}
+        where r.kind = 'rent' and r.next_month <= r.through
        on conflict do nothing`,
-      [apartmentId, current],
+      params,
     );
-    await db.query(`update recurring_entries set next_month = $3 where apartment_id = $1 and next_month <= $2`, [
-      apartmentId,
-      current,
-      nextMonth(current),
-    ]);
+    await db.query(
+      `update recurring_entries e
+          set next_month = to_char(to_date(d.through || '-01', 'YYYY-MM-DD') + interval '1 month', 'YYYY-MM')
+         from (select id, ${through} as through from recurring_entries where apartment_id = $1) d
+        where e.id = d.id and e.next_month <= d.through`,
+      params,
+    );
   }
 
   async function addRecurring(apartmentId: string, entry: RecurringInput): Promise<string | 'rent_exists'> {
     const rows = await db.query<{ id: string }>(
-      `insert into recurring_entries (apartment_id, kind, category, description, amount, next_month)
-       values ($1, $2, $3, $4, $5, $6)
+      `insert into recurring_entries (apartment_id, kind, category, description, amount, day_of_month, next_month)
+       values ($1, $2, $3, $4, $5, $6, $7)
        on conflict do nothing
        returning id`,
-      [apartmentId, entry.kind, entry.kind === 'cost' ? entry.category : null, entry.description, entry.amount, entry.firstMonth],
+      [apartmentId, entry.kind, entry.kind === 'cost' ? entry.category : null, entry.description, entry.amount, entry.dayOfMonth, entry.firstMonth],
     );
     return rows[0]?.id ?? 'rent_exists';
   }
@@ -254,7 +263,7 @@ export function portfolio(db: Queryable, clock: () => Date = () => new Date()) {
         ),
         db.query<RecurringEntry>(
           // Rent first, then costs in the order they were added.
-          `select id, kind, category, description, amount::float8 as amount, next_month as "nextMonth"
+          `select id, kind, category, description, amount::float8 as amount, day_of_month as "dayOfMonth", next_month as "nextMonth"
              from recurring_entries where apartment_id = $1 order by kind desc, created_at, id`,
           [apartmentId],
         ),
@@ -319,6 +328,7 @@ export function portfolio(db: Queryable, clock: () => Date = () => new Date()) {
           kind: 'rent',
           description: '',
           amount: rent.amount,
+          dayOfMonth: repeatDay(rent.receivedDate),
           firstMonth: nextMonth(month),
         });
       }
@@ -349,6 +359,7 @@ export function portfolio(db: Queryable, clock: () => Date = () => new Date()) {
           category: cost.category,
           description: cost.description,
           amount: cost.amount,
+          dayOfMonth: repeatDay(cost.date),
           firstMonth: nextMonth(cost.date.slice(0, 7)),
         });
       }
@@ -375,9 +386,10 @@ export function portfolio(db: Queryable, clock: () => Date = () => new Date()) {
       if (!isUuid(entryId) || !(await owns(userId, apartmentId))) return false;
       const rows = await db.query(
         `update recurring_entries
-            set category = case when kind = 'cost' then coalesce($3, category) end, description = $4, amount = $5
+            set category = case when kind = 'cost' then coalesce($3, category) end, description = $4, amount = $5,
+                day_of_month = $6
           where id = $1 and apartment_id = $2 returning id`,
-        [entryId, apartmentId, patch.category ?? null, patch.description, patch.amount],
+        [entryId, apartmentId, patch.category ?? null, patch.description, patch.amount, patch.dayOfMonth],
       );
       return rows.length > 0;
     },

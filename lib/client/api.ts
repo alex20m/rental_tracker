@@ -51,9 +51,9 @@ const apt = (id: string) => `/api/apartments/${encodeURIComponent(id)}`;
 export type CostInput = { date: string; category: CostCategory; description: string; amount: number };
 export type RentInput = { status: RentStatus; amount: number; receivedDate: string; note: string };
 export type RecurringInput =
-  | { kind: 'cost'; category: CostCategory; description: string; amount: number; firstMonth: string }
-  | { kind: 'rent'; description: string; amount: number; firstMonth: string };
-export type RecurringPatch = { category?: CostCategory; description: string; amount: number };
+  | { kind: 'cost'; category: CostCategory; description: string; amount: number; dayOfMonth: number; firstMonth: string }
+  | { kind: 'rent'; description: string; amount: number; dayOfMonth: number; firstMonth: string };
+export type RecurringPatch = { category?: CostCategory; description: string; amount: number; dayOfMonth: number };
 
 export const api = {
   me: () => call<{ userId: string; name: string; email: string; emailVerified: boolean }>('GET', '/api/me'),
