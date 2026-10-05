@@ -94,10 +94,11 @@ export async function fetchReceipt(
 }
 
 /**
- * Shrink a photo to max 1400px JPEG so receipts stay small to upload and store.
+ * Shrink a photo to max 2000px JPEG so receipts stay small to upload and store
+ * while small print (VAT lines, references) stays legible.
  * Rejects when the file is not an image the browser can decode.
  */
-export async function compressImage(file: File, maxSize = 1400, quality = 0.72): Promise<string> {
+export async function compressImage(file: File, maxSize = 2000, quality = 0.85): Promise<string> {
   const img = await createImageBitmap(file);
   const scale = Math.min(1, maxSize / Math.max(img.width, img.height));
   const c = document.createElement('canvas');
