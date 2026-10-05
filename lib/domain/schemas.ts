@@ -125,6 +125,9 @@ export const newCostSchema = costSchema.safeExtend({ repeatMonthly: repeat }).re
 
 export const newRentSchema = rentSchema.safeExtend({ repeatMonthly: repeat });
 
+/** The day of the month, never past the 28th so that every month has it. */
+const dayOfMonth = z.number().int().min(1).max(28);
+
 const recurringAmount = money.refine((n) => n > 0, 'Amount must be more than zero');
 const recurringCategory = z.enum(RECURRING_CATEGORIES as [CostCategory, ...CostCategory[]]);
 
@@ -136,14 +139,23 @@ export const recurringSchema = z.discriminatedUnion('kind', [
       category: recurringCategory,
       description: text(500),
       amount: recurringAmount,
+      dayOfMonth: dayOfMonth.default(1),
       firstMonth: month,
     })
     .strict(),
-  z.object({ kind: z.literal('rent'), description: text(500), amount: recurringAmount, firstMonth: month }).strict(),
+  z
+    .object({
+      kind: z.literal('rent'),
+      description: text(500),
+      amount: recurringAmount,
+      dayOfMonth: dayOfMonth.default(1),
+      firstMonth: month,
+    })
+    .strict(),
 ]);
 
 export const recurringPatchSchema = z
-  .object({ category: recurringCategory.optional(), description: text(500), amount: recurringAmount })
+  .object({ category: recurringCategory.optional(), description: text(500), amount: recurringAmount, dayOfMonth })
   .strict();
 
 export const inviteSchema = z

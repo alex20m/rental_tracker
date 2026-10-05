@@ -26,7 +26,7 @@ afterAll(async () => {
 });
 
 const flat = () => p.create(alice, { ...defaultSettings, name: 'Flat' });
-const charge = { kind: 'cost' as const, category: 'maintenance_charge' as const, description: 'Hoitovastike', amount: 150 };
+const charge = { kind: 'cost' as const, category: 'maintenance_charge' as const, description: 'Hoitovastike', amount: 150, dayOfMonth: 1 };
 
 describe('nextMonth', () => {
   it('moves to the next month and rolls over the year', () => {
@@ -101,7 +101,7 @@ describe('recurring costs', () => {
     const apt = (await p.get(alice.userId, id))!;
 
     expect(apt.recurring).toEqual([
-      { id: entryId, kind: 'cost', category: 'maintenance_charge', description: 'Hoitovastike', amount: 150, nextMonth: '2026-11' },
+      { id: entryId, kind: 'cost', category: 'maintenance_charge', description: 'Hoitovastike', amount: 150, dayOfMonth: 1, nextMonth: '2026-11' },
     ]);
   });
 
@@ -110,7 +110,7 @@ describe('recurring costs', () => {
     const entryId = (await p.createRecurring(alice.userId, id, { ...charge, firstMonth: '2026-10' }))!;
     await p.get(alice.userId, id);
 
-    expect(await p.updateRecurring(alice.userId, id, entryId, { category: 'insurance', description: 'Home', amount: 20 })).toBe(true);
+    expect(await p.updateRecurring(alice.userId, id, entryId, { category: 'insurance', description: 'Home', amount: 20, dayOfMonth: 1 })).toBe(true);
     now = new Date('2026-11-03T08:00:00Z');
     const apt = (await p.get(alice.userId, id))!;
 
@@ -133,7 +133,7 @@ describe('recurring costs', () => {
     expect(apt.costs.map((c) => c.date)).toEqual(['2026-09-01', '2026-10-01']);
   });
 
-  it('books a cost registered with “repeat” again only from the month after it', async () => {
+  it('books a cost registered with “repeat” again only from the month after it, on the same day', async () => {
     const id = await flat();
     await p.createCost(alice.userId, id, { date: '2026-10-03', category: 'insurance', description: '', amount: 30 }, { repeat: true });
 
@@ -141,13 +141,13 @@ describe('recurring costs', () => {
     now = new Date('2026-11-04T08:00:00Z');
     const apt = (await p.get(alice.userId, id))!;
 
-    expect(apt.costs.map((c) => c.date)).toEqual(['2026-10-03', '2026-11-01']);
+    expect(apt.costs.map((c) => c.date)).toEqual(['2026-10-03', '2026-11-03']);
     expect(apt.recurring.map((r) => [r.kind, r.category, r.amount])).toEqual([['cost', 'insurance', 30]]);
   });
 });
 
 describe('recurring rent', () => {
-  const rent = { kind: 'rent' as const, description: '', amount: 800 };
+  const rent = { kind: 'rent' as const, description: '', amount: 800, dayOfMonth: 1 };
 
   it('logs every month as paid, on the 1st', async () => {
     const id = await flat();
@@ -206,13 +206,83 @@ describe('recurring rent', () => {
   });
 });
 
+describe('booking on another day of the month', () => {
+  const on15 = { ...charge, dayOfMonth: 15 };
+
+  it('books a cost on its day, and the current month only once that day has come', async () => {
+    const id = await flat();
+    await p.createRecurring(alice.userId, id, { ...on15, firstMonth: '2026-08' });
+
+    // 5 October: the 15th has not come, so October waits.
+    expect((await p.get(alice.userId, id))!.costs.map((c) => c.date)).toEqual(['2026-08-15', '2026-09-15']);
+    now = new Date('2026-10-14T23:00:00Z');
+    expect((await p.get(alice.userId, id))!.costs.map((c) => c.date)).toEqual(['2026-08-15', '2026-09-15']);
+    now = new Date('2026-10-15T00:30:00Z');
+    expect((await p.get(alice.userId, id))!.costs.map((c) => c.date)).toEqual(['2026-08-15', '2026-09-15', '2026-10-15']);
+  });
+
+  it('logs rent as received on its day', async () => {
+    const id = await flat();
+    await p.createRecurring(alice.userId, id, { kind: 'rent', description: '', amount: 800, dayOfMonth: 15, firstMonth: '2026-09' });
+
+    expect((await p.get(alice.userId, id))!.rents.map((r) => [r.month, r.receivedDate])).toEqual([['2026-09', '2026-09-15']]);
+  });
+
+  it('lists the month it books next, which is the current one while its day is still to come', async () => {
+    const id = await flat();
+    await p.createRecurring(alice.userId, id, { ...on15, firstMonth: '2026-09' });
+
+    expect((await p.get(alice.userId, id))!.recurring[0]).toMatchObject({ dayOfMonth: 15, nextMonth: '2026-10' });
+  });
+
+  it('applies a changed day to the months not booked yet', async () => {
+    const id = await flat();
+    const entryId = (await p.createRecurring(alice.userId, id, { ...charge, firstMonth: '2026-10' }))!;
+    await p.get(alice.userId, id);
+    await p.updateRecurring(alice.userId, id, entryId, { description: 'Hoitovastike', amount: 150, dayOfMonth: 20 });
+
+    now = new Date('2026-11-25T08:00:00Z');
+    const apt = (await p.get(alice.userId, id))!;
+
+    expect(apt.costs.map((c) => c.date)).toEqual(['2026-10-01', '2026-11-20']);
+    expect(apt.recurring[0]!.dayOfMonth).toBe(20);
+  });
+
+  it('repeats a registered cost on the day it was dated', async () => {
+    const id = await flat();
+    await p.createCost(alice.userId, id, { date: '2026-09-12', category: 'insurance', description: '', amount: 30 }, { repeat: true });
+
+    expect((await p.get(alice.userId, id))!.recurring[0]).toMatchObject({ dayOfMonth: 12, nextMonth: '2026-10' });
+  });
+
+  it('repeats a registered rent on the day it was received', async () => {
+    const id = await flat();
+    await p.putRent(alice.userId, id, '2026-09', { status: 'paid', amount: 800, receivedDate: '2026-09-03', note: '' }, { repeat: true });
+
+    expect((await p.get(alice.userId, id))!.recurring[0]).toMatchObject({ kind: 'rent', dayOfMonth: 3 });
+  });
+
+  it('stops at the 28th for a registered date later in the month, so every month has the day', async () => {
+    const id = await flat();
+    await p.createCost(alice.userId, id, { date: '2026-08-31', category: 'insurance', description: '', amount: 30 }, { repeat: true });
+
+    expect((await p.get(alice.userId, id))!.recurring[0]!.dayOfMonth).toBe(28);
+  });
+
+  it('refuses a day the database could not keep', async () => {
+    const id = await flat();
+    await expect(p.createRecurring(alice.userId, id, { ...charge, dayOfMonth: 29, firstMonth: '2026-10' })).rejects.toThrow();
+    await expect(p.createRecurring(alice.userId, id, { ...charge, dayOfMonth: 0, firstMonth: '2026-10' })).rejects.toThrow();
+  });
+});
+
 describe('who can change recurring entries', () => {
   it('refuses someone who does not own the apartment, and shows them nothing', async () => {
     const id = await flat();
     const entryId = (await p.createRecurring(alice.userId, id, { ...charge, firstMonth: '2026-10' }))!;
 
     expect(await p.createRecurring(bob.userId, id, { ...charge, firstMonth: '2026-10' })).toBeNull();
-    expect(await p.updateRecurring(bob.userId, id, entryId, { description: 'x', amount: 1 })).toBe(false);
+    expect(await p.updateRecurring(bob.userId, id, entryId, { description: 'x', amount: 1, dayOfMonth: 1 })).toBe(false);
     expect(await p.deleteRecurring(bob.userId, id, entryId)).toBe(false);
     expect((await p.get(alice.userId, id))!.recurring).toHaveLength(1);
   });
@@ -222,14 +292,14 @@ describe('who can change recurring entries', () => {
     const theirs = await flat();
     const entryId = (await p.createRecurring(alice.userId, theirs, { ...charge, firstMonth: '2026-10' }))!;
 
-    expect(await p.updateRecurring(bob.userId, mine, entryId, { description: 'x', amount: 1 })).toBe(false);
+    expect(await p.updateRecurring(bob.userId, mine, entryId, { description: 'x', amount: 1, dayOfMonth: 1 })).toBe(false);
     expect(await p.deleteRecurring(bob.userId, mine, entryId)).toBe(false);
     expect((await p.get(alice.userId, theirs))!.recurring).toHaveLength(1);
   });
 
   it('treats an id that is not a uuid as not found', async () => {
     const id = await flat();
-    expect(await p.updateRecurring(alice.userId, id, 'nope', { description: '', amount: 1 })).toBe(false);
+    expect(await p.updateRecurring(alice.userId, id, 'nope', { description: '', amount: 1, dayOfMonth: 1 })).toBe(false);
     expect(await p.deleteRecurring(alice.userId, id, 'nope')).toBe(false);
   });
 

@@ -6,7 +6,7 @@ import { CATEGORIES, COST_CATEGORIES } from '@/lib/domain/types';
 import { api, compressImage } from '@/lib/client/api';
 import { computeTax, deductionOf, eur, improvementYears, mileageAmount } from '@/lib/domain/tax';
 import { rulesFor } from '@/lib/domain/taxRules';
-import { RECURRING_CATEGORIES, nextMonth } from '@/lib/domain/recurring';
+import { RECURRING_CATEGORIES, nextMonth, repeatDay } from '@/lib/domain/recurring';
 import { monthTitle, shortDate } from '@/lib/ui/format';
 import { ruleParams } from '@/lib/ui/ruleParams';
 import { useI18n } from '@/components/I18nProvider';
@@ -363,7 +363,7 @@ function CostForm({
           <Switch checked={repeat} onChange={setRepeat}>
             {t('recurring.repeat')}
           </Switch>
-          {repeat && <p className="msg">{t('recurring.repeatInfo', { month: monthTitle(nextMonth(date.slice(0, 7)), lang) })}</p>}
+          {repeat && <p className="msg">{t('recurring.repeatInfo', { day: repeatDay(date), month: monthTitle(nextMonth(date.slice(0, 7)), lang) })}</p>}
         </div>
       )}
 
