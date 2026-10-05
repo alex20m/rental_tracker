@@ -4,6 +4,7 @@ import { useState, useSyncExternalStore } from 'react';
 import { useI18n } from '@/components/I18nProvider';
 import { Heading, Icon, Sheet } from '@/components/ui';
 import {
+  INSTALLED_KEY,
   INSTALL_POPUP_DISMISSED_KEY,
   INSTALL_PROMPT_EVENT,
   INSTALL_PROMPT_KEY,
@@ -23,6 +24,7 @@ const parkedPrompt = () => (window as unknown as Record<string, BeforeInstallPro
 
 /** A string, not the state object: `useSyncExternalStore` compares snapshots by identity. */
 function readInstallability(): Installability {
+  if ((window as unknown as Record<string, boolean | undefined>)[INSTALLED_KEY]) return 'installed';
   const state = installState({
     standalone: standaloneFrom({
       displayModeStandalone: window.matchMedia('(display-mode: standalone)').matches,
@@ -52,6 +54,9 @@ export function useInstallability(): Installability {
   return useSyncExternalStore(subscribe, readInstallability, () => '');
 }
 
+/** What "Don't show again" falls back to when storage cannot hold it: it still means the rest of this visit. */
+let dismissedThisSession = false;
+
 /**
  * Whether "Don't show again" was ever pressed. The server snapshot says
  * "dismissed": a popup that flashes open for someone who told it to stop is a
@@ -60,6 +65,7 @@ export function useInstallability(): Installability {
  * "not dismissed", the safe direction to fail in.
  */
 function readDismissed(): boolean {
+  if (dismissedThisSession) return true;
   try {
     return localStorage.getItem(INSTALL_POPUP_DISMISSED_KEY) === '1';
   } catch {
@@ -73,10 +79,11 @@ function readDismissed(): boolean {
  * something unrelated re-rendered it.
  */
 function storeDismissed() {
+  dismissedThisSession = true;
   try {
     localStorage.setItem(INSTALL_POPUP_DISMISSED_KEY, '1');
   } catch {
-    /* A choice that cannot be remembered still holds for this visit. */
+    /* Not remembered across visits, but `dismissedThisSession` still holds for this one. */
   }
   window.dispatchEvent(new StorageEvent('storage', { key: INSTALL_POPUP_DISMISSED_KEY, newValue: '1' }));
 }

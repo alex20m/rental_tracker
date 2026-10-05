@@ -94,6 +94,13 @@ export interface BeforeInstallPromptEvent extends Event {
 /** Where the captured install event is parked, and how its arrival is announced. */
 export const INSTALL_PROMPT_KEY = '__rentalTrackerInstallPrompt';
 export const INSTALL_PROMPT_EVENT = 'rental-tracker:installprompt';
+/**
+ * Set once the browser reports `appinstalled`. The page that did the installing
+ * is still a browser tab (not standalone) with no prompt left, which would
+ * otherwise read as "no prompt API here — show the manual steps" to someone who
+ * has just installed.
+ */
+export const INSTALLED_KEY = '__rentalTrackerInstalled';
 
 /**
  * The script that catches Chromium's install prompt.
@@ -108,9 +115,9 @@ export const INSTALL_PROMPT_EVENT = 'rental-tracker:installprompt';
  * `preventDefault` is not optional either: without it Chromium shows its own
  * mini-infobar, which is both easy to miss and impossible to bring back.
  */
-export const INSTALL_PROMPT_SCRIPT = `(function(){try{var k=${JSON.stringify(INSTALL_PROMPT_KEY)},n=${JSON.stringify(
+export const INSTALL_PROMPT_SCRIPT = `(function(){try{var k=${JSON.stringify(INSTALL_PROMPT_KEY)},d=${JSON.stringify(INSTALLED_KEY)},n=${JSON.stringify(
   INSTALL_PROMPT_EVENT,
-)};window[k]=window[k]||null;window.addEventListener("beforeinstallprompt",function(e){e.preventDefault();window[k]=e;window.dispatchEvent(new Event(n));});window.addEventListener("appinstalled",function(){window[k]=null;window.dispatchEvent(new Event(n));});}catch(e){}})();`;
+)};window[k]=window[k]||null;window.addEventListener("beforeinstallprompt",function(e){e.preventDefault();window[k]=e;window.dispatchEvent(new Event(n));});window.addEventListener("appinstalled",function(){window[k]=null;window[d]=true;window.dispatchEvent(new Event(n));});}catch(e){}})();`;
 
 /**
  * The flag behind "Don't show again". "Not now" is deliberately *not* stored:

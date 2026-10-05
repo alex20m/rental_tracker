@@ -3,6 +3,7 @@ import { en } from '@/lib/i18n/en';
 import { fi } from '@/lib/i18n/fi';
 import { sv } from '@/lib/i18n/sv';
 import {
+  INSTALLED_KEY,
   INSTALL_PROMPT_EVENT,
   INSTALL_PROMPT_KEY,
   INSTALL_PROMPT_SCRIPT,
@@ -100,5 +101,6 @@ describe('the script that catches the install prompt', () => {
     win.dispatchEvent(new Event('appinstalled'));
 
     expect(win[INSTALL_PROMPT_KEY]).toBeNull();
+    expect(win[INSTALLED_KEY]).toBe(true);
   });
 });

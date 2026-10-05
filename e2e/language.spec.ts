@@ -1,5 +1,5 @@
 import { expect, test } from './fixtures';
-import { openAccount, openMenu } from './nav';
+import { closeInstallPopup, openAccount, openMenu } from './nav';
 
 test.describe('interface language', () => {
   test.describe('with a Finnish browser', () => {
@@ -65,6 +65,7 @@ test.describe('interface language', () => {
       });
     });
     await page.goto('/');
+    await closeInstallPopup(page);
     await expect(page.getByRole('heading', { name: 'Add your first apartment' })).toBeVisible();
     const menu = await openMenu(page);
     await menu.getByRole('radio', { name: 'Suomi' }).click();
