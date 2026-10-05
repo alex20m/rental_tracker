@@ -1,6 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { expect, test } from './fixtures';
 import { coOwned, ledger, m, YEAR } from './data';
+import { jpegInfo, pngOfSize } from './images';
 import { alert, openInfo, section } from './nav';
 
 const photo = `${__dirname}/receipt.jpg`;
@@ -136,6 +137,46 @@ test.describe('costs and receipts', () => {
     await expect(page.locator('.list li')).toContainText('14 Feb · Repairs & upkeep');
     await expect(page.locator('.list img.thumb')).toBeVisible();
     expect(apt.costs[0]).toMatchObject({ date: `${m(2)}-14`, category: 'repairs', description: 'Kitchen tap', amount: 142.5, hasReceipt: true });
+  });
+
+  test('keeps a receipt photo readable: 2000 px on its longest side, at high JPEG quality', async ({ page, api }) => {
+    const apt = api.addApartment({ name: 'Flat' });
+    await page.clock.setFixedTime(new Date(`${YEAR}-12-15T12:00:00`));
+    await page.goto('/');
+    await section(page, 'Costs');
+    await page.getByRole('button', { name: 'Add cost' }).click();
+    const sheet = page.getByRole('dialog', { name: 'Add cost' });
+    await sheet.getByLabel('Amount (€)').fill('10');
+    const [chooser] = await Promise.all([page.waitForEvent('filechooser'), sheet.getByRole('button', { name: 'Receipt' }).click()]);
+    await chooser.setFiles({ name: 'phone.png', mimeType: 'image/png', buffer: pngOfSize(3000, 2250) });
+    await expect(sheet.getByAltText('Receipt preview')).toBeVisible();
+    await sheet.getByRole('button', { name: 'Save' }).click();
+    await expect(page.locator('.list img.thumb')).toBeVisible();
+
+    const stored = api.receipts.get(apt.costs[0]!.id)!;
+    expect(stored.contentType).toBe('image/jpeg');
+    const { width, height, firstQuantValue } = jpegInfo(stored.data);
+    expect({ width, height }).toEqual({ width: 2000, height: 1500 });
+    // The first luminance quantisation value is 9 at quality 0.72 and 5 at 0.85.
+    expect(firstQuantValue).toBeLessThanOrEqual(6);
+  });
+
+  test('does not enlarge a receipt photo that is already small', async ({ page, api }) => {
+    const apt = api.addApartment({ name: 'Flat' });
+    await page.clock.setFixedTime(new Date(`${YEAR}-12-15T12:00:00`));
+    await page.goto('/');
+    await section(page, 'Costs');
+    await page.getByRole('button', { name: 'Add cost' }).click();
+    const sheet = page.getByRole('dialog', { name: 'Add cost' });
+    await sheet.getByLabel('Amount (€)').fill('10');
+    const [chooser] = await Promise.all([page.waitForEvent('filechooser'), sheet.getByRole('button', { name: 'Receipt' }).click()]);
+    await chooser.setFiles({ name: 'small.png', mimeType: 'image/png', buffer: pngOfSize(800, 600) });
+    await expect(sheet.getByAltText('Receipt preview')).toBeVisible();
+    await sheet.getByRole('button', { name: 'Save' }).click();
+    await expect(page.locator('.list img.thumb')).toBeVisible();
+
+    const { width, height } = jpegInfo(api.receipts.get(apt.costs[0]!.id)!.data);
+    expect({ width, height }).toEqual({ width: 800, height: 600 });
   });
 
   test('will not save a cost dated in a month that has not started', async ({ page, api }) => {
