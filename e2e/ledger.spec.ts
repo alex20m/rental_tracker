@@ -427,3 +427,34 @@ test.describe('costs and receipts', () => {
     await expect(page.getByRole('note')).toHaveText('On the Finnish form: Hoitovastike. Deducted in the year it is paid.');
   });
 });
+
+test.describe('popups on a narrow phone', () => {
+  test.use({ viewport: { width: 320, height: 640 } });
+
+  for (const popup of ['rent', 'cost'] as const) {
+    test(`the ${popup} popup never scrolls sideways and keeps its two fields apart`, async ({ page, api }) => {
+      api.addApartment({ name: 'Flat', monthlyRent: 750 });
+      await page.goto('/');
+      let sheet;
+      if (popup === 'rent') {
+        await section(page, 'Rent');
+        await page.locator('.month').first().click();
+        sheet = page.getByRole('dialog', { name: `January ${YEAR}` });
+      } else {
+        await section(page, 'Costs');
+        await page.getByRole('button', { name: 'Add cost' }).click();
+        sheet = page.getByRole('dialog', { name: 'Add cost' });
+      }
+      await expect(sheet).toBeVisible();
+
+      expect(await sheet.evaluate((el) => el.scrollWidth - el.clientWidth)).toBeLessThanOrEqual(0);
+      const [left, right] = (await sheet.locator('.cols > *').evaluateAll((els) =>
+        els.map((el) => {
+          const r = el.querySelector('input:not([hidden]), button')!.getBoundingClientRect();
+          return { left: r.left, right: r.right };
+        }),
+      )) as { left: number; right: number }[] as [{ left: number; right: number }, { left: number; right: number }];
+      expect(left.right).toBeLessThan(right.left);
+    });
+  }
+});

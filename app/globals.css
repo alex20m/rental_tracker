@@ -174,8 +174,9 @@ label { display: flex; align-items: center; min-height: 24px; font-size: 14px; f
 .label-row label { margin: 0; }
 .field { display: flex; flex-direction: column; }
 .fields { display: flex; flex-direction: column; }
-.cols { display: flex; gap: 12px; }
-.cols > * { flex: 1; min-width: 0; }
+.cols { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.cols > * { min-width: 0; }
+input[type="date"] { display: block; appearance: none; -webkit-appearance: none; max-width: 100%; } /* iOS gives date inputs an intrinsic width that ignores the column */
 .amount-input { font-size: 30px; font-weight: 700; letter-spacing: -0.03em; min-height: 56px; padding: 10px 14px; text-align: left; font-variant-numeric: tabular-nums; }
 .pct-input { width: 92px; text-align: right; flex: none; }
 
@@ -207,7 +208,7 @@ label { display: flex; align-items: center; min-height: 24px; font-size: 14px; f
 
 /* ── Sheet ── a dialog centred on screen at every size ── */
 .sheet-bg { position: fixed; inset: 0; z-index: 20; display: flex; align-items: center; justify-content: center; padding: 16px; background: rgba(8, 12, 14, 0.5); animation: fade 0.15s ease-out; }
-.sheet { width: 100%; max-width: 560px; max-height: calc(100dvh - 32px); overflow: auto; background: var(--bg); border-radius: 20px; padding: 8px 20px 20px; animation: rise 0.2s ease-out; outline: none; scroll-padding-top: 64px; }
+.sheet { width: 100%; max-width: 560px; max-height: calc(100dvh - 32px); overflow-y: auto; overflow-x: hidden; background: var(--bg); border-radius: 20px; padding: 8px 20px 20px; animation: rise 0.2s ease-out; outline: none; scroll-padding-top: 64px; }
 .sheet-head { position: sticky; top: 0; z-index: 1; display: flex; align-items: center; justify-content: space-between; padding: 4px 0 2px; background: var(--bg); }
 .sheet-head h3 { font-size: 20px; font-weight: 650; letter-spacing: -0.015em; }
 .install-lead { margin: 8px 0 16px; color: var(--text-2); }
@@ -309,8 +310,6 @@ label { display: flex; align-items: center; min-height: 24px; font-size: 14px; f
 /* Phones: 16px inputs keep iOS Safari from zooming on focus. Tap targets are 48px everywhere. */
 @media (max-width: 639px) {
   input, select, textarea { font-size: 16px; }
-  .cols { flex-wrap: wrap; }
-  .cols > * { min-width: 130px; }
 }
 @media (max-width: 380px) {
   .app { padding-left: 12px; padding-right: 12px; }
