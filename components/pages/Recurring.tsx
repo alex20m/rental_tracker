@@ -38,7 +38,7 @@ export default function Recurring({ apt, onChanged }: Props) {
                   <div className="t">{r.description || (r.category ? t(`cat.${r.category}.label`) : t('recurring.rentTitle'))}</div>
                   <div className="s">
                     {r.category && r.description && `${t(`cat.${r.category}.label`)} · `}
-                    {t('recurring.next', { month: monthTitle(r.nextMonth, lang) })}
+                    {t('recurring.next', { day: r.dayOfMonth, month: monthTitle(r.nextMonth, lang) })}
                   </div>
                 </div>
                 <div className="strong num">{t('recurring.perMonth', { amount: eur(r.amount) })}</div>
@@ -82,9 +82,12 @@ function RecurringForm({
   const [category, setCategory] = useState<CostCategory>(entry?.category ?? 'maintenance_charge');
   const [description, setDescription] = useState(entry?.description ?? '');
   const [amount, setAmount] = useState(entry ? String(entry.amount) : '');
+  const [day, setDay] = useState(String(entry?.dayOfMonth ?? 1));
   const [firstMonth, setFirstMonth] = useState(currentMonth());
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
+
+  const validDay = Number.isInteger(Number(day)) && Number(day) >= 1 && Number(day) <= 28;
 
   const run = async (action: () => Promise<unknown>) => {
     setBusy(true);
@@ -101,7 +104,7 @@ function RecurringForm({
 
   const save = () =>
     run(() => {
-      const base = { description: description.trim(), amount: Number(amount) };
+      const base = { description: description.trim(), amount: Number(amount), dayOfMonth: Number(day) };
       if (entry) return api.updateRecurring(apt.id, entry.id, kind === 'cost' ? { ...base, category } : base);
       return api.createRecurring(
         apt.id,
@@ -167,6 +170,23 @@ function RecurringForm({
         onChange={(e) => setDescription(e.target.value)}
       />
 
+      <Label
+        htmlFor="recurring-day"
+        info={<Info about={t('recurring.dayAbout')}>{t('recurring.dayInfo')}</Info>}
+      >
+        {t('recurring.day')}
+      </Label>
+      <input
+        id="recurring-day"
+        type="number"
+        inputMode="numeric"
+        min="1"
+        max="28"
+        step="1"
+        value={day}
+        onChange={(e) => setDay(e.target.value)}
+      />
+
       {entry ? (
         <p className="msg">{t('recurring.editNote')}</p>
       ) : (
@@ -188,7 +208,7 @@ function RecurringForm({
             {t('common.delete')}
           </button>
         )}
-        <button className="btn primary" onClick={save} disabled={busy || !(Number(amount) > 0) || !(entry || firstMonth)}>
+        <button className="btn primary" onClick={save} disabled={busy || !(Number(amount) > 0) || !validDay || !(entry || firstMonth)}>
           {busy ? t('common.saving') : t('common.save')}
         </button>
       </div>

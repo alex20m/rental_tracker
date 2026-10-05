@@ -44,6 +44,7 @@ test.describe('recurring expenses in the apartment settings', () => {
       kind: 'rent',
       description: '',
       amount: 800,
+      dayOfMonth: 1,
       firstMonth: thisMonth,
     });
     expect(apt.rents).toEqual([{ month: thisMonth, status: 'paid', amount: 800, receivedDate: `${thisMonth}-01`, note: '' }]);
@@ -64,6 +65,7 @@ test.describe('recurring expenses in the apartment settings', () => {
     await sheet.getByLabel('Amount every month (€)').fill('25.5');
     await sheet.getByLabel('Description').fill('Home insurance');
     await sheet.getByLabel('First month', { exact: true }).fill(`${now.getUTCFullYear() - 1}-11`);
+    await sheet.getByLabel('Day of the month', { exact: true }).fill('15');
     await sheet.getByRole('button', { name: 'Save' }).click();
 
     await expect(sheet).toHaveCount(0);
@@ -73,10 +75,11 @@ test.describe('recurring expenses in the apartment settings', () => {
       category: 'insurance',
       description: 'Home insurance',
       amount: 25.5,
+      dayOfMonth: 15,
       firstMonth: `${now.getUTCFullYear() - 1}-11`,
     });
     expect(apt.costs.length).toBeGreaterThanOrEqual(2);
-    expect(apt.costs.every((c) => c.category === 'insurance' && c.amount === 25.5 && c.date.endsWith('-01'))).toBe(true);
+    expect(apt.costs.every((c) => c.category === 'insurance' && c.amount === 25.5 && c.date.endsWith('-15'))).toBe(true);
   });
 
   test('offers only expenses once the rent repeats, and a cost with no description is named by its category', async ({ page, api }) => {
@@ -84,8 +87,8 @@ test.describe('recurring expenses in the apartment settings', () => {
       { name: 'Flat' },
       {
         recurring: [
-          { id: 'r-rent', kind: 'rent', description: '', amount: 800, nextMonth: thisMonth },
-          { id: 'r-charge', kind: 'cost', category: 'maintenance_charge', description: '', amount: 150, nextMonth: thisMonth },
+          { id: 'r-rent', kind: 'rent', description: '', amount: 800, dayOfMonth: 1, nextMonth: thisMonth },
+          { id: 'r-charge', kind: 'cost', category: 'maintenance_charge', description: '', amount: 150, dayOfMonth: 1, nextMonth: thisMonth },
         ],
       },
     );
@@ -102,7 +105,7 @@ test.describe('recurring expenses in the apartment settings', () => {
   test('changes an entry for the months to come, and says what stays', async ({ page, api }) => {
     const apt = api.addApartment(
       { name: 'Flat' },
-      { recurring: [{ id: 'r-charge', kind: 'cost', category: 'maintenance_charge', description: 'Hoitovastike', amount: 150, nextMonth: `${thisMonth}` }] },
+      { recurring: [{ id: 'r-charge', kind: 'cost', category: 'maintenance_charge', description: 'Hoitovastike', amount: 150, dayOfMonth: 1, nextMonth: `${thisMonth}` }] },
     );
     await page.goto('/');
     await openTopic(page, 'Recurring expenses');
@@ -112,17 +115,19 @@ test.describe('recurring expenses in the apartment settings', () => {
     await expect(sheet.getByText('A change applies to the months not booked yet.')).toBeVisible();
     await expect(sheet.getByLabel('First month', { exact: true })).toHaveCount(0);
     await expect(sheet.getByLabel('Amount every month (€)')).toHaveValue('150');
+    await expect(sheet.getByLabel('Day of the month', { exact: true })).toHaveValue('1');
+    await sheet.getByLabel('Day of the month', { exact: true }).fill('20');
     await sheet.getByLabel('Amount every month (€)').fill('160');
     await sheet.getByRole('radio', { name: 'Utilities paid by owner' }).click();
     await sheet.getByRole('button', { name: 'Save' }).click();
 
     await expect(sheet).toHaveCount(0);
-    expect(api.callsTo('PUT /api/apartments')[0]!.body).toEqual({ category: 'utilities', description: 'Hoitovastike', amount: 160 });
-    expect(apt.recurring[0]).toMatchObject({ category: 'utilities', amount: 160 });
+    expect(api.callsTo('PUT /api/apartments')[0]!.body).toEqual({ category: 'utilities', description: 'Hoitovastike', amount: 160, dayOfMonth: 20 });
+    expect(apt.recurring[0]).toMatchObject({ category: 'utilities', amount: 160, dayOfMonth: 20 });
   });
 
   test('changes the rent without sending a category', async ({ page, api }) => {
-    api.addApartment({ name: 'Flat' }, { recurring: [{ id: 'r-rent', kind: 'rent', description: '', amount: 800, nextMonth: thisMonth }] });
+    api.addApartment({ name: 'Flat' }, { recurring: [{ id: 'r-rent', kind: 'rent', description: '', amount: 800, dayOfMonth: 1, nextMonth: thisMonth }] });
     await page.goto('/');
     await openTopic(page, 'Recurring expenses');
     await page.getByRole('button', { name: /Monthly rent/ }).click();
@@ -133,7 +138,7 @@ test.describe('recurring expenses in the apartment settings', () => {
     await sheet.getByRole('button', { name: 'Save' }).click();
 
     await expect(page.getByRole('button', { name: /Monthly rent/ })).toContainText('850,00 € a month');
-    expect(api.callsTo('PUT /api/apartments')[0]!.body).toEqual({ description: '', amount: 850 });
+    expect(api.callsTo('PUT /api/apartments')[0]!.body).toEqual({ description: '', amount: 850, dayOfMonth: 1 });
   });
 
   test('stops an entry with Delete and lists it as one fewer', async ({ page, api }) => {
@@ -141,8 +146,8 @@ test.describe('recurring expenses in the apartment settings', () => {
       { name: 'Flat' },
       {
         recurring: [
-          { id: 'r-rent', kind: 'rent', description: '', amount: 800, nextMonth: thisMonth },
-          { id: 'r-charge', kind: 'cost', category: 'insurance', description: '', amount: 30, nextMonth: thisMonth },
+          { id: 'r-rent', kind: 'rent', description: '', amount: 800, dayOfMonth: 1, nextMonth: thisMonth },
+          { id: 'r-charge', kind: 'cost', category: 'insurance', description: '', amount: 30, dayOfMonth: 1, nextMonth: thisMonth },
         ],
       },
     );
@@ -156,6 +161,24 @@ test.describe('recurring expenses in the apartment settings', () => {
     await expect(page.getByRole('button', { name: /Insurance/ })).toHaveCount(0);
     await expect(page.getByText('1 item booked every month')).toBeVisible();
     expect(apt.recurring.map((r) => r.id)).toEqual(['r-rent']);
+  });
+
+  test('only accepts a day from 1 to 28', async ({ page, api }) => {
+    api.addApartment({ name: 'Flat' });
+    await page.goto('/');
+    await openTopic(page, 'Recurring expenses');
+    await page.getByRole('button', { name: 'Add recurring item' }).click();
+    const sheet = page.getByRole('dialog', { name: 'Add recurring item' });
+    await sheet.getByLabel('Amount every month (€)').fill('800');
+    const save = sheet.getByRole('button', { name: 'Save' });
+
+    await expect(save).toBeEnabled();
+    for (const day of ['0', '29', '1.5', '']) {
+      await sheet.getByLabel('Day of the month', { exact: true }).fill(day);
+      await expect(save, `day "${day}"`).toBeDisabled();
+    }
+    await sheet.getByLabel('Day of the month', { exact: true }).fill('28');
+    await expect(save).toBeEnabled();
   });
 
   test('says why a change was refused, and keeps the form open', async ({ page, api }) => {
@@ -185,7 +208,7 @@ test.describe('repeating from the ordinary forms', () => {
     await sheet.getByRole('radio', { name: 'Insurance' }).click();
     await expect(sheet.getByText('Books the same again')).toHaveCount(0);
     await sheet.getByRole('switch', { name: 'Repeat every month' }).click();
-    await expect(sheet.getByText(`from ${nextAfterNow}`)).toBeVisible();
+    await expect(sheet.getByText(`on day ${Math.min(now.getDate(), 28)}, from ${nextAfterNow}`)).toBeVisible();
     await sheet.getByRole('button', { name: 'Save' }).click();
     await expect(sheet).toHaveCount(0);
 
@@ -230,7 +253,7 @@ test.describe('repeating from the ordinary forms', () => {
     await expect(sheet.getByRole('switch', { name: 'Repeat every month' })).toHaveCount(0);
     await sheet.getByRole('radio', { name: 'Paid', exact: true }).click();
     await sheet.getByRole('switch', { name: 'Repeat every month' }).click();
-    await expect(sheet.getByText('Books the same again on the 1st of every month, from')).toBeVisible();
+    await expect(sheet.getByText(/Books the same again every month on day \d+, from/)).toBeVisible();
     await sheet.getByRole('button', { name: 'Save' }).click();
     await expect(sheet).toHaveCount(0);
 

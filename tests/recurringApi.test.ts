@@ -70,7 +70,7 @@ describe('the recurring routes', () => {
 
     const responses = await Promise.all([
       recurring.POST(req('POST', charge), p),
-      recurringOne.PUT(req('PUT', { description: '', amount: 1 }), p),
+      recurringOne.PUT(req('PUT', { description: '', amount: 1, dayOfMonth: 1 }), p),
       recurringOne.DELETE(req('DELETE'), p),
     ]);
 
@@ -93,8 +93,8 @@ describe('the recurring routes', () => {
     const { id: entryId } = (await (await recurring.POST(req('POST', charge), ctx({ id }))).json()) as { id: string };
     const p = ctx({ id, recurringId: entryId });
 
-    expect((await recurringOne.PUT(req('PUT', { category: 'insurance', description: 'Home', amount: 20 }), p)).status).toBe(200);
-    expect((await view(id)).recurring[0]).toMatchObject({ category: 'insurance', description: 'Home', amount: 20 });
+    expect((await recurringOne.PUT(req('PUT', { category: 'insurance', description: 'Home', amount: 20, dayOfMonth: 12 }), p)).status).toBe(200);
+    expect((await view(id)).recurring[0]).toMatchObject({ category: 'insurance', description: 'Home', amount: 20, dayOfMonth: 12 });
     expect((await recurringOne.DELETE(req('DELETE'), ctx({ id, recurringId: entryId }))).status).toBe(200);
     expect((await view(id)).recurring).toEqual([]);
   });
@@ -105,7 +105,7 @@ describe('the recurring routes', () => {
     signIn(bob);
 
     expect((await recurring.POST(req('POST', charge), ctx({ id }))).status).toBe(404);
-    expect((await recurringOne.PUT(req('PUT', { description: '', amount: 1 }), ctx({ id, recurringId: entryId }))).status).toBe(404);
+    expect((await recurringOne.PUT(req('PUT', { description: '', amount: 1, dayOfMonth: 1 }), ctx({ id, recurringId: entryId }))).status).toBe(404);
     expect((await recurringOne.DELETE(req('DELETE'), ctx({ id, recurringId: entryId }))).status).toBe(404);
     expect(await db.query('select 1 from recurring_entries')).toHaveLength(1);
   });
@@ -121,7 +121,21 @@ describe('the recurring routes', () => {
     expect(await again.json()).toEqual({ error: 'The rent already repeats every month. Change that one instead.' });
   });
 
+  it('books on the 1st unless another day is given, and keeps the day that is', async () => {
+    const id = await createApartment(alice);
+    await recurring.POST(req('POST', charge), ctx({ id }));
+    await recurring.POST(req('POST', { ...charge, category: 'insurance', dayOfMonth: 28 }), ctx({ id }));
+
+    expect((await view(id)).recurring.map((r) => [r.category, r.dayOfMonth])).toEqual([
+      ['maintenance_charge', 1],
+      ['insurance', 28],
+    ]);
+  });
+
   it.each([
+    ['day 0', { ...charge, dayOfMonth: 0 }],
+    ['day 29, which February does not have', { ...charge, dayOfMonth: 29 }],
+    ['a day that is not a whole number', { ...charge, dayOfMonth: 1.5 }],
     ['an improvement, which is not paid monthly', { ...charge, category: 'improvement' }],
     ['furniture, which is not paid monthly', { ...charge, category: 'furniture' }],
     ['a zero amount', { ...charge, amount: 0 }],
@@ -137,16 +151,25 @@ describe('the recurring routes', () => {
   });
 });
 
+it('refuses a change without a day', async () => {
+  const id = await createApartment(alice);
+  const { id: entryId } = (await (await recurring.POST(req('POST', charge), ctx({ id }))).json()) as { id: string };
+
+  const res = await recurringOne.PUT(req('PUT', { description: '', amount: 1 }), ctx({ id, recurringId: entryId }));
+
+  expect(res.status).toBe(400);
+});
+
 describe('registering a cost or rent that repeats', () => {
   it('adds a recurring cost from the month after the cost', async () => {
     const id = await createApartment(alice);
-    const cost = { date: `${lastMonth}-10`, category: 'insurance', description: 'Home', amount: 30, repeatMonthly: true };
+    const cost = { date: `${lastMonth}-01`, category: 'insurance', description: 'Home', amount: 30, repeatMonthly: true };
 
     expect((await costs.POST(req('POST', cost), ctx({ id }))).status).toBe(201);
 
     const apt = await view(id);
     expect(apt.recurring).toEqual([expect.objectContaining({ kind: 'cost', category: 'insurance', amount: 30 })]);
-    expect(apt.costs.map((c) => c.date)).toEqual([`${lastMonth}-10`, `${thisMonth}-01`]);
+    expect(apt.costs.map((c) => c.date)).toEqual([`${lastMonth}-01`, `${thisMonth}-01`]);
   });
 
   it('adds nothing when the box is not ticked', async () => {

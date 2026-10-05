@@ -4,7 +4,7 @@
  * This runs as part of the deploy's build command (vercel.json), so the schema
  * is in place before the new code serves a request, and a failed migration
  * fails the build and leaves the previous deployment serving. That ordering is
- * the reason it is not a CI job; see CLAUDE.md.
+ * the reason it is not a CI job; see AGENTS.md.
  *
  * The migrating itself is node-pg-migrate's: the ledger table, ordering,
  * apply-once bookkeeping, the advisory lock and the transaction each migration
