@@ -177,7 +177,7 @@ label { display: flex; align-items: center; min-height: 24px; font-size: 14px; f
 .fields { display: flex; flex-direction: column; }
 .cols { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
 .cols > * { min-width: 0; }
-input[type="date"] { display: block; appearance: none; -webkit-appearance: none; max-width: 100%; } /* iOS gives date inputs an intrinsic width that ignores the column */
+input[type="date"], input[type="month"] { display: block; appearance: none; -webkit-appearance: none; max-width: 100%; } /* iOS gives date and month inputs an intrinsic width that ignores the column */
 .amount-input { font-size: 30px; font-weight: 700; letter-spacing: -0.03em; min-height: 56px; padding: 10px 14px; text-align: left; font-variant-numeric: tabular-nums; }
 .pct-input { width: 92px; text-align: right; flex: none; }
 
