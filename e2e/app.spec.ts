@@ -407,6 +407,8 @@ test.describe('the navigation drawer', () => {
     await drawer(page).getByRole('button', { name: 'All apartments', exact: true }).click();
     await expect(page.getByRole('button', { name: /^Flat/ })).toBeVisible();
     await expect(toggle(page)).toHaveAttribute('aria-expanded', 'false');
+    // Tapped, not typed: focus must not be thrown back onto ☰, or its ring sticks on a phone.
+    await expect(toggle(page)).not.toBeFocused();
   });
 
   test('lists the apartment’s places under its name, and the portfolio and account apart from them', async ({ page, api }) => {

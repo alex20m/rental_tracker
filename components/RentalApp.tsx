@@ -85,6 +85,7 @@ export default function RentalApp() {
   const [scope, setScope] = useState<Scope>('mine');
   const [navOpen, setNavOpen] = useState(false);
   const toggle = useRef<HTMLButtonElement>(null);
+  const usingKeyboard = useRef(false);
   const [error, setError] = useState('');
 
   // A 401 has already sent the browser to /sign-in (lib/client/api.ts).
@@ -159,10 +160,14 @@ export default function RentalApp() {
     setTab(to);
   };
 
-  /** Close the drawer and put focus back on the ☰ that opened it. */
+  /**
+   * Close the drawer. A keyboard user gets focus back on the ☰ that opened it; after a tap it is
+   * left alone, because script-focusing a button draws its focus ring even on a touch screen.
+   */
   const closeNav = () => {
     setNavOpen(false);
-    toggle.current!.focus();
+    if (usingKeyboard.current) toggle.current!.focus();
+    else (document.activeElement as HTMLElement | null)?.blur();
   };
 
   /** A place picked in the drawer. */
@@ -195,7 +200,11 @@ export default function RentalApp() {
   const showYear = !welcome && tab !== 'settings' && tab !== 'history' && !onAccount;
 
   return (
-    <div className="app shell">
+    <div
+      className="app shell"
+      onKeyDownCapture={() => (usingKeyboard.current = true)}
+      onPointerDownCapture={() => (usingKeyboard.current = false)}
+    >
       <header className="topbar">
         <button
           ref={toggle}
