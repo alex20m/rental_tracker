@@ -1,5 +1,14 @@
 import { describe, expect, it } from 'vitest';
-import { computeDepreciation, computeTax, estimateCapitalTax, ownerShare, portfolioTotals } from '@/lib/domain/tax';
+import {
+  computeDepreciation,
+  computeTax,
+  deficitCreditOf,
+  estimateCapitalTax,
+  furniturePart,
+  ownerShare,
+  portfolioTotals,
+  round2,
+} from '@/lib/domain/tax';
 import { defaultSettings, type CostEntry, type Ledger } from '@/lib/domain/types';
 
 const ledger: Ledger = {
@@ -26,6 +35,48 @@ const ledger: Ledger = {
 };
 
 const afterYearEnd = new Date('2026-06-15T12:00:00Z');
+
+describe('rounding to the cent', () => {
+  // Each of these is an exact half cent in decimal that binary floating point
+  // stores a hair below the half (or above it), where a naive Math.round slips.
+  it.each([
+    [2.135, 2.14],
+    [1.005, 1.01],
+    [8.345, 8.35],
+    [300.025, 300.03],
+    [370.365, 370.37],
+    [512.045, 512.05],
+    [15.015, 15.02],
+  ])('rounds the half cent in %f up to %f', (value, expected) => {
+    expect(round2(value)).toBe(expected);
+  });
+
+  it('rounds a negative half cent away from zero, like a positive one, and never returns -0', () => {
+    expect(round2(-2.135)).toBe(-2.14);
+    expect(Object.is(round2(-0.001), 0)).toBe(true);
+  });
+
+  it('takes the cent right in a tax estimate that lands on a half cent: 30 % of 1 234,55 is 370,365', () => {
+    expect(estimateCapitalTax(1234.55, 2025)).toBe(370.37);
+  });
+
+  it('takes the cent right in a deficit credit that lands on a half cent: 30 % of 50,05 is 15,015', () => {
+    expect(deficitCreditOf(-50.05, 2025)).toBe(15.02);
+  });
+
+  it('takes the cent right in the depreciation of an item: 25 % of 1 200,10 is 300,025', () => {
+    expect(furniturePart({ date: '2025-03-01', amount: 1200.1 }, 2025)).toBe(300.03);
+  });
+
+  it('takes the cent right in a co-owner’s half of the rent: half of 1 024,09 is 512,045', () => {
+    const one: Ledger = {
+      settings: defaultSettings,
+      rents: [{ month: '2025-01', status: 'paid', amount: 1024.09, receivedDate: '2025-01-05', note: '' }],
+      costs: [],
+    };
+    expect(ownerShare(computeTax(one, 2025, afterYearEnd), 50).rentIncome).toBe(512.05);
+  });
+});
 
 describe('capital income tax estimate', () => {
   it('is zero for a loss', () => {

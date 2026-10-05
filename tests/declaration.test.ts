@@ -41,6 +41,20 @@ describe("the declaration's ledger", () => {
   });
 });
 
+describe("the declaration's ledger, to the cent", () => {
+  it('takes the cent right in the owner’s part of an amount that lands on a half cent: half of 1 024,09 is 512,045', () => {
+    const odd: ApartmentView = {
+      ...apt,
+      rents: [{ month: '2025-01', status: 'paid', amount: 1024.09, receivedDate: '2025-01-03', note: '' }],
+      costs: [{ id: 'c1', date: '2025-02-01', category: 'repairs', description: '', amount: 1024.09, hasReceipt: false }],
+    };
+    const rows = buildCsv(odd, year, 50, new Map()).split('\n');
+
+    expect(rows[1]).toContain('"1024.09","512.05"');
+    expect(rows[2]).toContain('"-1024.09","-512.05"');
+  });
+});
+
 describe("the declaration's PDF", () => {
   // jsPDF writes text uncompressed by default, so the figures can be read back.
   const textOf = async (blob: Blob) => Buffer.from(await blob.arrayBuffer()).toString('latin1');
