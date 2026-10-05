@@ -12,7 +12,15 @@ export const metadata: Metadata = {
   title: 'Rental Tracker',
   description: 'Track rent, costs and co-owners of your rental apartments, and prepare your Finnish rental income tax declaration.',
   manifest: '/manifest.webmanifest',
-  icons: { icon: '/icon.svg', apple: '/icon-192.png' },
+  // iOS ignores SVG icons and caches home-screen icons by URL, so the Apple icon is an opaque 180px PNG under
+  // its own filename (iOS fills transparent corners with black), and Safari tabs get a PNG favicon.
+  icons: {
+    icon: [
+      { url: '/icon.svg', type: 'image/svg+xml' },
+      { url: '/favicon-48.png', sizes: '48x48', type: 'image/png' },
+    ],
+    apple: { url: '/apple-touch-icon-180.png', sizes: '180x180', type: 'image/png' },
+  },
   appleWebApp: { capable: true, title: 'Rentals' },
 };
 
