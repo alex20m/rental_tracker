@@ -6,6 +6,7 @@ import { api } from '@/lib/client/api';
 import { authClient } from '@/lib/client/authClient';
 import type { Account } from '@/components/RentalApp';
 import { useI18n } from '@/components/I18nProvider';
+import { InstallSection } from '@/components/InstallPopup';
 import LanguagePicker from '@/components/LanguagePicker';
 import ThemePicker from '@/components/ThemePicker';
 import { Avatar, ErrorNote, Heading, Icon, Info } from '@/components/ui';
@@ -61,6 +62,8 @@ export default function AccountPanel({ account }: { account: Account }) {
         <Heading>{t('theme.label')}</Heading>
         <ThemePicker />
       </section>
+
+      <InstallSection />
 
       <button className="btn block" onClick={signOut}>
         {Icon.signout}

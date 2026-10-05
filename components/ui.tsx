@@ -441,6 +441,7 @@ export const Icon = {
   left: svg(<path d="m15 18-6-6 6-6" />),
   right: svg(<path d="m9 18 6-6-6-6" />),
   plus: svg(<path d="M12 5v14M5 12h14" />),
+  install: svg(<path d="M12 3v12m0 0-4-4m4 4 4-4M5 21h14" />),
   close: svg(<path d="M6 6l12 12M18 6 6 18" />),
   check: svg(<path d="m5 12 5 5 9-10" />),
   alert: svg(

@@ -528,6 +528,25 @@ export const en = {
   'auth.newPassword': 'New password',
   'auth.resetPassword': 'Reset password',
   'auth.passwordChanged': 'Password changed. Sign in with your new password.',
+  // — install —
+  'install.title': 'Install Rental Tracker',
+  'install.lead': 'Add it to your home screen — it opens like an app, full screen, one tap away.',
+  'install.button': 'Install app',
+  'install.notNow': 'Not now',
+  'install.never': 'Don’t show again',
+  'install.ios.title': 'Add to your Home Screen',
+  'install.ios.step1': 'Tap the Share button in Safari.',
+  'install.ios.step2': 'Scroll down and choose “Add to Home Screen”.',
+  'install.ios.step3': 'Tap Add. Rental Tracker opens like any other app.',
+  'install.android.title': 'Add to your Home screen',
+  'install.android.step1': 'Open your browser’s ⋮ menu.',
+  'install.android.step2': 'Choose “Install app” or “Add to Home screen”.',
+  'install.android.step3': 'Confirm, and Rental Tracker opens like any other app.',
+  'install.desktop.title': 'Install on this computer',
+  'install.desktop.step1': 'Look for the install icon at the end of the address bar.',
+  'install.desktop.step2': 'Choose Install, or find it under the browser’s ⋮ menu.',
+  'install.desktop.step3': 'Rental Tracker opens in its own window.',
+  'install.settings': 'Install the app',
 } as const;
 
 export type MessageKey = keyof typeof en;

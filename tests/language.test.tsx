@@ -2,6 +2,7 @@
 import { cleanup, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { stubMatchMedia } from './support/matchMedia';
 import RentalApp from '@/components/RentalApp';
 import { I18nProvider } from '@/components/I18nProvider';
 import { defaultSettings, type ApartmentView } from '@/lib/domain/types';
@@ -49,6 +50,7 @@ const setBrowserLanguages = (languages: string[]) =>
   vi.spyOn(window.navigator, 'languages', 'get').mockReturnValue(languages);
 
 beforeEach(() => {
+  stubMatchMedia();
   vi.useFakeTimers({ toFake: ['Date'] });
   vi.setSystemTime(new Date('2026-06-15T12:00:00'));
   localStorage.clear();
@@ -61,6 +63,7 @@ beforeEach(() => {
 });
 
 afterEach(() => {
+  vi.unstubAllGlobals();
   cleanup();
   vi.restoreAllMocks();
   vi.useRealTimers();

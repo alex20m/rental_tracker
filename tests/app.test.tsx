@@ -3,6 +3,7 @@ import { cleanup, screen, within } from '@testing-library/react';
 import { render } from './support/render';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { stubMatchMedia } from './support/matchMedia';
 import RentalApp from '@/components/RentalApp';
 import {
   defaultSettings,
@@ -96,6 +97,7 @@ async function openLedger(which: 'Rent' | 'Costs') {
 }
 
 beforeEach(() => {
+  stubMatchMedia();
   vi.useFakeTimers({ toFake: ['Date'] });
   vi.setSystemTime(new Date('2026-06-15T12:00:00'));
   localStorage.clear();
@@ -103,6 +105,7 @@ beforeEach(() => {
 });
 
 afterEach(() => {
+  vi.unstubAllGlobals();
   cleanup();
   vi.useRealTimers();
 });

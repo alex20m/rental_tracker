@@ -1,6 +1,7 @@
 import { test as base, expect, type BrowserType, type LaunchOptions } from '@playwright/test';
 import { CoverageReport } from 'monocart-coverage-reports';
 import { coverageOptions } from './coverage';
+import { INSTALL_POPUP_DISMISSED_KEY } from '@/lib/pwa';
 import { FakeApi } from './fakeApi';
 
 /**
@@ -9,7 +10,9 @@ import { FakeApi } from './fakeApi';
  * from '@playwright/test' — a test that bypasses this fixture adds nothing to
  * the coverage the gate counts.
  */
-export const test = base.extend<{ api: FakeApi }>({
+export const test = base.extend<{ api: FakeApi; installPopup: boolean }>({
+  /** The install popup covers the page it opens on, so it is silenced unless a test is about it. */
+  installPopup: [false, { option: true }],
   launchOptions: [
     async ({ launchOptions, playwright }, use) => {
       await use(await keepingCoverageAcrossNavigations(playwright.chromium, launchOptions));
@@ -19,8 +22,17 @@ export const test = base.extend<{ api: FakeApi }>({
   api: async ({}, use) => {
     await use(new FakeApi());
   },
-  page: async ({ page, api }, use, testInfo) => {
+  page: async ({ page, api, installPopup }, use, testInfo) => {
     await api.install(page);
+    if (!installPopup) {
+      await page.addInitScript((key) => {
+        try {
+          localStorage.setItem(key, '1');
+        } catch {
+          /* storage unavailable */
+        }
+      }, INSTALL_POPUP_DISMISSED_KEY);
+    }
     const errors: string[] = [];
     page.on('pageerror', (e) => errors.push(e.message));
     await page.coverage.startJSCoverage({ resetOnNavigation: false });
