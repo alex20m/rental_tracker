@@ -161,6 +161,17 @@ test.describe('costs and receipts', () => {
     expect(firstQuantValue).toBeLessThanOrEqual(6);
   });
 
+  test('lets the receipt come from the photo library or files, not only the camera', async ({ page, api }) => {
+    api.addApartment({ name: 'Flat' });
+    await page.goto('/');
+    await section(page, 'Costs');
+    await page.getByRole('button', { name: 'Add cost' }).click();
+    const sheet = page.getByRole('dialog', { name: 'Add cost' });
+    await Promise.all([page.waitForEvent('filechooser'), sheet.getByRole('button', { name: 'Receipt' }).click()]);
+    // A `capture` attribute makes phones open the camera and nothing else.
+    await expect(page.locator('input[type=file]')).not.toHaveAttribute('capture');
+  });
+
   test('does not enlarge a receipt photo that is already small', async ({ page, api }) => {
     const apt = api.addApartment({ name: 'Flat' });
     await page.clock.setFixedTime(new Date(`${YEAR}-12-15T12:00:00`));

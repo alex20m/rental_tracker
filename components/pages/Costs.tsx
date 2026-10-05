@@ -325,7 +325,6 @@ function CostForm({
             ref={fileRef}
             type="file"
             accept="image/*"
-            capture="environment"
             hidden
             onChange={(e) => pick(e.target.files?.[0])}
           />
