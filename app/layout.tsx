@@ -21,7 +21,7 @@ export const metadata: Metadata = {
     ],
     apple: { url: '/apple-touch-icon-180.png', sizes: '180x180', type: 'image/png' },
   },
-  appleWebApp: { capable: true, title: 'Rentals' },
+  appleWebApp: { capable: true, title: 'Rental Tracker' },
 };
 
 export const viewport: Viewport = {

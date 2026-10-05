@@ -1,6 +1,6 @@
 {
   "name": "Rental Tracker",
-  "short_name": "Rentals",
+  "short_name": "Rental Tracker",
   "description": "Track rent, costs and prepare your Finnish rental income tax declaration.",
   "start_url": "/",
   "scope": "/",
