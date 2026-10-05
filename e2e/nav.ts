@@ -64,7 +64,7 @@ export async function openSettings(page: Page) {
 }
 
 /** One topic of the apartment's settings, opened from the list. */
-export async function openTopic(page: Page, topic: 'Owners' | 'Property details' | 'Advanced') {
+export async function openTopic(page: Page, topic: 'Owners' | 'Property details' | 'Recurring expenses' | 'Advanced') {
   await openSettings(page);
   await page.getByRole('button', { name: new RegExp(`^${topic}`) }).click();
   await page.getByRole('heading', { name: topic, exact: true }).waitFor();

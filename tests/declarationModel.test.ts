@@ -24,6 +24,7 @@ const apartment = (settings: Partial<ApartmentView['settings']>, costs: CostEntr
   settings: { ...defaultSettings, name: 'Kauppakatu 12', address: 'Kauppakatu 12 B 7, Vaasa', ...settings },
   owners: pct === 100 ? [{ userId: 'u', email: 'u@example.test', sharePct: 100 }] : [{ userId: 'u', email: 'u@example.test', sharePct: pct }, { userId: 'v', email: 'v@example.test', sharePct: 100 - pct }],
   invites: [],
+  recurring: [],
   rents,
   costs,
   mySharePct: pct,

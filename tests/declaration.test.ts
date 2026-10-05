@@ -21,6 +21,7 @@ const apt: ApartmentView = {
     { userId: 'usr_b', email: 'b@example.test', sharePct: 75 },
   ],
   invites: [],
+  recurring: [],
   rents: [{ month: '2025-01', status: 'paid', amount: 800, receivedDate: '2025-01-03', note: '' }],
   costs: [{ id: 'c1', date: '2025-02-01', category: 'repairs', description: 'Tap "kitchen"', amount: 120, hasReceipt: true }],
   mySharePct: 25,

@@ -4,9 +4,10 @@ import { useState } from 'react';
 import type { ApartmentView, RentEntry, RentStatus } from '@/lib/domain/types';
 import { api } from '@/lib/client/api';
 import { computeTax, eur } from '@/lib/domain/tax';
+import { nextMonth } from '@/lib/domain/recurring';
 import { monthsShort, monthTitle } from '@/lib/ui/format';
 import { useI18n } from '@/components/I18nProvider';
-import { ErrorNote, Heading, Info, Money, Segmented, Sheet } from '@/components/ui';
+import { ErrorNote, Heading, Info, Money, Segmented, Sheet, Switch } from '@/components/ui';
 
 const todayIso = () => {
   const d = new Date();
@@ -93,6 +94,7 @@ function RentForm({
   const [date, setDate] = useState(entry?.receivedDate || todayIso());
   const [note, setNote] = useState(entry?.note ?? '');
   const [showNote, setShowNote] = useState(!!entry?.note);
+  const [repeat, setRepeat] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
 
@@ -109,6 +111,8 @@ function RentForm({
     }
   };
 
+  // The rent repeats as one entry per apartment: offered until there is one.
+  const repeats = status === 'paid' && !apt.recurring.some((r) => r.kind === 'rent');
   const save = () =>
     run(() =>
       api.putRent(apt.id, month, {
@@ -116,6 +120,7 @@ function RentForm({
         amount: status === 'paid' ? Number(amount) || 0 : 0,
         receivedDate: status === 'paid' ? date : '',
         note: note.trim(),
+        ...(repeats && repeat && { repeatMonthly: true }),
       }),
     );
   const remove = () => run(() => api.deleteRent(apt.id, month));
@@ -171,6 +176,14 @@ function RentForm({
         <button className="link" style={{ marginTop: 14 }} onClick={() => setShowNote(true)}>
           {t('rent.addNote')}
         </button>
+      )}
+      {repeats && (
+        <div style={{ marginTop: 12 }}>
+          <Switch checked={repeat} onChange={setRepeat}>
+            {t('recurring.repeat')}
+          </Switch>
+          {repeat && <p className="msg">{t('recurring.repeatInfo', { month: monthTitle(nextMonth(month), lang) })}</p>}
+        </div>
       )}
       <ErrorNote message={error} />
       <div className="sheet-foot">

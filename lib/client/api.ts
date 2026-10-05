@@ -50,6 +50,10 @@ const apt = (id: string) => `/api/apartments/${encodeURIComponent(id)}`;
 
 export type CostInput = { date: string; category: CostCategory; description: string; amount: number };
 export type RentInput = { status: RentStatus; amount: number; receivedDate: string; note: string };
+export type RecurringInput =
+  | { kind: 'cost'; category: CostCategory; description: string; amount: number; firstMonth: string }
+  | { kind: 'rent'; description: string; amount: number; firstMonth: string };
+export type RecurringPatch = { category?: CostCategory; description: string; amount: number };
 
 export const api = {
   me: () => call<{ userId: string; name: string; email: string; emailVerified: boolean }>('GET', '/api/me'),
@@ -59,15 +63,20 @@ export const api = {
   updateSettings: (id: string, patch: Partial<ApartmentSettings>) => call('PATCH', apt(id), patch),
   deleteApartment: (id: string) => call('DELETE', apt(id)),
 
-  putRent: (id: string, month: string, rent: RentInput) => call('PUT', `${apt(id)}/rents/${month}`, rent),
+  putRent: (id: string, month: string, rent: RentInput & { repeatMonthly?: boolean }) =>
+    call('PUT', `${apt(id)}/rents/${month}`, rent),
   deleteRent: (id: string, month: string) => call('DELETE', `${apt(id)}/rents/${month}`),
 
-  createCost: (id: string, cost: CostInput) => call<{ id: string }>('POST', `${apt(id)}/costs`, cost),
+  createCost: (id: string, cost: CostInput & { repeatMonthly?: boolean }) => call<{ id: string }>('POST', `${apt(id)}/costs`, cost),
   updateCost: (id: string, costId: string, cost: CostInput) => call('PUT', `${apt(id)}/costs/${costId}`, cost),
   deleteCost: (id: string, costId: string) => call('DELETE', `${apt(id)}/costs/${costId}`),
   receiptUrl: (id: string, costId: string) => `${apt(id)}/costs/${costId}/receipt`,
   putReceipt: (id: string, costId: string, dataUrl: string) => call('PUT', `${apt(id)}/costs/${costId}/receipt`, { dataUrl }),
   deleteReceipt: (id: string, costId: string) => call('DELETE', `${apt(id)}/costs/${costId}/receipt`),
+
+  createRecurring: (id: string, entry: RecurringInput) => call<{ id: string }>('POST', `${apt(id)}/recurring`, entry),
+  updateRecurring: (id: string, entryId: string, patch: RecurringPatch) => call('PUT', `${apt(id)}/recurring/${entryId}`, patch),
+  deleteRecurring: (id: string, entryId: string) => call('DELETE', `${apt(id)}/recurring/${entryId}`),
 
   invite: (id: string, email: string, sharePct: number) => call<{ id: string; emailSent: boolean }>('POST', `${apt(id)}/invites`, { email, sharePct }),
   revokeInvite: (id: string, inviteId: string) => call('DELETE', `${apt(id)}/invites/${inviteId}`),

@@ -119,11 +119,26 @@ export interface PendingInvite {
   sharePct: number;
 }
 
+/**
+ * A cost or the rent that books itself on the 1st of every month, from
+ * `nextMonth` on. What it has already booked are ordinary cost and rent
+ * entries; changing or deleting it leaves those as they are.
+ */
+export interface RecurringEntry {
+  id: string;
+  kind: 'cost' | 'rent';
+  category?: CostCategory; // costs only
+  description: string;
+  amount: number; // EUR a month
+  nextMonth: string; // YYYY-MM — the next month it will book
+}
+
 /** One apartment as one of its owners sees it. */
 export interface ApartmentView extends Ledger {
   id: string;
   owners: Owner[];
   invites: PendingInvite[];
+  recurring: RecurringEntry[];
   /** The viewer's own ownership share, in percent. */
   mySharePct: number;
 }
