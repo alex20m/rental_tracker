@@ -127,7 +127,7 @@ svg.i { width: 20px; height: 20px; flex: none; }
 .row .s, .row-btn .s { font-size: 14px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .row-btn > svg.i:last-child { color: var(--muted); width: 18px; height: 18px; }
 .todo { padding: 4px 16px; }
-.todo .row-btn:last-child { border-bottom: 0; }
+.todo .row-btn:last-child, .todo .row:last-child { border-bottom: 0; }
 .todo .dot { display: grid; place-items: center; width: 24px; height: 24px; border-radius: 99px; background: var(--warn-soft); color: var(--warn); flex: none; }
 .todo .dot svg.i { width: 16px; height: 16px; }
 .todo .dot.ok { background: var(--good-soft); color: var(--good); }
