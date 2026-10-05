@@ -6,6 +6,7 @@ import { api } from '@/lib/client/api';
 import { authClient } from '@/lib/client/authClient';
 import type { Account } from '@/components/RentalApp';
 import { useI18n } from '@/components/I18nProvider';
+import { InstallSection } from '@/components/InstallPopup';
 import LanguagePicker from '@/components/LanguagePicker';
 import ThemePicker from '@/components/ThemePicker';
 import { Avatar, ErrorNote, Heading, Icon, Info } from '@/components/ui';
@@ -73,6 +74,9 @@ export default function AccountPanel({ account }: { account: Account }) {
         </button>
         <Info about={t('menu.deleteAccountAbout')}>{t('menu.deleteAccountInfo')}</Info>
       </div>
+
+      {/* Last: it appears only after hydration, and anything above it would be pushed under a click. */}
+      <InstallSection />
 
       {deleting && (
         <div className="sheet-bg busy" role="alertdialog" aria-modal="true" aria-labelledby="deleting-title" aria-describedby="deleting-about">

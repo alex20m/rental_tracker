@@ -2,6 +2,8 @@ import type { Metadata, Viewport } from 'next';
 import type { ReactNode } from 'react';
 import { Geist } from 'next/font/google';
 import { I18nProvider } from '@/components/I18nProvider';
+import InstallPopup from '@/components/InstallPopup';
+import { INSTALL_PROMPT_SCRIPT } from '@/lib/pwa';
 import { THEME_INIT_SCRIPT } from '@/lib/ui/theme';
 import './globals.css';
 
@@ -30,9 +32,14 @@ export default function RootLayout({ children }: { children: ReactNode }) {
     <html lang="en" className={geist.variable} suppressHydrationWarning>
       <head>
         <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
+        {/* Catches Chromium's install prompt, which can fire long before React mounts. */}
+        <script dangerouslySetInnerHTML={{ __html: INSTALL_PROMPT_SCRIPT }} />
       </head>
       <body>
-        <I18nProvider>{children}</I18nProvider>
+        <I18nProvider>
+          {children}
+          <InstallPopup />
+        </I18nProvider>
       </body>
     </html>
   );

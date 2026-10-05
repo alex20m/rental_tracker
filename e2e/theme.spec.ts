@@ -1,5 +1,5 @@
 import { expect, test } from './fixtures';
-import { openAccount } from './nav';
+import { closeInstallPopup, openAccount } from './nav';
 
 const background = (page: import('@playwright/test').Page) =>
   page.evaluate(() => getComputedStyle(document.body).backgroundColor);
@@ -56,6 +56,7 @@ test.describe('theme', () => {
         });
       });
       await page.goto('/');
+      await closeInstallPopup(page);
       const account = await openAccount(page);
       await account.getByRole('radio', { name: 'Dark' }).click();
 

@@ -100,3 +100,15 @@ export async function openInfo(page: Page, name: string) {
   });
   await about.click();
 }
+
+/**
+ * Closes the install popup, which opens over any page in a browser that has not
+ * silenced it. The suite silences it through storage, so a test that disables
+ * storage has to dismiss it by hand.
+ */
+export async function closeInstallPopup(page: Page) {
+  const popup = page.getByRole('dialog', { name: 'Install Rental Tracker' });
+  await popup.waitFor();
+  await page.keyboard.press('Escape');
+  await popup.waitFor({ state: 'hidden' });
+}
