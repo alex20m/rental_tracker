@@ -34,14 +34,22 @@ function readInstallability(): Installability {
   return state.kind === 'manual' ? `manual:${state.platform}` : state.kind;
 }
 
-/** The prompt arriving and the app being installed are both announced on one event, from the script in <head>. */
-const subscribeToInstallability = (onChange: () => void) => {
+/**
+ * Two things change what this shows: the prompt arriving or the app being
+ * installed (both announced on one event by the script in <head>), and the
+ * "Don't show again" flag (a `storage` event, see `storeDismissed`).
+ */
+const subscribe = (onChange: () => void) => {
   window.addEventListener(INSTALL_PROMPT_EVENT, onChange);
-  return () => window.removeEventListener(INSTALL_PROMPT_EVENT, onChange);
+  window.addEventListener('storage', onChange);
+  return () => {
+    window.removeEventListener(INSTALL_PROMPT_EVENT, onChange);
+    window.removeEventListener('storage', onChange);
+  };
 };
 
 export function useInstallability(): Installability {
-  return useSyncExternalStore(subscribeToInstallability, readInstallability, () => '');
+  return useSyncExternalStore(subscribe, readInstallability, () => '');
 }
 
 /**
@@ -58,11 +66,6 @@ function readDismissed(): boolean {
     return false;
   }
 }
-
-const subscribeToDismissed = (onChange: () => void) => {
-  window.addEventListener('storage', onChange);
-  return () => window.removeEventListener('storage', onChange);
-};
 
 /**
  * A same-tab `setItem` fires no `storage` event (only other tabs hear it), so
@@ -88,10 +91,8 @@ async function replayPrompt() {
 }
 
 /** The offer itself: one tap where the browser allows it, the steps for this device where it does not. */
-export function InstallOffer() {
+export function InstallOffer({ state }: { state: Exclude<Installability, '' | 'installed'> }) {
   const { t } = useI18n();
-  const state = useInstallability();
-  if (state === '' || state === 'installed') return null;
 
   if (state === 'ready') {
     return (
@@ -123,7 +124,7 @@ export function InstallSection() {
   return (
     <section>
       <Heading>{t('install.settings')}</Heading>
-      <InstallOffer />
+      <InstallOffer state={state} />
     </section>
   );
 }
@@ -139,7 +140,7 @@ export function InstallSection() {
 export default function InstallPopup() {
   const { t } = useI18n();
   const state = useInstallability();
-  const dismissedForever = useSyncExternalStore(subscribeToDismissed, readDismissed, () => true);
+  const dismissedForever = useSyncExternalStore(subscribe, readDismissed, () => true);
   const [closedThisVisit, setClosedThisVisit] = useState(false);
 
   const open = state !== '' && state !== 'installed' && !dismissedForever && !closedThisVisit;
@@ -149,7 +150,7 @@ export default function InstallPopup() {
   return (
     <Sheet title={t('install.title')} onClose={() => setClosedThisVisit(true)}>
       <p className="install-lead">{t('install.lead')}</p>
-      <InstallOffer />
+      <InstallOffer state={state} />
       <div className="sheet-foot">
         <button type="button" className="btn" onClick={() => setClosedThisVisit(true)}>
           {t('install.notNow')}
