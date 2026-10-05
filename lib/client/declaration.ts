@@ -4,7 +4,7 @@ import { jsPDF } from 'jspdf';
 import JSZip from 'jszip';
 import { CATEGORIES } from '@/lib/domain/types';
 import type { ApartmentView } from '@/lib/domain/types';
-import { computeTax, ownerShare } from '@/lib/domain/tax';
+import { computeTax, ownerShare, round2 } from '@/lib/domain/tax';
 import type { OwnerShare, TaxResult } from '@/lib/domain/tax';
 import { declarationModel } from '@/lib/domain/declarationModel';
 import { fetchReceipt } from '@/lib/client/api';
@@ -150,7 +150,7 @@ const csvCell = (v: string | number) => `"${String(v).replace(/"/g, '""')}"`;
 /** The apartment's full ledger for the year; the share column is the owner's part of each amount. */
 export function buildCsv(apt: ApartmentView, year: number, sharePct: number, receiptNames: Map<string, string>): string {
   const y = String(year);
-  const part = (n: number) => Math.round(n * sharePct) / 100;
+  const part = (n: number) => round2((n * sharePct) / 100);
   const rows: (string | number)[][] = [
     ['date', 'type', 'category', 'description', 'amount_eur', `your_share_eur_${sharePct}pct`, 'receipt_file'],
   ];

@@ -73,7 +73,18 @@ export interface PortfolioTotals {
   deficitCredit: number;
 }
 
-export const round2 = (n: number) => Math.round((n + Number.EPSILON) * 100) / 100;
+/**
+ * Rounds to the cent, a half cent away from zero. A share or a rate of a
+ * two-decimal amount often lands exactly on a half cent (25 % of 1 200,10 is
+ * 300,025), which binary floating point stores a hair either side of; a plain
+ * Math.round then goes the wrong way about one time in eight. Fifteen
+ * significant digits is all a double holds exactly, so the noise is dropped
+ * before the rounding.
+ */
+export const round2 = (n: number) => {
+  const cents = Math.round(Number((Math.abs(n) * 100).toPrecision(15)));
+  return cents === 0 ? 0 : (Math.sign(n) * cents) / 100;
+};
 
 const yearOf = (date: string) => Number(date.slice(0, 4));
 

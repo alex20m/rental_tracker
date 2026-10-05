@@ -178,6 +178,11 @@ describe('the declaration for a flat in a housing company', () => {
     expect(solo.find((b) => b.type === 'h2' && b.text.startsWith('Income by month'))).toMatchObject({ columns: undefined });
   });
 
+  it('takes the cent right in the owner’s part of a month’s rent that lands on a half cent: half of 1 024,09 is 512,045', () => {
+    const odd = model(apartment({}, [], [paid('2025-01', 1024.09)], 50));
+    expect(odd.find((b) => b.type === 'amount' && b.left.startsWith('Jan'))).toMatchObject({ total: 1024.09, mine: 512.05 });
+  });
+
   it('says what is deducted over several years: this year’s part of each, and the inventory the law asks for', () => {
     const l = apartment({}, [
       cost({ category: 'improvement', date: '2024-05-01', amount: 3000, description: 'Balcony glazing' }),

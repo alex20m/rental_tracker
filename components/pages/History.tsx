@@ -1,7 +1,7 @@
 'use client';
 
 import type { ApartmentView } from '@/lib/domain/types';
-import { computeTax, deductionsOf, eur, ownerShare } from '@/lib/domain/tax';
+import { computeTax, deductionsOf, eur, ownerShare, round2 } from '@/lib/domain/tax';
 import { eurWhole } from '@/lib/ui/format';
 import { useI18n } from '@/components/I18nProvider';
 import type { Scope } from '@/components/RentalApp';
@@ -32,7 +32,7 @@ export default function History({ apt, thisYear, scope, onScope, onPick }: Props
       const tax = computeTax(apt, year);
       return { year, f: shared && scope === 'mine' ? ownerShare(tax, apt.mySharePct) : tax };
     });
-  const total = rows.reduce((sum, r) => sum + r.f.netIncome, 0);
+  const total = round2(rows.reduce((sum, r) => sum + r.f.netIncome, 0));
 
   return (
     <>

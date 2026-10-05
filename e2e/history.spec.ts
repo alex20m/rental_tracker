@@ -1,5 +1,5 @@
 import { expect, test } from './fixtures';
-import { coOwned, ledger, YEAR } from './data';
+import { coOwned, ledger, m, YEAR } from './data';
 import { section } from './nav';
 
 const earlier = (years: number) => ({
@@ -52,6 +52,22 @@ test.describe('history', () => {
 
     await expect(page.getByRole('listitem').nth(1)).toContainText('−300,00 €');
     await expect(page.getByTestId('history-total')).toHaveClass(/neg/);
+  });
+
+  test('shows years that net out to nothing as a total of zero, not as a loss of a fraction of a cent', async ({ page, api }) => {
+    // 0,30 − 0,20 − 0,10 is 0 on paper but −2.8e-17 added up as floating point numbers.
+    api.addApartment({ name: 'Flat' }, {
+      rents: [{ month: m(1), status: 'paid', amount: 0.3, receivedDate: `${m(1)}-03`, note: '' }],
+      costs: [
+        { id: 'c-a', date: `${YEAR - 1}-05-05`, category: 'repairs', description: '', amount: 0.2, hasReceipt: false },
+        { id: 'c-b', date: `${YEAR - 2}-05-05`, category: 'repairs', description: '', amount: 0.1, hasReceipt: false },
+      ],
+    });
+    await page.goto('/');
+    await section(page, 'History');
+
+    await expect(page.getByTestId('history-total')).toHaveText('0,00 €');
+    await expect(page.getByTestId('history-total')).not.toHaveClass(/neg/);
   });
 
   test('switches between your share and the whole apartment for a co-owned apartment', async ({ page, api }) => {
