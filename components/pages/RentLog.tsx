@@ -4,7 +4,7 @@ import { useState } from 'react';
 import type { ApartmentView, RentEntry, RentStatus } from '@/lib/domain/types';
 import { api } from '@/lib/client/api';
 import { computeTax, eur } from '@/lib/domain/tax';
-import { nextMonth } from '@/lib/domain/recurring';
+import { nextMonth, repeatDay } from '@/lib/domain/recurring';
 import { monthsShort, monthTitle } from '@/lib/ui/format';
 import { useI18n } from '@/components/I18nProvider';
 import { ErrorNote, Heading, Info, Money, Segmented, Sheet, Switch } from '@/components/ui';
@@ -182,7 +182,7 @@ function RentForm({
           <Switch checked={repeat} onChange={setRepeat}>
             {t('recurring.repeat')}
           </Switch>
-          {repeat && <p className="msg">{t('recurring.repeatInfo', { month: monthTitle(nextMonth(month), lang) })}</p>}
+          {repeat && <p className="msg">{t('recurring.repeatInfo', { day: repeatDay(date), month: monthTitle(nextMonth(month), lang) })}</p>}
         </div>
       )}
       <ErrorNote message={error} />

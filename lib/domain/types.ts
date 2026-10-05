@@ -120,7 +120,7 @@ export interface PendingInvite {
 }
 
 /**
- * A cost or the rent that books itself on the 1st of every month, from
+ * A cost or the rent that books itself on one day of every month, from
  * `nextMonth` on. What it has already booked are ordinary cost and rent
  * entries; changing or deleting it leaves those as they are.
  */
@@ -130,6 +130,7 @@ export interface RecurringEntry {
   category?: CostCategory; // costs only
   description: string;
   amount: number; // EUR a month
+  dayOfMonth: number; // 1–28
   nextMonth: string; // YYYY-MM — the next month it will book
 }
 
