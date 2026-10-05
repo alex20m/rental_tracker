@@ -15,7 +15,8 @@
  */
 
 import type { Page, Route } from '@playwright/test';
-import type { ApartmentSettings, ApartmentView, CostEntry, Owner, PendingInvite } from '../lib/domain/types';
+import type { ApartmentSettings, ApartmentView, CostEntry, Owner, PendingInvite, RecurringEntry } from '../lib/domain/types';
+import { nextMonth } from '../lib/domain/recurring';
 import { defaultSettings } from '../lib/domain/types';
 
 export const ME = { userId: 'usr_me', email: 'me@example.test' };
@@ -60,7 +61,7 @@ export class FakeApi {
   /** An apartment as the viewer sees it, owned by them alone unless `owners` says otherwise. */
   addApartment(
     settings: Partial<ApartmentSettings> = {},
-    more: Partial<Pick<ApartmentView, 'owners' | 'invites' | 'rents' | 'costs' | 'mySharePct'>> = {},
+    more: Partial<Pick<ApartmentView, 'owners' | 'invites' | 'rents' | 'costs' | 'recurring' | 'mySharePct'>> = {},
   ): ApartmentView {
     const id = uuid();
     const apt: ApartmentView = {
@@ -68,6 +69,7 @@ export class FakeApi {
       settings: { ...defaultSettings, ...settings },
       owners: [{ ...ME, sharePct: 100 }],
       invites: [],
+      recurring: [],
       rents: [],
       costs: [],
       mySharePct: 100,
@@ -75,6 +77,20 @@ export class FakeApi {
     };
     this.apartments.set(id, apt);
     return apt;
+  }
+
+  /** Books what recurring entries have come due, up to this month, as the real server does when an apartment is opened. */
+  private bookDue(apt: ApartmentView) {
+    const current = new Date().toISOString().slice(0, 7);
+    for (const r of apt.recurring) {
+      for (; r.nextMonth <= current; r.nextMonth = nextMonth(r.nextMonth)) {
+        if (r.kind === 'cost') {
+          apt.costs.push({ id: uuid(), date: `${r.nextMonth}-01`, category: r.category!, description: r.description, amount: r.amount, hasReceipt: false });
+        } else if (!apt.rents.some((x) => x.month === r.nextMonth)) {
+          apt.rents.push({ month: r.nextMonth, status: 'paid', amount: r.amount, receivedDate: `${r.nextMonth}-01`, note: '' });
+        }
+      }
+    }
   }
 
   callsTo(prefix: string) {
@@ -176,7 +192,10 @@ export class FakeApi {
     };
 
     if (!sub) {
-      if (method === 'GET') return { status: 200, body: apt };
+      if (method === 'GET') {
+        this.bookDue(apt);
+        return { status: 200, body: apt };
+      }
       if (method === 'PATCH') {
         apt.settings = { ...apt.settings, ...(body as Partial<ApartmentSettings>) };
         return ok;
@@ -191,13 +210,52 @@ export class FakeApi {
     }
     if (sub === 'rents' && subId) {
       apt.rents = apt.rents.filter((r) => r.month !== subId);
-      if (method === 'PUT') apt.rents.push({ month: subId, ...(body as Omit<ApartmentView['rents'][number], 'month'>) });
+      if (method === 'PUT') {
+        const { repeatMonthly, ...rent } = body as Omit<ApartmentView['rents'][number], 'month'> & { repeatMonthly?: boolean };
+        apt.rents.push({ month: subId, ...rent });
+        if (repeatMonthly && rent.status === 'paid' && !apt.recurring.some((r) => r.kind === 'rent')) {
+          apt.recurring.push({ id: uuid(), kind: 'rent', description: '', amount: rent.amount, nextMonth: nextMonth(subId) });
+        }
+      }
       return ok;
+    }
+    if (sub === 'recurring') {
+      if (!subId && method === 'POST') {
+        const input = body as unknown as Omit<RecurringEntry, 'id' | 'nextMonth'> & { firstMonth: string };
+        if (input.kind === 'rent' && apt.recurring.some((r) => r.kind === 'rent')) {
+          return { status: 409, body: { error: 'The rent already repeats every month. Change that one instead.' } };
+        }
+        const { firstMonth, ...rest } = input;
+        const entry: RecurringEntry = { id: uuid(), ...rest, nextMonth: firstMonth };
+        apt.recurring.push(entry);
+        return { status: 201, body: { id: entry.id } };
+      }
+      const entry = apt.recurring.find((r) => r.id === subId);
+      if (!entry) return notFound;
+      if (method === 'PUT') {
+        Object.assign(entry, body);
+        return ok;
+      }
+      if (method === 'DELETE') {
+        apt.recurring = apt.recurring.filter((r) => r !== entry);
+        return ok;
+      }
     }
     if (sub === 'costs') {
       if (!subId && method === 'POST') {
-        const cost: CostEntry = { id: uuid(), ...(body as Omit<CostEntry, 'id' | 'hasReceipt'>), hasReceipt: false };
+        const { repeatMonthly, ...entry } = body as Omit<CostEntry, 'id' | 'hasReceipt'> & { repeatMonthly?: boolean };
+        const cost: CostEntry = { id: uuid(), ...entry, hasReceipt: false };
         apt.costs.push(cost);
+        if (repeatMonthly) {
+          apt.recurring.push({
+            id: uuid(),
+            kind: 'cost',
+            category: cost.category,
+            description: cost.description,
+            amount: cost.amount,
+            nextMonth: nextMonth(cost.date.slice(0, 7)),
+          });
+        }
         return { status: 201, body: { id: cost.id } };
       }
       const cost = apt.costs.find((c) => c.id === subId);

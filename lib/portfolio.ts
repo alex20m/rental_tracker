@@ -22,9 +22,11 @@ import type {
   Owner,
   PendingInvite,
   PortfolioItem,
+  RecurringEntry,
   RentEntry,
   RentStatus,
 } from '@/lib/domain/types';
+import { nextMonth } from '@/lib/domain/recurring';
 
 /** Just enough of a Postgres client: Neon's HTTP driver in the app, PGlite in tests. */
 export interface Queryable {
@@ -38,6 +40,17 @@ export interface Actor {
 
 export type CostInput = Omit<CostEntry, 'id' | 'hasReceipt'>;
 export type RentInput = Omit<RentEntry, 'month'>;
+export type RecurringInput = {
+  kind: 'cost' | 'rent';
+  category?: CostCategory;
+  description: string;
+  amount: number;
+  /** The first month to book, YYYY-MM; any month up to the current one books the months since. */
+  firstMonth: string;
+};
+export type RecurringPatch = { category?: CostCategory; description: string; amount: number };
+/** `repeat`: also book the same again every month, from the month after this one. */
+export type RepeatOption = { repeat?: boolean };
 export type Receipt = { contentType: string; base64: string };
 export type ShareAssignment = {
   owners: { userId: string; sharePct: number }[];
@@ -98,7 +111,7 @@ const toDbValue = (key: keyof ApartmentSettings, value: unknown) =>
 /** Ownership shares are compared in hundredths, never as floats. */
 const cents = (pct: number) => Math.round(pct * 100);
 
-export function portfolio(db: Queryable) {
+export function portfolio(db: Queryable, clock: () => Date = () => new Date()) {
   async function myShare(userId: string, apartmentId: string): Promise<number | null> {
     if (!isUuid(apartmentId)) return null;
     const rows = await db.query<{ share: number }>(
@@ -106,6 +119,50 @@ export function portfolio(db: Queryable) {
       [apartmentId, userId],
     );
     return rows[0]?.share ?? null;
+  }
+
+  /**
+   * Books every month a recurring entry has come due, up to the current one
+   * (UTC, so no one is booked into a month that has not begun for them). Safe to
+   * repeat and to run concurrently: a month already booked is skipped, a month
+   * the user deleted stays deleted because the entry has moved on, and a rent
+   * month the user logged themselves is left as they logged it.
+   */
+  async function bookDue(apartmentId: string) {
+    const current = clock().toISOString().slice(0, 7);
+    const months = `generate_series(to_date(r.next_month || '-01', 'YYYY-MM-DD'), to_date($2 || '-01', 'YYYY-MM-DD'), interval '1 month') m`;
+    await db.query(
+      `insert into costs (apartment_id, date, category, description, amount, recurring_id)
+       select r.apartment_id, m::date, r.category, r.description, r.amount, r.id
+         from recurring_entries r, ${months}
+        where r.apartment_id = $1 and r.kind = 'cost' and r.next_month <= $2
+       on conflict do nothing`,
+      [apartmentId, current],
+    );
+    await db.query(
+      `insert into rents (apartment_id, month, status, amount, received_date)
+       select r.apartment_id, to_char(m, 'YYYY-MM'), 'paid', r.amount, m::date
+         from recurring_entries r, ${months}
+        where r.apartment_id = $1 and r.kind = 'rent' and r.next_month <= $2
+       on conflict do nothing`,
+      [apartmentId, current],
+    );
+    await db.query(`update recurring_entries set next_month = $3 where apartment_id = $1 and next_month <= $2`, [
+      apartmentId,
+      current,
+      nextMonth(current),
+    ]);
+  }
+
+  async function addRecurring(apartmentId: string, entry: RecurringInput): Promise<string | 'rent_exists'> {
+    const rows = await db.query<{ id: string }>(
+      `insert into recurring_entries (apartment_id, kind, category, description, amount, next_month)
+       values ($1, $2, $3, $4, $5, $6)
+       on conflict do nothing
+       returning id`,
+      [apartmentId, entry.kind, entry.kind === 'cost' ? entry.category : null, entry.description, entry.amount, entry.firstMonth],
+    );
+    return rows[0]?.id ?? 'rent_exists';
   }
 
   const owns = async (userId: string, apartmentId: string) => (await myShare(userId, apartmentId)) !== null;
@@ -168,8 +225,9 @@ export function portfolio(db: Queryable) {
     async get(userId: string, apartmentId: string): Promise<ApartmentView | null> {
       const share = await myShare(userId, apartmentId);
       if (share === null) return null;
+      await bookDue(apartmentId);
 
-      const [settingsRows, owners, invites, rents, costs] = await Promise.all([
+      const [settingsRows, owners, invites, rents, costs, recurring] = await Promise.all([
         db.query<ApartmentSettings>(`select ${SETTINGS_COLUMNS} from apartments a where a.id = $1`, [apartmentId]),
         db.query<Owner>(
           `select user_id as "userId", email, share_pct::float8 as "sharePct"
@@ -194,11 +252,20 @@ export function portfolio(db: Queryable) {
              from costs c where c.apartment_id = $1 order by c.date, c.created_at`,
           [apartmentId],
         ),
+        db.query<RecurringEntry>(
+          // Rent first, then costs in the order they were added.
+          `select id, kind, category, description, amount::float8 as amount, next_month as "nextMonth"
+             from recurring_entries where apartment_id = $1 order by kind desc, created_at, id`,
+          [apartmentId],
+        ),
       ]);
       const settings = settingsRows[0];
       if (!settings) return null;
 
-      return { id: apartmentId, settings, owners, invites, rents, costs, mySharePct: share };
+      // A cost has a category and the rent has none; leave the key out rather than send null.
+      for (const r of recurring) if (r.category === null) delete r.category;
+
+      return { id: apartmentId, settings, owners, invites, rents, costs, recurring, mySharePct: share };
     },
 
     async updateSettings(userId: string, apartmentId: string, patch: Partial<ApartmentSettings>): Promise<boolean> {
@@ -229,7 +296,13 @@ export function portfolio(db: Queryable) {
       return rows.length ? 'deleted' : 'has_co_owners';
     },
 
-    async putRent(userId: string, apartmentId: string, month: string, rent: RentInput): Promise<boolean> {
+    async putRent(
+      userId: string,
+      apartmentId: string,
+      month: string,
+      rent: RentInput,
+      { repeat }: RepeatOption = {},
+    ): Promise<boolean> {
       if (!(await owns(userId, apartmentId))) return false;
       const paid = rent.status === 'paid';
       await db.query(
@@ -240,6 +313,15 @@ export function portfolio(db: Queryable) {
                received_date = excluded.received_date, note = excluded.note`,
         [apartmentId, month, rent.status, paid ? rent.amount : 0, paid ? rent.receivedDate : null, rent.note],
       );
+      // Only a month that was paid has an amount to repeat. If rent already repeats, that stays as it is.
+      if (repeat && paid) {
+        await addRecurring(apartmentId, {
+          kind: 'rent',
+          description: '',
+          amount: rent.amount,
+          firstMonth: nextMonth(month),
+        });
+      }
       return true;
     },
 
@@ -249,14 +331,65 @@ export function portfolio(db: Queryable) {
       return true;
     },
 
-    async createCost(userId: string, apartmentId: string, cost: CostInput): Promise<string | null> {
+    async createCost(
+      userId: string,
+      apartmentId: string,
+      cost: CostInput,
+      { repeat }: RepeatOption = {},
+    ): Promise<string | null> {
       if (!(await owns(userId, apartmentId))) return null;
       const rows = await db.query<{ id: string }>(
         `insert into costs (apartment_id, date, category, description, amount, spread_years)
          values ($1, $2, $3, $4, $5, $6) returning id`,
         [apartmentId, cost.date, cost.category, cost.description, cost.amount, cost.spreadYears ?? 10],
       );
+      if (repeat) {
+        await addRecurring(apartmentId, {
+          kind: 'cost',
+          category: cost.category,
+          description: cost.description,
+          amount: cost.amount,
+          firstMonth: nextMonth(cost.date.slice(0, 7)),
+        });
+      }
       return rows[0]!.id;
+    },
+
+    /** Starts booking a cost or the rent every month. 'rent_exists': the apartment's rent already repeats. */
+    async createRecurring(
+      userId: string,
+      apartmentId: string,
+      entry: RecurringInput,
+    ): Promise<string | 'rent_exists' | null> {
+      if (!(await owns(userId, apartmentId))) return null;
+      return addRecurring(apartmentId, entry);
+    },
+
+    /** Changes what the months not booked yet will book. */
+    async updateRecurring(
+      userId: string,
+      apartmentId: string,
+      entryId: string,
+      patch: RecurringPatch,
+    ): Promise<boolean> {
+      if (!isUuid(entryId) || !(await owns(userId, apartmentId))) return false;
+      const rows = await db.query(
+        `update recurring_entries
+            set category = case when kind = 'cost' then coalesce($3, category) end, description = $4, amount = $5
+          where id = $1 and apartment_id = $2 returning id`,
+        [entryId, apartmentId, patch.category ?? null, patch.description, patch.amount],
+      );
+      return rows.length > 0;
+    },
+
+    /** Stops the booking. What it booked so far stays. */
+    async deleteRecurring(userId: string, apartmentId: string, entryId: string): Promise<boolean> {
+      if (!isUuid(entryId) || !(await owns(userId, apartmentId))) return false;
+      const rows = await db.query('delete from recurring_entries where id = $1 and apartment_id = $2 returning id', [
+        entryId,
+        apartmentId,
+      ]);
+      return rows.length > 0;
     },
 
     async updateCost(userId: string, apartmentId: string, costId: string, cost: CostInput): Promise<boolean> {

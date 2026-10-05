@@ -6,7 +6,8 @@ import { CATEGORIES, COST_CATEGORIES } from '@/lib/domain/types';
 import { api, compressImage } from '@/lib/client/api';
 import { computeTax, deductionOf, eur, improvementYears, mileageAmount } from '@/lib/domain/tax';
 import { rulesFor } from '@/lib/domain/taxRules';
-import { shortDate } from '@/lib/ui/format';
+import { RECURRING_CATEGORIES, nextMonth } from '@/lib/domain/recurring';
+import { monthTitle, shortDate } from '@/lib/ui/format';
 import { ruleParams } from '@/lib/ui/ruleParams';
 import { useI18n } from '@/components/I18nProvider';
 import { ErrorNote, Icon, Info, Label, Money, Sheet, Switch } from '@/components/ui';
@@ -138,6 +139,7 @@ function CostForm({
   const [spreadYears, setSpreadYears] = useState(cost?.spreadYears ?? rules.improvement.maxYears);
   const [newImage, setNewImage] = useState<string>();
   const [removeImage, setRemoveImage] = useState(false);
+  const [repeat, setRepeat] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const fileRef = useRef<HTMLInputElement>(null);
@@ -172,9 +174,10 @@ function CostForm({
   const save = () =>
     run(async () => {
       const entry = { date, category, description: description.trim(), amount: Number(amount), spreadYears };
+      const repeatMonthly = !cost && repeats && repeat;
       const id = cost
         ? (await api.updateCost(apt.id, cost.id, entry), cost.id)
-        : (await api.createCost(apt.id, entry)).id;
+        : (await api.createCost(apt.id, repeatMonthly ? { ...entry, repeatMonthly } : entry)).id;
       if (newImage) await api.putReceipt(apt.id, id, newImage);
       else if (removeImage && cost?.hasReceipt) await api.deleteReceipt(apt.id, id);
     });
@@ -182,6 +185,8 @@ function CostForm({
   const remove = () => run(() => api.deleteCost(apt.id, cost!.id));
 
   const cat = CATEGORIES[category];
+  // Only a new cost can start repeating, and only one that is paid in full the year it falls.
+  const repeats = !cost && RECURRING_CATEGORIES.includes(category);
   const how = deductionOf({ category, amount: Number(amount), spreadYears, date }, apt.settings);
   const params = { ...ruleParams(costYear, lang), year: costYear };
   // Only an improvement of a flat is spread over years; a property's joins the building's cost.
@@ -351,6 +356,15 @@ function CostForm({
               {t('common.remove')}
             </button>
           </div>
+        </div>
+      )}
+
+      {repeats && (
+        <div style={{ marginTop: 12 }}>
+          <Switch checked={repeat} onChange={setRepeat}>
+            {t('recurring.repeat')}
+          </Switch>
+          {repeat && <p className="msg">{t('recurring.repeatInfo', { month: monthTitle(nextMonth(date.slice(0, 7)), lang) })}</p>}
         </div>
       )}
 
