@@ -115,8 +115,13 @@ export function InstallOffer({ state }: { state: Exclude<Installability, '' | 'i
     <>
       <h3 className="install-how">{t(guide.title)}</h3>
       <ol className="install-steps">
-        {guide.steps.map((step) => (
-          <li key={step}>{t(step)}</li>
+        {guide.steps.map(({ text, icon }) => (
+          <li key={text}>
+            <span className="install-icon" data-icon={icon}>
+              {Icon[icon]}
+            </span>
+            <span>{t(text)}</span>
+          </li>
         ))}
       </ol>
     </>

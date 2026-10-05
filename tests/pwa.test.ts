@@ -67,8 +67,19 @@ describe('manual install steps', () => {
     const messages = { en, sv, fi }[lang] as Record<string, string>;
     for (const guide of Object.values(MANUAL_STEPS)) {
       expect(guide.steps).toHaveLength(3);
-      for (const key of [guide.title, ...guide.steps]) expect(messages[key]).toBeTruthy();
+      for (const key of [guide.title, ...guide.steps.map((step) => step.text)]) expect(messages[key]).toBeTruthy();
     }
+  });
+});
+
+describe('manual install icons', () => {
+  it('shows the Share button first on iOS, where the whole route starts from it', () => {
+    expect(MANUAL_STEPS.ios.steps[0]).toEqual({ text: 'install.ios.step1', icon: 'share' });
+  });
+
+  it('shows the ⋮ menu on Android and the address-bar install icon on a desktop', () => {
+    expect(MANUAL_STEPS.android.steps[0]?.icon).toBe('dots');
+    expect(MANUAL_STEPS.desktop.steps[0]?.icon).toBe('installDesktop');
   });
 });
 

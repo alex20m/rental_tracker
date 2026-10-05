@@ -32,6 +32,7 @@ test.describe('install popup', () => {
     await expect(popup(page)).toBeVisible();
     await expect(popup(page).getByRole('heading', { name: 'Install on this computer' })).toBeVisible();
     await expect(popup(page).getByText('Look for the install icon at the end of the address bar.')).toBeVisible();
+    await expect(popup(page).locator('li', { hasText: 'install icon' }).locator('[data-icon="installDesktop"] svg')).toBeVisible();
   });
 
   test('also opens on the sign-in page, before anyone has an account', async ({ page, api }) => {
@@ -149,6 +150,9 @@ test.describe('install popup', () => {
 
       await expect(popup(page).getByText('Tap the Share button in Safari.')).toBeVisible();
       await expect(popup(page).getByText('Scroll down and choose “Add to Home Screen”.')).toBeVisible();
+      // The button to press is drawn, not just named.
+      await expect(popup(page).locator('li', { hasText: 'Tap the Share button' }).locator('[data-icon="share"] svg')).toBeVisible();
+      await expect(popup(page).locator('li', { hasText: 'Add to Home Screen' }).locator('[data-icon="addToHome"] svg')).toBeVisible();
     });
   });
 
@@ -160,6 +164,8 @@ test.describe('install popup', () => {
       await page.goto('/');
 
       await expect(popup(page).getByText('Choose “Install app” or “Add to Home screen”.')).toBeVisible();
+      await expect(popup(page).locator('li', { hasText: '⋮ menu' }).locator('[data-icon="dots"] svg')).toBeVisible();
+      await expect(popup(page).locator('li', { hasText: 'Install app' }).locator('[data-icon="installPhone"] svg')).toBeVisible();
     });
   });
 
