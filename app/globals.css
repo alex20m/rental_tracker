@@ -209,8 +209,8 @@ input[type="date"] { display: block; appearance: none; -webkit-appearance: none;
 
 /* ── Sheet ── a dialog centred on screen at every size ── */
 .sheet-bg { position: fixed; inset: 0; z-index: 20; display: flex; align-items: center; justify-content: center; padding: 16px; background: rgba(8, 12, 14, 0.5); animation: fade 0.15s ease-out; }
-.sheet { width: 100%; max-width: 560px; max-height: calc(100dvh - 32px); overflow-y: auto; overflow-x: hidden; background: var(--bg); border-radius: 20px; padding: 8px 20px 20px; animation: rise 0.2s ease-out; outline: none; scroll-padding-top: 64px; }
-.sheet-head { position: sticky; top: 0; z-index: 1; display: flex; align-items: center; justify-content: space-between; padding: 4px 0 2px; background: var(--bg); }
+.sheet { width: 100%; max-width: 560px; max-height: calc(100dvh - 32px); overflow-y: auto; overflow-x: hidden; background: var(--bg); border-radius: 20px; padding: 0 20px 20px; animation: rise 0.2s ease-out; outline: none; scroll-padding-top: 64px; }
+.sheet-head { position: sticky; top: 0; z-index: 1; display: flex; align-items: center; justify-content: space-between; padding: 12px 0 2px; background: var(--bg); }
 .sheet-head h3 { font-size: 20px; font-weight: 650; letter-spacing: -0.015em; }
 .install-lead { margin: 8px 0 16px; color: var(--text-2); }
 .install-how { margin: 0 0 6px; font-size: 16px; font-weight: 650; }
