@@ -322,6 +322,14 @@ place.
 **`DATABASE_URL is not set`** — `npx vercel env pull .env.local`, after the
 integration was added.
 
+**A merge to `main` did not change the live site** — deploys come from the
+platform's Git integration, not from `.github/workflows/`, so a green or missing
+"Main" check says nothing about them. Open the project's Deployments in Vercel
+(`npx vercel ls`) and find the production deployment for the merge commit: a
+failed build (the migration in `vercel.json` runs first, and `&&` stops the build
+if it fails) leaves the previous deployment serving. Fix the cause, or redeploy
+with `npx vercel redeploy <deployment-url>`.
+
 **`/api/health` says `authConfigured: false` on a deployment** — the variables
 exist but the deployment predates them. Redeploy.
 
