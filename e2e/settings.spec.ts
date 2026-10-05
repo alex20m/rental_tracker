@@ -488,4 +488,13 @@ test.describe('changes that race other people', () => {
 
     await expect(page).toHaveURL(/\/sign-in$/);
   });
+
+  test('lines up the purchase date and purchase price fields although only the price label has an info icon', async ({ page, api }) => {
+    api.addApartment({ name: 'Flat' });
+    await page.goto('/');
+    await openTopic(page, 'Advanced');
+    const date = await page.getByLabel('Purchase date').boundingBox();
+    const price = await page.getByLabel('Purchase price (€)').boundingBox();
+    expect(price!.y).toBe(date!.y);
+  });
 });
