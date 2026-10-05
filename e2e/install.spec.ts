@@ -35,9 +35,15 @@ test.describe('install popup', () => {
     await expect(popup(page).locator('li', { hasText: 'install icon' }).locator('[data-icon="installDesktop"] svg')).toBeVisible();
   });
 
-  test('also opens on the sign-in page, before anyone has an account', async ({ page, api }) => {
-    api.signedIn = false;
+  test('stays off the sign-in page, and opens once the person has signed in', async ({ page, api }) => {
+    api.accounts.set('me@example.test', { password: 'correct horse', verified: true, userId: 'usr_me' });
     await page.goto('/sign-in');
+    await expect(page.getByRole('heading', { name: 'Sign in' })).toBeVisible();
+    await expect(popup(page)).toBeHidden();
+
+    await page.getByLabel('Email', { exact: true }).fill('me@example.test');
+    await page.getByLabel('Password').fill('correct horse');
+    await page.getByRole('button', { name: 'Sign in' }).click();
 
     await expect(popup(page)).toBeVisible();
   });
@@ -144,14 +150,14 @@ test.describe('install popup', () => {
   test.describe('on an iPhone', () => {
     test.use({ userAgent: IPHONE_UA });
 
-    test('says where the Share button is, since Safari has no install prompt', async ({ page, api }) => {
+    test('says where the Share button is, since iOS browsers have no install prompt', async ({ page, api }) => {
       api.addApartment({ name: 'Flat' });
       await page.goto('/');
 
-      await expect(popup(page).getByText('Tap the Share button in Safari.')).toBeVisible();
+      await expect(popup(page).getByText('Tap the Share icon in your browser’s toolbar or menu.')).toBeVisible();
       await expect(popup(page).getByText('Scroll down and choose “Add to Home Screen”.')).toBeVisible();
       // The button to press is drawn, not just named.
-      await expect(popup(page).locator('li', { hasText: 'Tap the Share button' }).locator('[data-icon="share"] svg')).toBeVisible();
+      await expect(popup(page).locator('li', { hasText: 'Share icon' }).locator('[data-icon="share"] svg')).toBeVisible();
       await expect(popup(page).locator('li', { hasText: 'Add to Home Screen' }).locator('[data-icon="addToHome"] svg')).toBeVisible();
     });
   });

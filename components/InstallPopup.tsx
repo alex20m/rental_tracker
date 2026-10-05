@@ -16,8 +16,12 @@ import {
   type Platform,
 } from '@/lib/pwa';
 
-/** `''` is what the server sees: none of this is knowable without a browser, and guessing would flash the wrong thing. */
-type Installability = '' | 'installed' | 'ready' | `manual:${Platform}`;
+/**
+ * Nothing here is knowable without a browser, so these hooks have no server
+ * snapshot: they are only ever rendered by the signed-in app after it has loaded
+ * in the browser, never on the server.
+ */
+type Installability = 'installed' | 'ready' | `manual:${Platform}`;
 
 // The script in <head> sets this to null before anything else runs, so it is never undefined.
 const parkedPrompt = () => (window as unknown as Record<string, BeforeInstallPromptEvent | null>)[INSTALL_PROMPT_KEY];
@@ -51,17 +55,14 @@ const subscribe = (onChange: () => void) => {
 };
 
 export function useInstallability(): Installability {
-  return useSyncExternalStore(subscribe, readInstallability, () => '');
+  return useSyncExternalStore(subscribe, readInstallability);
 }
 
 /** What "Don't show again" falls back to when storage cannot hold it: it still means the rest of this visit. */
 let dismissedThisSession = false;
 
 /**
- * Whether "Don't show again" was ever pressed. The server snapshot says
- * "dismissed": a popup that flashes open for someone who told it to stop is a
- * worse bug than one that takes a render longer to appear for everyone else.
- * `localStorage` throws in a browser with site data blocked; that reads as
+ * Whether "Don't show again" was ever pressed. `localStorage` throws in a browser with site data blocked; that reads as
  * "not dismissed", the safe direction to fail in.
  */
 function readDismissed(): boolean {
@@ -98,7 +99,7 @@ async function replayPrompt() {
 }
 
 /** The offer itself: one tap where the browser allows it, the steps for this device where it does not. */
-export function InstallOffer({ state }: { state: Exclude<Installability, '' | 'installed'> }) {
+export function InstallOffer({ state }: { state: Exclude<Installability, 'installed'> }) {
   const { t } = useI18n();
 
   if (state === 'ready') {
@@ -132,7 +133,7 @@ export function InstallOffer({ state }: { state: Exclude<Installability, '' | 'i
 export function InstallSection() {
   const { t } = useI18n();
   const state = useInstallability();
-  if (state === '' || state === 'installed') return null;
+  if (state === 'installed') return null;
   return (
     <section>
       <Heading>{t('install.settings')}</Heading>
@@ -152,10 +153,10 @@ export function InstallSection() {
 export default function InstallPopup() {
   const { t } = useI18n();
   const state = useInstallability();
-  const dismissedForever = useSyncExternalStore(subscribe, readDismissed, () => true);
+  const dismissedForever = useSyncExternalStore(subscribe, readDismissed);
   const [closedThisVisit, setClosedThisVisit] = useState(false);
 
-  const open = state !== '' && state !== 'installed' && !dismissedForever && !closedThisVisit;
+  const open = state !== 'installed' && !dismissedForever && !closedThisVisit;
 
   if (!open) return null;
 

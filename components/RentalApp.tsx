@@ -15,6 +15,7 @@ import Tax from '@/components/pages/Tax';
 import History from '@/components/pages/History';
 import SettingsPage from '@/components/pages/SettingsPage';
 import AccountPage from '@/components/pages/AccountPage';
+import InstallPopup from '@/components/InstallPopup';
 
 export type Tab = 'home' | 'rent' | 'costs' | 'tax' | 'history' | 'settings' | 'portfolio' | 'account';
 /** Where a tap can lead: a page. */
@@ -331,6 +332,9 @@ export default function RentalApp() {
         apartment={items.length > 0 && selectedId ? aptName : null}
         hasApartments={items.length > 0}
       />
+
+      {/* Only for someone signed in and looking at their apartments, never on the sign-in page. */}
+      <InstallPopup />
     </div>
   );
 }

@@ -3,7 +3,7 @@
  *
  * The browsers disagree about this more than any other feature here. Chromium
  * fires `beforeinstallprompt`, which can be saved and replayed from a button of
- * our own. Safari fires nothing and exposes no API: on iOS the only route is
+ * our own. Safari fires nothing and exposes no API (and every iOS browser is WebKit underneath): on iOS the only route is
  * Share ▸ Add to Home Screen, a menu item almost nobody finds by accident.
  *
  * So the rule is that the offer is always visible somewhere, and only its
