@@ -10,6 +10,7 @@ import { rulesFor } from '@/lib/domain/taxRules';
 import { ruleParams } from '@/lib/ui/ruleParams';
 import { isWholeApartment, shareTotal } from '@/lib/domain/shares';
 import { advancedChoices } from '@/lib/ui/advancedChoices';
+import Recurring from '@/components/pages/Recurring';
 import { Avatar, ErrorNote, Heading, Icon, Info, Label, Sheet, Switch } from '@/components/ui';
 import type { Account } from '@/components/RentalApp';
 import { useI18n } from '@/components/I18nProvider';
@@ -24,7 +25,7 @@ type Props = {
   onGone: () => Promise<void>;
 };
 
-type View = 'owners' | 'details' | 'advanced';
+type View = 'owners' | 'details' | 'recurring' | 'advanced';
 
 /**
  * Everything adjustable about this one apartment, as a short list: each row
@@ -34,7 +35,7 @@ type View = 'owners' | 'details' | 'advanced';
  * settings are kept while moving between topics and saved together from one bar.
  */
 export default function SettingsPage({ apt, year, account, onChanged, onGone }: Props) {
-  const { t } = useI18n();
+  const { t, tn } = useI18n();
   const [view, setView] = useState<View | null>(null);
   const [draft, setDraft] = useState<ApartmentSettings>(apt.settings);
   // Functional, so two changes made in one handler (a kind of building and its rate) both stick.
@@ -53,6 +54,18 @@ export default function SettingsPage({ apt, year, account, onChanged, onGone }: 
           info={<Info about={t('settings.ownersAbout')}>{t('settings.ownersInfo')}</Info>}
         />
         <Owners key={`owners-${apt.id}`} apt={apt} account={account} onChanged={onChanged} onGone={onGone} />
+      </>
+    );
+  }
+  if (view === 'recurring') {
+    return (
+      <>
+        <SubPage
+          title={t('settings.recurring')}
+          onBack={back}
+          info={<Info about={t('settings.recurringAbout')}>{t('settings.recurringInfo')}</Info>}
+        />
+        <Recurring key={`recurring-${apt.id}`} apt={apt} onChanged={onChanged} />
       </>
     );
   }
@@ -102,6 +115,12 @@ export default function SettingsPage({ apt, year, account, onChanged, onGone }: 
                 Icon.building,
                 t('settings.details'),
                 saved.address || t(`settings.type.${saved.propertyType}`),
+              ],
+              [
+                'recurring',
+                Icon.rent,
+                t('settings.recurring'),
+                apt.recurring.length ? tn('settings.recurringCount', apt.recurring.length) : t('settings.recurringNone'),
               ],
               ['advanced', Icon.stack, t('settings.advanced'), advanced],
             ] as const

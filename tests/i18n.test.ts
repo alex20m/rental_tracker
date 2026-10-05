@@ -102,6 +102,7 @@ describe('the checklist in another language', () => {
     costs: [],
     owners: [{ userId: 'u1', email: 'me@example.test', sharePct: 100 }],
     invites: [],
+    recurring: [],
     mySharePct: 100,
   };
 

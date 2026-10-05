@@ -6,6 +6,7 @@
 
 import { z } from 'zod';
 import {
+  type CostCategory,
   BUILDING_KINDS,
   COST_CATEGORIES,
   FURNISHINGS,
@@ -15,6 +16,7 @@ import {
   defaultSettings,
 } from '@/lib/domain/types';
 import { RULES } from '@/lib/domain/taxRules';
+import { RECURRING_CATEGORIES } from '@/lib/domain/recurring';
 
 const isRealDate = (s: string) => {
   const d = new Date(`${s}T00:00:00Z`);
@@ -111,6 +113,37 @@ export const costSchema = z
       .max(Math.max(...RULES.map(([, r]) => r.improvement.maxYears)))
       .optional(),
   })
+  .strict();
+
+/** Ask for the cost or rent being registered to repeat every month, from the month after. */
+const repeat = z.boolean().optional();
+
+export const newCostSchema = costSchema.safeExtend({ repeatMonthly: repeat }).refine(
+  (c) => !c.repeatMonthly || (RECURRING_CATEGORIES as readonly string[]).includes(c.category),
+  { message: 'This kind of cost cannot repeat every month', path: ['repeatMonthly'] },
+);
+
+export const newRentSchema = rentSchema.safeExtend({ repeatMonthly: repeat });
+
+const recurringAmount = money.refine((n) => n > 0, 'Amount must be more than zero');
+const recurringCategory = z.enum(RECURRING_CATEGORIES as [CostCategory, ...CostCategory[]]);
+
+/** A cost or the rent that books itself every month, from `firstMonth` (a past month books the months since). */
+export const recurringSchema = z.discriminatedUnion('kind', [
+  z
+    .object({
+      kind: z.literal('cost'),
+      category: recurringCategory,
+      description: text(500),
+      amount: recurringAmount,
+      firstMonth: month,
+    })
+    .strict(),
+  z.object({ kind: z.literal('rent'), description: text(500), amount: recurringAmount, firstMonth: month }).strict(),
+]);
+
+export const recurringPatchSchema = z
+  .object({ category: recurringCategory.optional(), description: text(500), amount: recurringAmount })
   .strict();
 
 export const inviteSchema = z
