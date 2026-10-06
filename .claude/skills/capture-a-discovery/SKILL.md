@@ -18,7 +18,7 @@ Sessions here do not share memory. Anything not written down is discovered
 fresh every time — differently each time — and that is precisely how the same
 mistake gets made twice in three repos.
 
-The rule is short: **when you learn something that is not already in `CLAUDE.md`
+The rule is short: **when you learn something that is not already in `AGENTS.md`
 or a skill, land it in the repo you learned it in — and, if another project could
 act on it, in the skeleton too, in the same task.** Not "later", not "if it comes
 up again". The second time is the occasion you will not recognise.
@@ -67,7 +67,7 @@ Two independent choices: what **form** it takes, and how far it **travels**.
 
 | What you learned | Where it belongs |
 | --- | --- |
-| A one-line standing rule, no procedure | `CLAUDE.md` |
+| A one-line standing rule, no procedure | `AGENTS.md` |
 | A procedure: order, checks, traps, decision rules | A skill |
 | A shape a new app should *start* with, not just know | Code, plus one of the above |
 
@@ -92,7 +92,7 @@ is about every app on the stack, and that is the version the skeleton wants. Whe
 a discovery has both halves, split it: the mechanism travels, the incident stays.
 
 Genuinely repo-specific findings are not homeless — they belong in that repo's
-`README.md`, `SETUP.md`, its own `CLAUDE.md`, or a skill that lives only there.
+`README.md`, `SETUP.md`, its own `AGENTS.md`, or a skill that lives only there.
 Write them down with the same care. They just do not get copied outward.
 
 If you cannot decide, ask what a reader of the skeleton would do with it. If the
@@ -148,7 +148,7 @@ survives contact with someone who has not read the rule.
 
 ## What to write
 
-The standards from `CLAUDE.md` apply — mechanism not anecdote, repo-agnostic,
+The standards from `AGENTS.md` apply — mechanism not anecdote, repo-agnostic,
 and say what you are unsure about. Two additions that matter for discoveries
 specifically:
 
