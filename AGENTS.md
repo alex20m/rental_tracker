@@ -18,6 +18,11 @@ All work must be isolated, reproducible, and branch-based:
 - Do all work in a dedicated branch/worktree.
 - Keep changes scoped to one task — do not bundle unrelated fixes into the
   same branch.
+- **`AGENTS.md` is the only instructions file.** Do not create a `CLAUDE.md`:
+  Claude Code reads `AGENTS.md` directly only when no `CLAUDE.md` exists, so a
+  stray one silently replaces these rules instead of adding to them. If one
+  appears — by mistake, or written by a tool such as `next dev` — move anything
+  worth keeping into `AGENTS.md` and delete it in the same change.
 
 Do not stop after planning. Start implementing immediately, and only ask if
 blocked.
