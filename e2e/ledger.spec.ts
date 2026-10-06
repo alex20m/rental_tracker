@@ -139,6 +139,22 @@ test.describe('costs and receipts', () => {
     expect(apt.costs[0]).toMatchObject({ date: `${m(2)}-14`, category: 'repairs', description: 'Kitchen tap', amount: 142.5, hasReceipt: true });
   });
 
+  test('keeps the dialog title flush with the top edge while the form scrolls beneath it', async ({ page, api }) => {
+    api.addApartment({ name: 'Flat' });
+    await page.setViewportSize({ width: 390, height: 500 });
+    await page.goto('/');
+    await section(page, 'Costs');
+    await page.getByRole('button', { name: 'Add cost' }).click();
+    const sheet = page.getByRole('dialog', { name: 'Add cost' });
+    await sheet.evaluate((el) => el.scrollTo(0, el.scrollHeight));
+
+    const gap = await sheet.evaluate((el) => {
+      const head = el.querySelector('.sheet-head')!.getBoundingClientRect();
+      return head.top - el.getBoundingClientRect().top;
+    });
+    expect(gap).toBe(0);
+  });
+
   test('keeps a receipt photo readable: 2000 px on its longest side, at high JPEG quality', async ({ page, api }) => {
     const apt = api.addApartment({ name: 'Flat' });
     await page.clock.setFixedTime(new Date(`${YEAR}-12-15T12:00:00`));
