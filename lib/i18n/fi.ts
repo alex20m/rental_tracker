@@ -348,18 +348,6 @@ export const fi: Record<MessageKey, string> = {
   'check.invites.todo.one': '{n} kutsuttu omistaja ei ole vielä liittynyt – tarkista, että osuudet ovat lopulliset',
   'check.invites.todo.other': '{n} kutsuttua omistajaa ei ole vielä liittynyt – tarkista, että osuudet ovat lopulliset',
 
-  // — history —
-  'tax.view': 'Verotusnäkymä',
-  'tax.thisYear': 'Tämä vuosi',
-  'tax.allYears': 'Kaikki vuodet',
-  'history.allYears': 'Nettotulo, kaikki vuodet',
-  'history.allYearsAbout': 'kaikki vuodet',
-  'history.allYearsInfo': 'Kaikkien kirjaamiesi vuosien vuokratulojen nettotulo yhteensä. Tappiolliset vuodet lasketaan negatiivisina.',
-  'history.years': 'Vuosittain',
-  'history.summary': 'Vuokra {rent} · Kulut {costs}',
-  'history.netTitle': 'Nettotulo {year}',
-  'history.hint': 'Avaa vuoden veroyhteenveto napauttamalla vuotta.',
-  'history.onlyOne': 'Aiemmat vuodet näkyvät tässä, kun kirjaat niille vuokria tai kuluja.',
 
   // — settings —
   'settings.title': 'Asunnon asetukset',

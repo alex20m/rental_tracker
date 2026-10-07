@@ -31,17 +31,13 @@ export async function openApartment(page: Page, name: string) {
 
 /**
  * One of the places of the apartment, from the drawer. Rent and Costs share the
- * "Rent & costs" place, and History is the "All years" side of Tax, so reaching
- * one of those is the place and then its switch.
+ * "Rent & costs" place, so reaching one of those is the place and then its switch.
  */
-export async function section(page: Page, name: 'Home' | 'Rent' | 'Costs' | 'Tax' | 'History' | 'Settings') {
+export async function section(page: Page, name: 'Home' | 'Rent' | 'Costs' | 'Tax' | 'Settings') {
   const nav = await openDrawer(page);
   if (name === 'Rent' || name === 'Costs') {
     await nav.getByRole('button', { name: 'Rent & costs', exact: true }).click();
     await page.getByRole('radiogroup', { name: 'Rent or costs' }).getByRole('radio', { name, exact: true }).click();
-  } else if (name === 'History') {
-    await nav.getByRole('button', { name: 'Tax', exact: true }).click();
-    await page.getByRole('radiogroup', { name: 'Tax view' }).getByRole('radio', { name: 'All years', exact: true }).click();
   } else {
     await nav.getByRole('button', { name: name, exact: true }).click();
   }

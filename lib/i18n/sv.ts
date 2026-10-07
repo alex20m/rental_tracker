@@ -349,18 +349,6 @@ export const sv: Record<MessageKey, string> = {
   'check.invites.todo.one': '{n} inbjuden ägare har inte anslutit ännu – kontrollera att andelarna är slutgiltiga',
   'check.invites.todo.other': '{n} inbjudna ägare har inte anslutit ännu – kontrollera att andelarna är slutgiltiga',
 
-  // — history —
-  'tax.view': 'Skattevy',
-  'tax.thisYear': 'Det här året',
-  'tax.allYears': 'Alla år',
-  'history.allYears': 'Nettoinkomst, alla år',
-  'history.allYearsAbout': 'alla år',
-  'history.allYearsInfo': 'Nettohyresinkomsten för varje år du har fört in, sammanlagt. År med förlust räknas som negativa.',
-  'history.years': 'Per år',
-  'history.summary': 'Hyra {rent} · Kostnader {costs}',
-  'history.netTitle': 'Nettoinkomst {year}',
-  'history.hint': 'Tryck på ett år för att öppna dess skattesammanställning.',
-  'history.onlyOne': 'Tidigare år visas här när du för in hyror eller kostnader för dem.',
 
   // — settings —
   'settings.title': 'Lägenhetsinställningar',

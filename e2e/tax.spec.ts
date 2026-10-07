@@ -5,6 +5,20 @@ import { coOwned, ledger, m, YEAR } from './data';
 import { alert, openApartment, openInfo, section } from './nav';
 
 test.describe('the tax page', () => {
+  test('shows one year at a time, chosen with the year picker, and has no all-years view', async ({ page, api }) => {
+    api.addApartment({ name: 'Flat' }, {
+      rents: [...ledger().rents, { month: `${YEAR - 2}-06`, status: 'paid', amount: 500, receivedDate: `${YEAR - 2}-06-02`, note: '' }],
+    });
+    await page.goto('/');
+    await section(page, 'Tax');
+
+    await expect(page.getByRole('radio', { name: 'All years' })).toHaveCount(0);
+    const kv = page.locator('.kv').filter({ hasText: 'Rent received' });
+    await expect(kv).toContainText('2 400,00 €');
+    await page.getByLabel('Tax year').selectOption(String(YEAR - 2));
+    await expect(kv).toContainText('500,00 €');
+  });
+
   test("shows the viewer's share of every line, or the whole apartment's", async ({ page, api }) => {
     coOwned(api);
     await page.goto('/');

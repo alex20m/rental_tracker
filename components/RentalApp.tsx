@@ -12,12 +12,11 @@ import Home from '@/components/pages/Home';
 import RentLog from '@/components/pages/RentLog';
 import Costs from '@/components/pages/Costs';
 import Tax from '@/components/pages/Tax';
-import History from '@/components/pages/History';
 import SettingsPage from '@/components/pages/SettingsPage';
 import AccountPage from '@/components/pages/AccountPage';
 import InstallPopup from '@/components/InstallPopup';
 
-export type Tab = 'home' | 'rent' | 'costs' | 'tax' | 'history' | 'settings' | 'portfolio' | 'account';
+export type Tab = 'home' | 'rent' | 'costs' | 'tax' | 'settings' | 'portfolio' | 'account';
 /** Where a tap can lead: a page. */
 export type Destination = Tab;
 export type Go = (to: Destination) => void;
@@ -71,7 +70,6 @@ export type Account = {
 };
 
 type LedgerView = 'rent' | 'costs';
-type TaxView = 'tax' | 'history';
 
 export default function RentalApp() {
   const { t } = useI18n();
@@ -197,8 +195,8 @@ export default function RentalApp() {
   const welcome = items.length === 0 && !onAccount;
   const inApartment = !welcome && !inPortfolio && !onAccount;
   const aptName = apt?.settings.name ?? items.find((i) => i.id === selectedId)?.name ?? '…';
-  // The year matters wherever there are figures for it; settings, history and the account have none.
-  const showYear = !welcome && tab !== 'settings' && tab !== 'history' && !onAccount;
+  // The year matters wherever there are figures for it; settings and the account have none.
+  const showYear = !welcome && tab !== 'settings' && !onAccount;
 
   return (
     <div
@@ -282,31 +280,8 @@ export default function RentalApp() {
           )}
           {apt && tab === 'rent' && <RentLog apt={apt} year={year} onChanged={reloadSelected} />}
           {apt && tab === 'costs' && <Costs apt={apt} year={year} onChanged={reloadSelected} />}
-          {apt && (tab === 'tax' || tab === 'history') && (
-            <Segmented<TaxView>
-              label={t('tax.view')}
-              value={tab}
-              onChange={setTab}
-              options={[
-                { value: 'tax', label: t('tax.thisYear') },
-                { value: 'history', label: t('tax.allYears') },
-              ]}
-            />
-          )}
           {apt && tab === 'tax' && (
             <Tax apt={apt} year={year} taxpayerName={account.name} scope={scope} onScope={setScope} go={go} />
-          )}
-          {apt && tab === 'history' && (
-            <History
-              apt={apt}
-              thisYear={thisYear}
-              scope={scope}
-              onScope={setScope}
-              onPick={(y) => {
-                setYear(y);
-                setTab('tax');
-              }}
-            />
           )}
           {apt && tab === 'settings' && (
             <SettingsPage

@@ -352,18 +352,6 @@ export const en = {
   'check.invites.todo.one': '{n} invited owner hasn’t joined yet — check the shares are final',
   'check.invites.todo.other': '{n} invited owners haven’t joined yet — check the shares are final',
 
-  // — history —
-  'tax.view': 'Tax view',
-  'tax.thisYear': 'This year',
-  'tax.allYears': 'All years',
-  'history.allYears': 'Net income, all years',
-  'history.allYearsAbout': 'all years',
-  'history.allYearsInfo': 'The net rental income of every year you have logged, added together. Years with a loss count as negative.',
-  'history.years': 'By year',
-  'history.summary': 'Rent {rent} · Costs {costs}',
-  'history.netTitle': 'Net income {year}',
-  'history.hint': 'Tap a year to open its tax summary.',
-  'history.onlyOne': 'Earlier years appear here once you log rent or costs in them.',
 
   // — settings —
   'settings.title': 'Apartment settings',
