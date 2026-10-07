@@ -76,7 +76,7 @@ export default function AppNav({ open, onClose, tab, onGo, apartment, hasApartme
             <div className="nav-group">{apartment}</div>
             {item('home', Icon.home, t('nav.home'), tab === 'home')}
             {item('rent', Icon.rent, t('nav.ledger'), tab === 'rent' || tab === 'costs')}
-            {item('tax', Icon.tax, t('nav.tax'), tab === 'tax' || tab === 'history')}
+            {item('tax', Icon.tax, t('nav.tax'), tab === 'tax')}
             {item('settings', Icon.gear, t('nav.settings'), tab === 'settings')}
             <div className="nav-sep" role="separator" />
           </>

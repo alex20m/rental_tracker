@@ -546,7 +546,7 @@ describe('the navigation drawer', () => {
 
     expect(isOpen()).toBe(false);
     expect(screen.getByRole('button', { name: 'Tax' }).getAttribute('aria-current')).toBe('page');
-    expect(screen.getByRole('radio', { name: 'This year' }).getAttribute('aria-checked')).toBe('true');
+    expect(screen.getByText(/Taxable rental income · 2026/)).toBeTruthy();
   });
 
   it('keeps Tab inside the open drawer, wrapping at both ends', async () => {
@@ -705,38 +705,19 @@ describe('settings topics', () => {
   });
 });
 
-describe('history', () => {
-  it('lists this year and every earlier year with data, newest first, skipping years with nothing logged', async () => {
+describe('tax year', () => {
+  it('shows one year at a time on the Tax page, with no all-years switch, and the year picker changes which year', async () => {
     serve([view('a1', 'Alpha', { rents: [paid('2024-03', 500), paid('2026-01', 700)] })]);
     render(<RentalApp />);
     await user().click(await screen.findByRole('button', { name: 'Tax' }));
-    await user().click(await screen.findByRole('radio', { name: 'All years' }));
 
-    const years = screen.getAllByRole('listitem').map((li) => li.textContent ?? '');
-    expect(years).toHaveLength(2);
-    expect(years[0]).toMatch(/^2026/);
-    expect(years[0]).toMatch(/700,00/);
-    expect(years[1]).toMatch(/^2024/);
-    expect(years[1]).toMatch(/500,00/);
-    expect(screen.getByTestId('history-total').textContent).toMatch(/1\s?200,00/);
-  });
+    expect(screen.queryByRole('radio', { name: 'All years' })).toBeNull();
+    expect(screen.queryByTestId('history-total')).toBeNull();
+    const year = screen.getByLabelText('Tax year') as HTMLSelectElement;
+    expect(year.value).toBe('2026');
+    expect(screen.getByText(/Taxable rental income · 2026/)).toBeTruthy();
 
-  it('opens a year’s tax summary when the year is tapped', async () => {
-    serve([view('a1', 'Alpha', { rents: [paid('2024-03', 500)] })]);
-    render(<RentalApp />);
-    await user().click(await screen.findByRole('button', { name: 'Tax' }));
-    await user().click(await screen.findByRole('radio', { name: 'All years' }));
-    await user().click(screen.getByRole('button', { name: /^2024/ }));
-
-    expect(screen.getByRole('button', { name: 'Tax' }).getAttribute('aria-current')).toBe('page');
-    expect((screen.getByLabelText('Tax year') as HTMLSelectElement).value).toBe('2024');
-  });
-
-  it('says earlier years will appear once there is data for them', async () => {
-    serve([view('a1', 'Alpha')]);
-    render(<RentalApp />);
-    await user().click(await screen.findByRole('button', { name: 'Tax' }));
-    await user().click(await screen.findByRole('radio', { name: 'All years' }));
-    expect(screen.getByText(/Earlier years appear here/)).toBeTruthy();
+    await user().selectOptions(year, '2024');
+    expect(screen.getByText(/Taxable rental income · 2024/)).toBeTruthy();
   });
 });
