@@ -22,6 +22,7 @@ function apartment(over: Partial<ApartmentView> = {}): ApartmentView {
     owners: [{ userId: 'u1', email: 'me@example.test', sharePct: 100 }],
     invites: [],
     recurring: [],
+    acquisitionCosts: [],
     mySharePct: 100,
     ...over,
   };

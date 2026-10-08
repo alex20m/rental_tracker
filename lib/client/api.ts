@@ -7,6 +7,7 @@
  */
 
 import type {
+  AcquisitionKind,
   ApartmentSettings,
   ApartmentView,
   CostCategory,
@@ -49,6 +50,7 @@ async function call<T>(method: string, path: string, body?: unknown): Promise<T>
 const apt = (id: string) => `/api/apartments/${encodeURIComponent(id)}`;
 
 export type CostInput = { date: string; category: CostCategory; description: string; amount: number };
+export type AcquisitionInput = { date: string; kind: AcquisitionKind; description: string; amount: number };
 export type RentInput = { status: RentStatus; amount: number; receivedDate: string; note: string };
 export type RecurringInput =
   | { kind: 'cost'; category: CostCategory; description: string; amount: number; dayOfMonth: number; firstMonth: string }
@@ -73,6 +75,11 @@ export const api = {
   receiptUrl: (id: string, costId: string) => `${apt(id)}/costs/${costId}/receipt`,
   putReceipt: (id: string, costId: string, dataUrl: string) => call('PUT', `${apt(id)}/costs/${costId}/receipt`, { dataUrl }),
   deleteReceipt: (id: string, costId: string) => call('DELETE', `${apt(id)}/costs/${costId}/receipt`),
+
+  createAcquisition: (id: string, cost: AcquisitionInput) => call<{ id: string }>('POST', `${apt(id)}/acquisition`, cost),
+  updateAcquisition: (id: string, costId: string, cost: AcquisitionInput) =>
+    call('PUT', `${apt(id)}/acquisition/${costId}`, cost),
+  deleteAcquisition: (id: string, costId: string) => call('DELETE', `${apt(id)}/acquisition/${costId}`),
 
   createRecurring: (id: string, entry: RecurringInput) => call<{ id: string }>('POST', `${apt(id)}/recurring`, entry),
   updateRecurring: (id: string, entryId: string, patch: RecurringPatch) => call('PUT', `${apt(id)}/recurring/${entryId}`, patch),

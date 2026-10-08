@@ -7,6 +7,7 @@
 import { z } from 'zod';
 import {
   type CostCategory,
+  ACQUISITION_KINDS,
   BUILDING_KINDS,
   COST_CATEGORIES,
   FURNISHINGS,
@@ -71,6 +72,9 @@ export const settingsSchema = z.object({
   roomClass: z.enum(ROOM_CLASSES),
   belowMarketRent: z.boolean(),
   letSharePct: percent.refine((n) => n > 0, 'Something must be let'),
+  saleDate: z.union([z.literal(''), isoDate]),
+  salePrice: money,
+  saleCosts: money,
 });
 
 /** Creating an apartment: anything left out takes the default. */
@@ -112,6 +116,16 @@ export const costSchema = z
       .min(1)
       .max(Math.max(...RULES.map(([, r]) => r.improvement.maxYears)))
       .optional(),
+  })
+  .strict();
+
+/** What counts towards the cost of acquiring the apartment, for when it is sold; any day, since it may be years old. */
+export const acquisitionSchema = z
+  .object({
+    date: isoDate,
+    kind: z.enum(ACQUISITION_KINDS),
+    description: text(500),
+    amount: money.refine((n) => n > 0, 'Amount must be more than zero'),
   })
   .strict();
 

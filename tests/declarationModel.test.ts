@@ -25,6 +25,7 @@ const apartment = (settings: Partial<ApartmentView['settings']>, costs: CostEntr
   owners: pct === 100 ? [{ userId: 'u', email: 'u@example.test', sharePct: 100 }] : [{ userId: 'u', email: 'u@example.test', sharePct: pct }, { userId: 'v', email: 'v@example.test', sharePct: 100 - pct }],
   invites: [],
   recurring: [],
+  acquisitionCosts: [],
   rents,
   costs,
   mySharePct: pct,

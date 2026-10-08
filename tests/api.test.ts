@@ -6,6 +6,8 @@ import * as apartment from '@/app/api/apartments/[id]/route';
 import * as rents from '@/app/api/apartments/[id]/rents/[month]/route';
 import * as costs from '@/app/api/apartments/[id]/costs/route';
 import * as cost from '@/app/api/apartments/[id]/costs/[costId]/route';
+import * as acquisitions from '@/app/api/apartments/[id]/acquisition/route';
+import * as acquisition from '@/app/api/apartments/[id]/acquisition/[acquisitionId]/route';
 import * as receipt from '@/app/api/apartments/[id]/costs/[costId]/receipt/route';
 import * as invites from '@/app/api/apartments/[id]/invites/route';
 import * as invite from '@/app/api/apartments/[id]/invites/[inviteId]/route';
@@ -73,7 +75,8 @@ describe('every route, signed out', () => {
   it('answers 401 and changes nothing', async () => {
     const id = await createApartment(alice);
     signIn(null);
-    const p = ctx({ id, month: '2025-01', costId: id, inviteId: id, userId: alice.userId });
+    const p = ctx({ id, month: '2025-01', costId: id, acquisitionId: id, inviteId: id, userId: alice.userId });
+    const acquired = { date: '2025-01-01', kind: 'other', description: '', amount: 1 };
 
     const responses = await Promise.all([
       apartments.GET(req('GET')),
@@ -86,6 +89,9 @@ describe('every route, signed out', () => {
       costs.POST(req('POST', { date: '2025-01-01', category: 'other', description: '', amount: 1 }), p),
       cost.PUT(req('PUT', { date: '2025-01-01', category: 'other', description: '', amount: 1 }), p),
       cost.DELETE(req('DELETE'), p),
+      acquisitions.POST(req('POST', acquired), p),
+      acquisition.PUT(req('PUT', acquired), p),
+      acquisition.DELETE(req('DELETE'), p),
       receipt.GET(req('GET'), p),
       receipt.PUT(req('PUT', { dataUrl: 'data:image/png;base64,AAAA' }), p),
       receipt.DELETE(req('DELETE'), p),
