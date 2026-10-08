@@ -12,6 +12,7 @@ describe('the rules by tax year', () => {
       furnishedFlatRate: { studio: 40, larger: 60 },
       mileagePerKm: 0.27,
       sourceTaxOnEarnedIncome: 0.35,
+      sale: { assumedShort: 0.2, assumedLong: 0.4, assumedLongYears: 10, taxFreeYears: 2, lossCarryForwardYears: 5 },
       recordKeepingYears: 6,
     });
   });
