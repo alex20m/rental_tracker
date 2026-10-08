@@ -86,6 +86,22 @@ languages + the e2e gate).
   years (the *Avdrag* page says it cannot be carried forward — the
   *Underskottsgottgörelse* page and the Act are the complete picture).
 
+## The sale of an apartment
+
+The figures (the 20 % / 40 % assumed cost, the ten and two years, the loss years)
+are `rules.sale` in `taxRules.ts`; the way they combine is `lib/domain/sale.ts`.
+The sources are not under the rent pages and **the Swedish and English addresses
+you would guess for them do not exist** (404): read the Finnish pages from
+`https://www.vero.fi/henkiloasiakkaat/omaisuus/asunnon-myynti/` (the taxable sale
+and the tax-free sale of one's own home are separate pages) and the detailed
+guidance *Omaisuuden luovutusvoitot ja -tappiot luonnollisen henkilön
+tuloverotuksessa* (`/syventavat-vero-ohjeet/ohje-hakusivu/48935/`, over 200 000
+characters — grep it for the chapter you need). The doc's §15 holds each claim
+and its source. Two things the pages do not say outright: that depreciation
+already deducted lowers the acquisition cost (it is in the guidance's example of
+a property sale, as the *unwritten-off* cost), and that ownership time runs from
+the binding purchase agreement, not from the deed.
+
 ## Before you push
 
 `npm run lint && npm run typecheck && npm test`, then `npm run test:e2e` (100 %

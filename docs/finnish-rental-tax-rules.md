@@ -29,6 +29,9 @@ All fetched 2026-10-04. "upd." is the date the page itself carries.
 | **Ä26** | vero.fi, *What will change in taxation in 2026* — https://vero.fi/en/About-us/newsroom/news/uutiset/2025/what-will-change-in-taxation-in-2026/ (12.8.2025) and *Muutokset veroperusteisiin 2026* — https://vero.fi/tietoa-verohallinnosta/tilastot/verotulojen-kehitys/muutokset-veroperusteisiin-verovuosittain/2026/ (upd. 16.6.2026) |
 | **RÄ** | Verohallinto, detailed guidance *Ränteavdrag i personbeskattningen* — https://vero.fi/sv/Detaljerade_skatteanvisningar/anvisningar/49021/ |
 | **DB** | vero.fi, *Dödsboets hyresinkomster och skatter* — https://vero.fi/sv/privatpersoner/egendom/arv/dodsboets-skattearenden/hyresinkomster/ (upd. 3.5.2024) |
+| **LV** | vero.fi, *Sijoitusasunnon, kesämökin tai muun asunnon verollinen myynti* (fi; read 2026-10-08) — https://www.vero.fi/henkiloasiakkaat/omaisuus/asunnon-myynti/asunnon-verollinen-myynti/ (upd. 25.3.2025) |
+| **OA** | vero.fi, *Oman vakituisen asunnon verovapaa myynti* (fi; read 2026-10-08) — https://www.vero.fi/henkiloasiakkaat/omaisuus/asunnon-myynti/oman-asunnon-myynti/ (upd. 7.9.2026) |
+| **LG** | Verohallinto, detailed guidance *Omaisuuden luovutusvoitot ja -tappiot luonnollisen henkilön tuloverotuksessa* VH/2188/00.01.00/2026 (fi; read 2026-10-08) — https://www.vero.fi/syventavat-vero-ohjeet/ohje-hakusivu/48935/ (given 4.5.2026). Cites TVL 45–50 §. |
 | **IL** | Income Tax Act 1535/1992, consolidated — https://www.finlex.fi/fi/lainsaadanto/1992/1535 (54, 58, 114, 124 b, 131–134 §) |
 | **NL** | Business Income Tax Act 360/1968, consolidated — https://www.finlex.fi/fi/lainsaadanto/1968/360 (24 § and the depreciation provisions) |
 | **KS** | Source Tax Act 627/1978, consolidated — https://www.finlex.fi/fi/lainsaadanto/1978/627 |
@@ -176,6 +179,23 @@ All fetched 2026-10-04. "upd." is the date the page itself carries.
 | A private landlord does not charge VAT; a business above 20 000 € turnover registers. | ÄN | ✅ |
 | Rent must be declared even when no tax is left; letting through a platform is reported to the Tax Administration. | DK | ✅ |
 
+## 15 · Selling the apartment (luovutusvoitto / överlåtelsevinst)
+
+Read on 2026-10-08, from the Finnish pages (the sv/en pages of this topic were not found at the guessed addresses).
+
+| Claim | Source | Status |
+| --- | --- | --- |
+| The gain is capital income, taxed in the year the sale was agreed (the deed or other contract), whenever the price is paid. At **30 %** up to 30 000 € and **34 %** above — of the seller's capital income. | LV, LG | ✅ |
+| Two ways to count it, never combined: **actual costs** (selling price − purchase price [or the inheritance/gift value] − transfer tax − basic improvements − funded financing charges − costs of buying and selling: agent fees, delivery fees, registration) or the **assumed acquisition cost** (hankintameno-olettama): **20 %** of the selling price, **40 %** when owned at least 10 years. With the assumed cost, neither the purchase price nor the costs are deducted. The Tax Administration uses the one that is better for the seller. | LV, LG | ✅ |
+| Ownership time runs from the binding purchase agreement to the binding sale agreement. | LG | ✅ |
+| Spending directly after the purchase on repairs counts as a basic improvement (acquisition cost), even if the same work later in the ownership would be an ordinary repair. Improvements count only from the seller's own ownership. | LG 8.2 | ✅ |
+| Funded (rahastoitu) financing charges add to the acquisition cost of the shares; charges the company books as income do not. | LG | ✅ |
+| Depreciation deducted on a building lowers the acquisition cost to the *unwritten-off* cost (poistamaton hankintameno). | LG (ex. of a property sale) | ✅ |
+| A loss is set against gains of the year, then other capital income; if there is none, for the 5 following years. A loss on a home whose gain would have been tax-free cannot be deducted. | LV, OA | ✅ |
+| Tax-free: the seller owned the home at least 2 years **and** the seller or their spouse or minor child lived in it permanently, without a break, for at least 2 years during the ownership. The home may be let before the sale. | OA | ✅ |
+| The sale is reported in OmaVero in the sale year even when it is tax-free or at a loss. | LV, OA | ✅ |
+| §8 says that letting the *whole* home, even briefly, breaks the "lived in for two years" period (rent guidance). OA says the sale need not follow the end of living there and that the home may be let before the sale without losing the exemption. The pages are not about the same moment, and we could not settle how they fit. The app does not decide: it asks only whether the seller lived in the home for the 2 years, and the seller answers. | D 4.1, KF, OA | ⚠️ |
+
 ## What the app does about each — decisions and limits
 
 Where the sources leave a choice, or the app deliberately stops short:
@@ -206,6 +226,17 @@ Where the sources leave a choice, or the app deliberately stops short:
   housing company. The kind of property, the share of the home let, a rent below
   the usual, the flat-rate furniture deduction, building depreciation and the
   purchase price and date are under Advanced; the list of settings names the ones in use.
+- **Selling** (§15, the Sale place): the sale — day, price and costs of selling —
+  is stored with the apartment (whole-apartment amounts); the costs of acquiring it
+  besides the price and `purchaseCosts` are listed by kind. The gain is shown by both
+  ways and the smaller one marked; the tax is the viewer's share of it on top of the
+  other capital income they type in (not stored) at the rates of the sale year. The
+  building depreciation deducted is counted from the settings, up to the year before
+  the sale. Not handled: inherited or gifted homes (their acquisition cost is another
+  rule), a purchase date that is the date of a binding agreement rather than the deed,
+  the tax-free exemption's spouse and family conditions (one switch, answered by the
+  person), and a basic improvement that was also deducted from the rent — the person
+  lists only what was not.
 - **Kilometre rate** by year in `taxRules.ts`; 2026 is the 2025 figure until
   Verohallinto publishes its decision (§6).
 - **Part of the home let**: a percentage that scales the costs of the whole home
