@@ -23,6 +23,11 @@ describe('the numbers the law sets, as the messages need them', () => {
       creditMaxChildren: '2 200',
       carryYears: '10',
       sourceTax: '35',
+      assumedShort: '20',
+      assumedLong: '40',
+      assumedLongYears: '10',
+      freeYears: '2',
+      lossYears: '5',
     });
     expect(ruleParams(2025, 'fi').mileage).toBe('0,27');
     expect(ruleParams(2025, 'sv').mileage).toBe('0,27');

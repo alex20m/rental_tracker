@@ -46,6 +46,25 @@ export interface TaxRules {
    * explanation of that says the right number.
    */
   sourceTaxOnEarnedIncome: number;
+  /**
+   * Selling a home or flat (luovutusvoitto, TVL 45–50 §), taxed as capital
+   * income at `capitalIncome`'s rates in the year the sale was agreed. Instead
+   * of the actual costs the seller may deduct the assumed acquisition cost
+   * (hankintameno-olettama): `assumedShort` of the selling price, or
+   * `assumedLong` once the seller has owned it at least `assumedLongYears`
+   * years. It replaces the price and every cost of buying and selling, and the
+   * Tax Administration uses whichever is better for the seller. A sale of the
+   * seller's own permanent home is tax-free after `taxFreeYears` of owning it
+   * and living in it; a loss is set against other capital income for
+   * `lossCarryForwardYears` more years.
+   */
+  sale: {
+    assumedShort: number;
+    assumedLong: number;
+    assumedLongYears: number;
+    taxFreeYears: number;
+    lossCarryForwardYears: number;
+  };
   /** Years notes and receipts for the rental income are kept (from the start of the year after taxation is final, the longer of the two readings). */
   recordKeepingYears: number;
 }
@@ -59,6 +78,7 @@ const RULES_2025: TaxRules = {
   furnishedFlatRate: { studio: 40, larger: 60 },
   mileagePerKm: 0.27,
   sourceTaxOnEarnedIncome: 0.35,
+  sale: { assumedShort: 0.2, assumedLong: 0.4, assumedLongYears: 10, taxFreeYears: 2, lossCarryForwardYears: 5 },
   recordKeepingYears: 6,
 };
 

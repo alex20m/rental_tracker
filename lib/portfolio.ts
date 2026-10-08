@@ -15,6 +15,7 @@
  */
 
 import type {
+  AcquisitionCost,
   ApartmentSettings,
   ApartmentView,
   CostCategory,
@@ -40,6 +41,7 @@ export interface Actor {
 
 export type CostInput = Omit<CostEntry, 'id' | 'hasReceipt'>;
 export type RentInput = Omit<RentEntry, 'month'>;
+export type AcquisitionInput = Omit<AcquisitionCost, 'id'>;
 export type RecurringInput = {
   kind: 'cost' | 'rent';
   category?: CostCategory;
@@ -83,7 +85,10 @@ const SETTINGS_COLUMNS = `
   a.furnishing,
   a.room_class            as "roomClass",
   a.below_market_rent     as "belowMarketRent",
-  a.let_share_pct::float8 as "letSharePct"`;
+  a.let_share_pct::float8 as "letSharePct",
+  coalesce(a.sale_date::text, '') as "saleDate",
+  a.sale_price::float8    as "salePrice",
+  a.sale_costs::float8    as "saleCosts"`;
 
 const SETTINGS_FIELDS: Record<keyof ApartmentSettings, string> = {
   name: 'name',
@@ -105,10 +110,15 @@ const SETTINGS_FIELDS: Record<keyof ApartmentSettings, string> = {
   roomClass: 'room_class',
   belowMarketRent: 'below_market_rent',
   letSharePct: 'let_share_pct',
+  saleDate: 'sale_date',
+  salePrice: 'sale_price',
+  saleCosts: 'sale_costs',
 };
 
+const DATE_SETTINGS: (keyof ApartmentSettings)[] = ['purchaseDate', 'saleDate'];
+
 const toDbValue = (key: keyof ApartmentSettings, value: unknown) =>
-  key === 'purchaseDate' && value === '' ? null : value;
+  DATE_SETTINGS.includes(key) && value === '' ? null : value;
 
 /** Ownership shares are compared in hundredths, never as floats. */
 const cents = (pct: number) => Math.round(pct * 100);
@@ -236,7 +246,7 @@ export function portfolio(db: Queryable, clock: () => Date = () => new Date()) {
       if (share === null) return null;
       await bookDue(apartmentId);
 
-      const [settingsRows, owners, invites, rents, costs, recurring] = await Promise.all([
+      const [settingsRows, owners, invites, rents, costs, recurring, acquisitionCosts] = await Promise.all([
         db.query<ApartmentSettings>(`select ${SETTINGS_COLUMNS} from apartments a where a.id = $1`, [apartmentId]),
         db.query<Owner>(
           `select user_id as "userId", email, share_pct::float8 as "sharePct"
@@ -267,6 +277,11 @@ export function portfolio(db: Queryable, clock: () => Date = () => new Date()) {
              from recurring_entries where apartment_id = $1 order by kind desc, created_at, id`,
           [apartmentId],
         ),
+        db.query<AcquisitionCost>(
+          `select id, date::text as date, kind, description, amount::float8 as amount
+             from acquisition_costs where apartment_id = $1 order by date, created_at, id`,
+          [apartmentId],
+        ),
       ]);
       const settings = settingsRows[0];
       if (!settings) return null;
@@ -274,7 +289,7 @@ export function portfolio(db: Queryable, clock: () => Date = () => new Date()) {
       // A cost has a category and the rent has none; leave the key out rather than send null.
       for (const r of recurring) if (r.category === null) delete r.category;
 
-      return { id: apartmentId, settings, owners, invites, rents, costs, recurring, mySharePct: share };
+      return { id: apartmentId, settings, owners, invites, rents, costs, recurring, acquisitionCosts, mySharePct: share };
     },
 
     async updateSettings(userId: string, apartmentId: string, patch: Partial<ApartmentSettings>): Promise<boolean> {
@@ -418,6 +433,40 @@ export function portfolio(db: Queryable, clock: () => Date = () => new Date()) {
       if (!isUuid(costId) || !(await owns(userId, apartmentId))) return false;
       const rows = await db.query('delete from costs where id = $1 and apartment_id = $2 returning id', [
         costId,
+        apartmentId,
+      ]);
+      return rows.length > 0;
+    },
+
+    async createAcquisition(userId: string, apartmentId: string, cost: AcquisitionInput): Promise<string | null> {
+      if (!(await owns(userId, apartmentId))) return null;
+      const rows = await db.query<{ id: string }>(
+        `insert into acquisition_costs (apartment_id, date, kind, description, amount)
+         values ($1, $2, $3, $4, $5) returning id`,
+        [apartmentId, cost.date, cost.kind, cost.description, cost.amount],
+      );
+      return rows[0]!.id;
+    },
+
+    async updateAcquisition(
+      userId: string,
+      apartmentId: string,
+      acquisitionId: string,
+      cost: AcquisitionInput,
+    ): Promise<boolean> {
+      if (!isUuid(acquisitionId) || !(await owns(userId, apartmentId))) return false;
+      const rows = await db.query(
+        `update acquisition_costs set date = $3, kind = $4, description = $5, amount = $6
+          where id = $1 and apartment_id = $2 returning id`,
+        [acquisitionId, apartmentId, cost.date, cost.kind, cost.description, cost.amount],
+      );
+      return rows.length > 0;
+    },
+
+    async deleteAcquisition(userId: string, apartmentId: string, acquisitionId: string): Promise<boolean> {
+      if (!isUuid(acquisitionId) || !(await owns(userId, apartmentId))) return false;
+      const rows = await db.query('delete from acquisition_costs where id = $1 and apartment_id = $2 returning id', [
+        acquisitionId,
         apartmentId,
       ]);
       return rows.length > 0;

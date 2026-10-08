@@ -229,6 +229,7 @@ test.describe('repeating from the ordinary forms', () => {
     await sheet.getByRole('radio', { name: 'Basic improvement' }).click();
     await expect(sheet.getByRole('switch', { name: 'Repeat every month' })).toHaveCount(0);
     await sheet.getByRole('button', { name: 'Save' }).click();
+    await expect(sheet).toHaveCount(0); // saved: the request has been sent, not just clicked
 
     expect(api.callsTo('POST')[0]!.body).not.toHaveProperty('repeatMonthly'); // ticked, then moved to a category that cannot repeat
     expect(apt.recurring).toEqual([]);

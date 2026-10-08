@@ -37,5 +37,10 @@ export function ruleParams(year: number, lang: Lang): Params {
     creditMaxChildren: n(max + 2 * childIncrease),
     carryYears: n(r.deficitCredit.carryForwardYears),
     sourceTax: n(r.sourceTaxOnEarnedIncome * 100),
+    assumedShort: n(r.sale.assumedShort * 100),
+    assumedLong: n(r.sale.assumedLong * 100),
+    assumedLongYears: n(r.sale.assumedLongYears),
+    freeYears: n(r.sale.taxFreeYears),
+    lossYears: n(r.sale.lossCarryForwardYears),
   };
 }

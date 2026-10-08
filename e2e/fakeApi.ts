@@ -15,7 +15,7 @@
  */
 
 import type { Page, Route } from '@playwright/test';
-import type { ApartmentSettings, ApartmentView, CostEntry, Owner, PendingInvite, RecurringEntry } from '../lib/domain/types';
+import type { AcquisitionCost, ApartmentSettings, ApartmentView, CostEntry, Owner, PendingInvite, RecurringEntry } from '../lib/domain/types';
 import { nextMonth, repeatDay } from '../lib/domain/recurring';
 import { defaultSettings } from '../lib/domain/types';
 
@@ -61,7 +61,7 @@ export class FakeApi {
   /** An apartment as the viewer sees it, owned by them alone unless `owners` says otherwise. */
   addApartment(
     settings: Partial<ApartmentSettings> = {},
-    more: Partial<Pick<ApartmentView, 'owners' | 'invites' | 'rents' | 'costs' | 'recurring' | 'mySharePct'>> = {},
+    more: Partial<Pick<ApartmentView, 'owners' | 'invites' | 'rents' | 'costs' | 'recurring' | 'acquisitionCosts' | 'mySharePct'>> = {},
   ): ApartmentView {
     const id = uuid();
     const apt: ApartmentView = {
@@ -70,6 +70,7 @@ export class FakeApi {
       owners: [{ ...ME, sharePct: 100 }],
       invites: [],
       recurring: [],
+      acquisitionCosts: [],
       rents: [],
       costs: [],
       mySharePct: 100,
@@ -287,6 +288,23 @@ export class FakeApi {
       }
       if (method === 'DELETE') {
         apt.costs = apt.costs.filter((c) => c !== cost);
+        return ok;
+      }
+    }
+    if (sub === 'acquisition') {
+      if (!subId && method === 'POST') {
+        const cost: AcquisitionCost = { id: uuid(), ...(body as Omit<AcquisitionCost, 'id'>) };
+        apt.acquisitionCosts.push(cost);
+        return { status: 201, body: { id: cost.id } };
+      }
+      const cost = apt.acquisitionCosts.find((c) => c.id === subId);
+      if (!cost) return notFound;
+      if (method === 'PUT') {
+        Object.assign(cost, body);
+        return ok;
+      }
+      if (method === 'DELETE') {
+        apt.acquisitionCosts = apt.acquisitionCosts.filter((c) => c !== cost);
         return ok;
       }
     }

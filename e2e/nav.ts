@@ -33,7 +33,7 @@ export async function openApartment(page: Page, name: string) {
  * One of the places of the apartment, from the drawer. Rent and Costs share the
  * "Rent & costs" place, so reaching one of those is the place and then its switch.
  */
-export async function section(page: Page, name: 'Home' | 'Rent' | 'Costs' | 'Tax' | 'Settings') {
+export async function section(page: Page, name: 'Home' | 'Rent' | 'Costs' | 'Tax' | 'Sale' | 'Settings') {
   const nav = await openDrawer(page);
   if (name === 'Rent' || name === 'Costs') {
     await nav.getByRole('button', { name: 'Rent & costs', exact: true }).click();
