@@ -104,6 +104,7 @@ describe('the checklist in another language', () => {
     invites: [],
     recurring: [],
     acquisitionCosts: [],
+    mySale: null,
     mySharePct: 100,
   };
 

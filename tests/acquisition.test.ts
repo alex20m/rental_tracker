@@ -3,6 +3,11 @@ import { defaultAuth, setAuthProvider, type Session } from '@/lib/auth';
 import { setQueryableForTesting } from '@/lib/db';
 import * as apartments from '@/app/api/apartments/route';
 import * as apartment from '@/app/api/apartments/[id]/route';
+import * as sale from '@/app/api/apartments/[id]/sale/route';
+import * as shares from '@/app/api/apartments/[id]/shares/route';
+import * as owners from '@/app/api/apartments/[id]/owners/[userId]/route';
+import * as invites from '@/app/api/apartments/[id]/invites/route';
+import * as me from '@/app/api/me/route';
 import * as acquisitions from '@/app/api/apartments/[id]/acquisition/route';
 import * as acquisition from '@/app/api/apartments/[id]/acquisition/[acquisitionId]/route';
 import { testDb, type TestDb } from './support/testDb';
@@ -52,7 +57,7 @@ async function view(as: Session, id: string): Promise<ApartmentView> {
 
 const fuktmatning = { date: '2025-02-10', kind: 'inspection', description: 'Fuktmätning', amount: 300 };
 
-describe('the acquisition costs of an apartment', () => {
+describe('the acquisition costs of an owner', () => {
   it('are listed with the apartment, oldest first, with their kind and amount', async () => {
     const id = await createApartment(alice);
     expect((await view(alice, id)).acquisitionCosts).toEqual([]);
@@ -150,34 +155,161 @@ describe('the acquisition costs of an apartment', () => {
   });
 });
 
-describe('the sale of an apartment', () => {
-  it('is stored with the settings: a day, a price and the costs of selling', async () => {
+const mySale = { purchaseDate: '2018-03-01', purchasePrice: 62000, saleDate: '2025-06-15', salePrice: 111000, saleCosts: 2400.5 };
+
+/** Alice invites Bob for 40 %, who then joins by signing in with his verified email. */
+async function sharedWithBob(): Promise<string> {
+  const id = await createApartment(alice);
+  signIn(alice);
+  await invites.POST(req('POST', { email: bob.email, sharePct: 40 }), ctx({ id }));
+  signIn(bob);
+  await apartments.GET(req('GET')); // loading the portfolio claims the invite
+  return id;
+}
+
+describe('the sale of an owner’s own part', () => {
+  it('starts as none, is saved with the purchase it follows from, and is read back exactly', async () => {
     const id = await createApartment(alice);
-    expect((await view(alice, id)).settings).toMatchObject({ saleDate: '', salePrice: 0, saleCosts: 0 });
+    expect((await view(alice, id)).mySale).toBeNull();
 
     signIn(alice);
-    const res = await apartment.PATCH(req('PATCH', { saleDate: '2025-06-15', salePrice: 185000, saleCosts: 4650.5 }), ctx({ id }));
+    const res = await sale.PUT(req('PUT', mySale), ctx({ id }));
 
     expect(res.status).toBe(200);
-    expect((await view(alice, id)).settings).toMatchObject({ saleDate: '2025-06-15', salePrice: 185000, saleCosts: 4650.5 });
+    expect((await view(alice, id)).mySale).toEqual(mySale);
   });
 
-  it('can be taken back by clearing the date', async () => {
+  it('can be saved before it is complete, with only the purchase, and then replaced', async () => {
     const id = await createApartment(alice);
     signIn(alice);
-    await apartment.PATCH(req('PATCH', { saleDate: '2025-06-15', salePrice: 185000 }), ctx({ id }));
-    await apartment.PATCH(req('PATCH', { saleDate: '', salePrice: 0 }), ctx({ id }));
+    const onlyPurchase = { purchaseDate: '2018-03-01', purchasePrice: 62000, saleDate: '', salePrice: 0, saleCosts: 0 };
+    await sale.PUT(req('PUT', onlyPurchase), ctx({ id }));
+    expect((await view(alice, id)).mySale).toEqual(onlyPurchase);
 
-    expect((await view(alice, id)).settings).toMatchObject({ saleDate: '', salePrice: 0 });
+    signIn(alice);
+    await sale.PUT(req('PUT', mySale), ctx({ id }));
+    expect((await view(alice, id)).mySale).toEqual(mySale);
+    expect(await db.query('select 1 from sales')).toHaveLength(1);
   });
 
-  it('refuses a day that does not exist and amounts below zero', async () => {
+  it('can be taken back', async () => {
     const id = await createApartment(alice);
     signIn(alice);
-    const patch = (body: unknown) => apartment.PATCH(req('PATCH', body), ctx({ id }));
+    await sale.PUT(req('PUT', mySale), ctx({ id }));
+    signIn(alice);
 
-    const refused = await Promise.all([patch({ saleDate: '2025-02-30' }), patch({ salePrice: -1 }), patch({ saleCosts: -1 })]);
+    const res = await sale.DELETE(req('DELETE'), ctx({ id }));
 
-    expect(refused.map((r) => r.status)).toEqual([400, 400, 400]);
+    expect(res.status).toBe(200);
+    expect((await view(alice, id)).mySale).toBeNull();
+  });
+
+  it('is private: a co-owner neither sees it nor, by saving their own, changes it', async () => {
+    const id = await sharedWithBob();
+    signIn(alice);
+    await sale.PUT(req('PUT', mySale), ctx({ id }));
+    signIn(alice);
+    await acquisitions.POST(req('POST', fuktmatning), ctx({ id }));
+
+    const bobSees = await view(bob, id);
+    expect(bobSees.mySale).toBeNull();
+    expect(bobSees.acquisitionCosts).toEqual([]);
+
+    signIn(bob);
+    await sale.PUT(req('PUT', { ...mySale, salePrice: 5 }), ctx({ id }));
+    expect((await view(alice, id)).mySale).toEqual(mySale);
+    expect((await view(bob, id)).mySale).toMatchObject({ salePrice: 5 });
+  });
+
+  it('keeps a co-owner from changing or deleting an acquisition cost that is not theirs', async () => {
+    const id = await sharedWithBob();
+    signIn(alice);
+    const created = (await (await acquisitions.POST(req('POST', fuktmatning), ctx({ id }))).json()) as { id: string };
+
+    signIn(bob);
+    const attempts = await Promise.all([
+      acquisition.PUT(req('PUT', { ...fuktmatning, amount: 1 }), ctx({ id, acquisitionId: created.id })),
+      acquisition.DELETE(req('DELETE'), ctx({ id, acquisitionId: created.id })),
+    ]);
+
+    expect(attempts.map((r) => r.status)).toEqual([404, 404]);
+    expect((await view(alice, id)).acquisitionCosts).toMatchObject([{ id: created.id, amount: 300 }]);
+  });
+
+  it('refuses a day that does not exist, amounts below zero or with fractions of a cent, and unknown fields', async () => {
+    const id = await createApartment(alice);
+    signIn(alice);
+    const put = (body: unknown) => sale.PUT(req('PUT', body), ctx({ id }));
+
+    const refused = await Promise.all([
+      put({ ...mySale, saleDate: '2025-02-30' }),
+      put({ ...mySale, purchaseDate: '2018-13-01' }),
+      put({ ...mySale, salePrice: -1 }),
+      put({ ...mySale, saleCosts: 1.234 }),
+      put({ ...mySale, purchasePrice: -5 }),
+      put({ ...mySale, extra: 1 }),
+      put({ saleDate: '2025-06-15' }),
+    ]);
+
+    expect(refused.map((r) => r.status)).toEqual([400, 400, 400, 400, 400, 400, 400]);
+    expect((await view(alice, id)).mySale).toBeNull();
+  });
+
+  it('is not reachable by someone who does not own the apartment', async () => {
+    const id = await createApartment(alice);
+    signIn(bob);
+
+    const attempts = await Promise.all([sale.PUT(req('PUT', mySale), ctx({ id })), sale.DELETE(req('DELETE'), ctx({ id }))]);
+
+    expect(attempts.map((r) => r.status)).toEqual([404, 404]);
+    expect(await db.query('select 1 from sales')).toEqual([]);
+  });
+
+  it('is deleted with the apartment, and with the account or ownership of the person who made it', async () => {
+    const id = await sharedWithBob();
+    signIn(bob);
+    await sale.PUT(req('PUT', mySale), ctx({ id }));
+    signIn(bob);
+    await acquisitions.POST(req('POST', fuktmatning), ctx({ id }));
+    signIn(alice);
+    await sale.PUT(req('PUT', mySale), ctx({ id }));
+
+    // Bob gives his share away and leaves: what he kept for himself goes with him.
+    signIn(alice);
+    await shares.PUT(
+      req('PUT', {
+        owners: [
+          { userId: alice.userId, sharePct: 100 },
+          { userId: bob.userId, sharePct: 0 },
+        ],
+        invites: [],
+      }),
+      ctx({ id }),
+    );
+    signIn(alice);
+    await owners.DELETE(req('DELETE'), ctx({ id, userId: bob.userId }));
+
+    expect(await db.query('select user_id from sales')).toEqual([{ user_id: alice.userId }]);
+    expect(await db.query('select 1 from acquisition_costs')).toEqual([]);
+
+    signIn(alice);
+    await acquisitions.POST(req('POST', fuktmatning), ctx({ id }));
+    signIn(alice);
+    await me.DELETE(req('DELETE'));
+    expect(await db.query('select 1 from sales')).toEqual([]);
+    expect(await db.query('select 1 from acquisition_costs')).toEqual([]);
+  });
+
+  it('is deleted with the account of a co-owner who leaves the others’ apartment behind', async () => {
+    const id = await sharedWithBob();
+    signIn(bob);
+    await sale.PUT(req('PUT', mySale), ctx({ id }));
+    signIn(alice);
+    await sale.PUT(req('PUT', mySale), ctx({ id }));
+
+    signIn(bob);
+    await me.DELETE(req('DELETE'));
+
+    expect(await db.query('select user_id from sales')).toEqual([{ user_id: alice.userId }]);
   });
 });

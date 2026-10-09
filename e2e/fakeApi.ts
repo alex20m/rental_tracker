@@ -61,7 +61,7 @@ export class FakeApi {
   /** An apartment as the viewer sees it, owned by them alone unless `owners` says otherwise. */
   addApartment(
     settings: Partial<ApartmentSettings> = {},
-    more: Partial<Pick<ApartmentView, 'owners' | 'invites' | 'rents' | 'costs' | 'recurring' | 'acquisitionCosts' | 'mySharePct'>> = {},
+    more: Partial<Pick<ApartmentView, 'owners' | 'invites' | 'rents' | 'costs' | 'recurring' | 'acquisitionCosts' | 'mySale' | 'mySharePct'>> = {},
   ): ApartmentView {
     const id = uuid();
     const apt: ApartmentView = {
@@ -71,6 +71,7 @@ export class FakeApi {
       invites: [],
       recurring: [],
       acquisitionCosts: [],
+      mySale: null,
       rents: [],
       costs: [],
       mySharePct: 100,
@@ -290,6 +291,11 @@ export class FakeApi {
         apt.costs = apt.costs.filter((c) => c !== cost);
         return ok;
       }
+    }
+    if (sub === 'sale') {
+      if (method === 'PUT') apt.mySale = body as unknown as ApartmentView['mySale'];
+      if (method === 'DELETE') apt.mySale = null;
+      return ok;
     }
     if (sub === 'acquisition') {
       if (!subId && method === 'POST') {

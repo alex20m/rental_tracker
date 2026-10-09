@@ -23,6 +23,7 @@ function apartment(over: Partial<ApartmentView> = {}): ApartmentView {
     invites: [],
     recurring: [],
     acquisitionCosts: [],
+    mySale: null,
     mySharePct: 100,
     ...over,
   };

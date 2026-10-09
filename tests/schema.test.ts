@@ -74,3 +74,46 @@ describe('migration 0004, the verified deduction rules', () => {
     await pg.close();
   });
 });
+
+describe('migration 0008, the personal sale', () => {
+  const upTo = (n: number) => readdirSync(migrations).filter((f) => f.endsWith('.sql') && Number(f.slice(0, 4)) <= n).sort();
+  const apply = async (pg: PGlite, files: string[]) => {
+    for (const f of files) await pg.exec(readFileSync(`${migrations}/${f}`, 'utf8'));
+  };
+
+  it('hands a sale entered on the apartment to the person who created it, at their share, and drops costs nobody owns', async () => {
+    const pg = new PGlite();
+    await apply(pg, upTo(7));
+    await pg.exec(`
+      insert into apartments (id, name, created_by, purchase_date, purchase_price, sale_date, sale_price, sale_costs) values
+        ('00000000-0000-4000-8000-000000000001', 'Shared', 'alice', '2018-03-01', 200000, '2025-06-15', 300000, 5000),
+        ('00000000-0000-4000-8000-000000000002', 'Not for sale', 'alice', '2018-03-01', 100000, null, 0, 0),
+        ('00000000-0000-4000-8000-000000000003', 'Creator left', 'carol', '2018-03-01', 100000, '2025-06-15', 100000, 0);
+      insert into apartment_owners (apartment_id, user_id, email, share_pct) values
+        ('00000000-0000-4000-8000-000000000001', 'alice', 'a@x.test', 60),
+        ('00000000-0000-4000-8000-000000000001', 'bob', 'b@x.test', 40),
+        ('00000000-0000-4000-8000-000000000002', 'alice', 'a@x.test', 100),
+        ('00000000-0000-4000-8000-000000000003', 'dave', 'd@x.test', 100);
+      insert into acquisition_costs (apartment_id, date, kind, amount) values
+        ('00000000-0000-4000-8000-000000000001', '2018-03-02', 'transfer_tax', 1500),
+        ('00000000-0000-4000-8000-000000000003', '2018-03-02', 'transfer_tax', 700)`);
+
+    await apply(pg, upTo(8).slice(7)); // 0008 alone, on top of what 0001–0007 built
+
+    const sales = await pg.query(`select apartment_id, user_id, purchase_date::text, purchase_price::float8, sale_date::text, sale_price::float8, sale_costs::float8 from sales order by apartment_id`);
+    expect(sales.rows).toEqual([
+      {
+        apartment_id: '00000000-0000-4000-8000-000000000001',
+        user_id: 'alice',
+        purchase_date: '2018-03-01',
+        purchase_price: 120000, // 60 % of 200 000
+        sale_date: '2025-06-15',
+        sale_price: 180000,
+        sale_costs: 3000,
+      },
+    ]);
+    const costs = await pg.query(`select user_id, amount::float8 from acquisition_costs`);
+    expect(costs.rows).toEqual([{ user_id: 'alice', amount: 900 }]);
+    await pg.close();
+  });
+});

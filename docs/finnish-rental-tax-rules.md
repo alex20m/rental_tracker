@@ -226,17 +226,23 @@ Where the sources leave a choice, or the app deliberately stops short:
   housing company. The kind of property, the share of the home let, a rent below
   the usual, the flat-rate furniture deduction, building depreciation and the
   purchase price and date are under Advanced; the list of settings names the ones in use.
-- **Selling** (§15, the Sale place): the sale — day, price and costs of selling —
-  is stored with the apartment (whole-apartment amounts); the costs of acquiring it
-  besides the price and `purchaseCosts` are listed by kind. The gain is shown by both
-  ways and the smaller one marked; the tax is the viewer's share of it on top of the
-  other capital income they type in (not stored) at the rates of the sale year. The
-  building depreciation deducted is counted from the settings, up to the year before
-  the sale. Not handled: inherited or gifted homes (their acquisition cost is another
-  rule), a purchase date that is the date of a binding agreement rather than the deed,
-  the tax-free exemption's spouse and family conditions (one switch, answered by the
-  person), and a basic improvement that was also deducted from the rent — the person
-  lists only what was not.
+- **Selling** (§15, the Sale place) is **personal**: each owner enters their own part
+  — their purchase date and price, the sale (day, price, costs of selling) and the
+  costs of acquiring their part, listed by kind — and no other owner sees any of it.
+  Every amount is already the owner's own, so no ownership share is applied to it (a
+  co-owner who bought in later, or for another price, has their own cost and
+  ownership time, as the guidance says). The form starts from the owner's share of the
+  apartment's purchase price and date in the settings, which stay as they are: they
+  drive the yield and the building depreciation. The purchase costs in the settings
+  are for that depreciation and are not counted in a sale; the owner lists them as
+  acquisition costs. The gain is shown by both ways and the smaller marked; the tax is
+  on top of the other capital income typed in (not stored) at the rates of the sale year.
+  The building depreciation deducted is the apartment's up to the year before the sale,
+  and the owner's share of it comes off their cost. Not handled: inherited or gifted
+  homes (their acquisition cost is another rule), a purchase date that is the date of a
+  binding agreement rather than the deed, the tax-free exemption's spouse and family
+  conditions (one switch, answered by the person), and a basic improvement that was also
+  deducted from the rent — the person lists only what was not.
 - **Kilometre rate** by year in `taxRules.ts`; 2026 is the 2025 figure until
   Verohallinto publishes its decision (§6).
 - **Part of the home let**: a percentage that scales the costs of the whole home

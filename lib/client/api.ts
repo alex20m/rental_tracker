@@ -11,6 +11,7 @@ import type {
   ApartmentSettings,
   ApartmentView,
   CostCategory,
+  SaleDetails,
   PortfolioItem,
   RentStatus,
 } from '@/lib/domain/types';
@@ -76,6 +77,8 @@ export const api = {
   putReceipt: (id: string, costId: string, dataUrl: string) => call('PUT', `${apt(id)}/costs/${costId}/receipt`, { dataUrl }),
   deleteReceipt: (id: string, costId: string) => call('DELETE', `${apt(id)}/costs/${costId}/receipt`),
 
+  putSale: (id: string, sale: SaleDetails) => call('PUT', `${apt(id)}/sale`, sale),
+  deleteSale: (id: string) => call('DELETE', `${apt(id)}/sale`),
   createAcquisition: (id: string, cost: AcquisitionInput) => call<{ id: string }>('POST', `${apt(id)}/acquisition`, cost),
   updateAcquisition: (id: string, costId: string, cost: AcquisitionInput) =>
     call('PUT', `${apt(id)}/acquisition/${costId}`, cost),
