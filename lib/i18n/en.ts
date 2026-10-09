@@ -222,12 +222,13 @@ export const en = {
   'sale.heroLoss': 'Your loss on the sale',
   'sale.heroNone': 'No sale entered',
   'sale.heroNoneHint': 'Enter your own part of the sale below to see the gain and the tax on it. Only you see it.',
+  'sale.heroSaved': 'Your purchase is saved. Come back and enter the sale when you sell.',
   'sale.tax': 'Estimated tax',
   'sale.taxFreeShort': 'tax-free',
   'sale.details': 'Your sale',
   'sale.detailsAbout': 'the sale',
   'sale.purchaseInfo':
-    'What you paid for your part. It starts as your share of the price and date in the apartment settings; change it to what you actually paid. The date decides whether {assumedLong} % applies (owned {assumedLongYears} years) and whether the sale can be tax-free.',
+    'What you paid for your part. It starts as your share of the price and date in the apartment settings; change it to what you actually paid. You can save it now, long before you sell, so it is not forgotten when the time comes. The date decides whether {assumedLong} % applies (owned {assumedLongYears} years) and whether the sale can be tax-free.',
   'sale.purchaseAbout': 'your purchase',
   'sale.purchasePrice': 'Your purchase price (€)',
   'sale.purchaseDate': 'Purchase date',
@@ -239,7 +240,7 @@ export const en = {
   'sale.costsAbout': 'the costs of selling',
   'sale.costsInfo':
     'Your part of the agent’s fee, delivery and registration fees and what else it cost to sell. Not used with the assumed acquisition cost.',
-  'sale.clear': 'Remove the sale',
+  'sale.clear': 'Remove my entries',
   'sale.acq': 'Acquisition costs',
   'sale.acqAbout': 'acquisition costs',
   'sale.acqInfo':

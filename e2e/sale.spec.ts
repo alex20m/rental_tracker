@@ -48,10 +48,10 @@ test.describe('selling your part of the apartment', () => {
     await expect(page.getByLabel('Your selling price (€)')).toHaveValue('');
     await expect(page.getByText('Nothing listed yet.')).toBeVisible();
     await expect(page.getByRole('heading', { name: 'Two ways to count the gain' })).toHaveCount(0);
-    await expect(page.getByRole('button', { name: 'Remove the sale' })).toHaveCount(0);
+    await expect(page.getByRole('button', { name: 'Remove my entries' })).toHaveCount(0);
   });
 
-  test('keeps what you typed without a sale, so the purchase can be saved first', async ({ page, api }) => {
+  test('saves the purchase on its own, long before any sale, and still has it when it is time to sell', async ({ page, api }) => {
     const apt = api.addApartment(FLAT);
     await page.goto('/');
     await section(page, 'Sale');
@@ -60,10 +60,22 @@ test.describe('selling your part of the apartment', () => {
 
     await page.getByRole('button', { name: 'Save', exact: true }).click();
 
-    await expect(page.getByRole('button', { name: 'Remove the sale' })).toBeVisible();
     await expect(hero(page)).toContainText('No sale entered');
+    await expect(hero(page)).toContainText('Your purchase is saved. Come back and enter the sale when you sell.');
     expect(apt.mySale).toEqual({ purchaseDate: '2018-03-01', purchasePrice: 62000, saleDate: '', salePrice: 0, saleCosts: 0 });
+
+    // Years later: the purchase is there, and only the sale is left to enter.
+    await page.reload();
+    await section(page, 'Sale');
+    await expect(page.getByLabel('Purchase date')).toHaveValue('2018-03-01');
+    await expect(page.getByLabel('Your purchase price (€)')).toHaveValue('62000');
+    await page.getByLabel('Sale date').fill('2025-06-15');
+    await page.getByLabel('Your selling price (€)').fill('160000');
+    await page.getByRole('button', { name: 'Save', exact: true }).click();
+    await expect(hero(page)).toContainText('Your gain from the sale');
+    await expect(hero(page)).toContainText('98 000,00 €');
   });
+
 
   test('works out the gain by the actual costs, with your acquisition costs listed, and the tax on it', async ({ page, api }) => {
     const apt = api.addApartment(FLAT, {
@@ -289,7 +301,7 @@ test.describe('selling your part of the apartment', () => {
     await expect(page.getByLabel('Your selling price (€)')).toHaveValue('160000');
     await expect(page.getByLabel('Your costs of selling (€)')).toHaveValue('4000');
 
-    await page.getByRole('button', { name: 'Remove the sale' }).click();
+    await page.getByRole('button', { name: 'Remove my entries' }).click();
 
     await expect(hero(page)).toContainText('No sale entered');
     await expect(page.getByLabel('Purchase date')).toHaveValue('2018-03-01');
