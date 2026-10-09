@@ -72,9 +72,6 @@ export const settingsSchema = z.object({
   roomClass: z.enum(ROOM_CLASSES),
   belowMarketRent: z.boolean(),
   letSharePct: percent.refine((n) => n > 0, 'Something must be let'),
-  saleDate: z.union([z.literal(''), isoDate]),
-  salePrice: money,
-  saleCosts: money,
 });
 
 /** Creating an apartment: anything left out takes the default. */
@@ -119,7 +116,18 @@ export const costSchema = z
   })
   .strict();
 
-/** What counts towards the cost of acquiring the apartment, for when it is sold; any day, since it may be years old. */
+/** One owner's own purchase and sale of their part, which can be saved before it is complete. */
+export const saleSchema = z
+  .object({
+    purchaseDate: z.union([z.literal(''), isoDate]),
+    purchasePrice: money,
+    saleDate: z.union([z.literal(''), isoDate]),
+    salePrice: money,
+    saleCosts: money,
+  })
+  .strict();
+
+/** What counts towards the cost of acquiring the owner's part, for when it is sold; any day, since it may be years old. */
 export const acquisitionSchema = z
   .object({
     date: isoDate,

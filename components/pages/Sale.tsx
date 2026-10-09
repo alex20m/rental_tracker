@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { ACQUISITION_KINDS } from '@/lib/domain/types';
 import type { AcquisitionCost, AcquisitionKind, ApartmentView } from '@/lib/domain/types';
 import { api } from '@/lib/client/api';
-import { computeSale } from '@/lib/domain/sale';
+import { computeSale, suggestedSale } from '@/lib/domain/sale';
 import { eur } from '@/lib/domain/tax';
 import { shortDate } from '@/lib/ui/format';
 import { ruleParams } from '@/lib/ui/ruleParams';
@@ -18,37 +18,45 @@ const todayIso = () => {
 
 type Props = { apt: ApartmentView; onChanged: () => Promise<void> };
 
+const text = (n: number) => (n ? String(n) : '');
+
 /**
- * Selling the apartment: what it cost to acquire, what it sold for, the gain
- * by the actual costs and by the assumed acquisition cost, and the viewer's
- * tax on the better of the two. The sale itself and the acquisition costs are
- * stored with the apartment; what the viewer says about their own tax (other
- * capital income, whether it was their home) is not, since it is theirs alone.
+ * Selling one's own part of the apartment: what it cost to acquire, what it
+ * sold for, the gain by the actual costs and by the assumed acquisition cost,
+ * and the tax on the better of the two. Everything here is the viewer's own and
+ * private to them — their purchase, their sale, their acquisition costs, each
+ * as their own part — so no ownership share is applied to it. What they say
+ * about their other capital income and whether it was their home is not even
+ * stored.
  */
 export default function Sale({ apt, onChanged }: Props) {
   const { t, tn, lang } = useI18n();
-  const s = apt.settings;
-  const [saleDate, setSaleDate] = useState(s.saleDate);
-  const [salePrice, setSalePrice] = useState(s.salePrice ? String(s.salePrice) : '');
-  const [saleCosts, setSaleCosts] = useState(s.saleCosts ? String(s.saleCosts) : '');
+  const start = apt.mySale ?? suggestedSale(apt.settings, apt.mySharePct);
+  const [purchaseDate, setPurchaseDate] = useState(start.purchaseDate);
+  const [purchasePrice, setPurchasePrice] = useState(text(start.purchasePrice));
+  const [saleDate, setSaleDate] = useState(start.saleDate);
+  const [salePrice, setSalePrice] = useState(text(start.salePrice));
+  const [saleCosts, setSaleCosts] = useState(text(start.saleCosts));
   const [otherIncome, setOtherIncome] = useState('');
   const [livedIn, setLivedIn] = useState(false);
   const [editing, setEditing] = useState<AcquisitionCost | 'new' | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
 
-  const result = computeSale(apt, {
-    sharePct: apt.mySharePct,
-    otherCapitalIncome: Math.max(Number(otherIncome), 0),
-    livedIn,
-  });
+  const result = apt.mySale
+    ? computeSale(apt, apt.mySale, {
+        sharePct: apt.mySharePct,
+        otherCapitalIncome: Math.max(Number(otherIncome), 0),
+        livedIn,
+      })
+    : null;
   const params = ruleParams(result?.year ?? new Date().getFullYear(), lang);
 
-  const save = async (patch: { saleDate: string; salePrice: number; saleCosts: number }) => {
+  const run = async (action: () => Promise<unknown>) => {
     setBusy(true);
     setError('');
     try {
-      await api.updateSettings(apt.id, patch);
+      await action();
       await onChanged();
     } catch (e) {
       setError((e as Error).message);
@@ -56,8 +64,23 @@ export default function Sale({ apt, onChanged }: Props) {
     setBusy(false);
   };
 
+  const save = () =>
+    run(() =>
+      api.putSale(apt.id, {
+        purchaseDate,
+        purchasePrice: Number(purchasePrice),
+        saleDate,
+        salePrice: Number(salePrice),
+        saleCosts: Number(saleCosts),
+      }),
+    );
+
   const clear = async () => {
-    await save({ saleDate: '', salePrice: 0, saleCosts: 0 });
+    await run(() => api.deleteSale(apt.id));
+    // Back to where an owner with no sale starts, not to the sale just removed.
+    const fresh = suggestedSale(apt.settings, apt.mySharePct);
+    setPurchaseDate(fresh.purchaseDate);
+    setPurchasePrice(text(fresh.purchasePrice));
     setSaleDate('');
     setSalePrice('');
     setSaleCosts('');
@@ -67,12 +90,12 @@ export default function Sale({ apt, onChanged }: Props) {
     <>
       <section className="hero">
         <div className="label">
-          {result ? (result.myGain >= 0 ? t('sale.heroGain') : t('sale.heroLoss')) : t('sale.heroNone')}
+          {result ? (result.gain >= 0 ? t('sale.heroGain') : t('sale.heroLoss')) : t('sale.heroNone')}
         </div>
         {result ? (
           <>
-            <div className={'big ' + (result.myGain < 0 ? 'neg' : '')}>
-              <Money value={result.myGain} />
+            <div className={'big ' + (result.gain < 0 ? 'neg' : '')}>
+              <Money value={result.gain} />
             </div>
             <div className="label" style={{ marginTop: 4 }}>
               {result.taxFree ? (
@@ -95,6 +118,23 @@ export default function Sale({ apt, onChanged }: Props) {
       <section className="section">
         <Heading info={<Info about={t('sale.detailsAbout')}>{t('sale.detailsInfo')}</Info>}>{t('sale.details')}</Heading>
         <div className="card pad">
+          <Label
+            htmlFor="sale-purchase-date"
+            info={<Info about={t('sale.purchaseAbout')}>{t('sale.purchaseInfo', params)}</Info>}
+          >
+            {t('sale.purchaseDate')}
+          </Label>
+          <input id="sale-purchase-date" type="date" value={purchaseDate} onChange={(e) => setPurchaseDate(e.target.value)} />
+          <label htmlFor="sale-purchase-price">{t('sale.purchasePrice')}</label>
+          <input
+            id="sale-purchase-price"
+            type="number"
+            inputMode="decimal"
+            min="0"
+            step="0.01"
+            value={purchasePrice}
+            onChange={(e) => setPurchasePrice(e.target.value)}
+          />
           <label htmlFor="sale-date">{t('sale.date')}</label>
           <input id="sale-date" type="date" value={saleDate} onChange={(e) => setSaleDate(e.target.value)} />
           <label htmlFor="sale-price">{t('sale.price')}</label>
@@ -121,16 +161,12 @@ export default function Sale({ apt, onChanged }: Props) {
           />
           <ErrorNote message={error} />
           <div className="sheet-foot">
-            {s.saleDate !== '' && (
+            {apt.mySale && (
               <button className="btn danger" onClick={clear} disabled={busy}>
                 {t('sale.clear')}
               </button>
             )}
-            <button
-              className="btn primary"
-              disabled={busy || saleDate === '' || !(Number(salePrice) > 0)}
-              onClick={() => save({ saleDate, salePrice: Number(salePrice), saleCosts: Number(saleCosts) })}
-            >
+            <button className="btn primary" disabled={busy} onClick={save}>
               {t('common.save')}
             </button>
           </div>
@@ -187,15 +223,11 @@ export default function Sale({ apt, onChanged }: Props) {
               </div>
               <div className="kv">
                 <span>{t('sale.row.price')}</span>
-                <span className="num">{eur(apt.settings.salePrice)}</span>
+                <span className="num">{eur(apt.mySale!.salePrice)}</span>
               </div>
               <div className="kv">
                 <span>{t('sale.row.purchasePrice')}</span>
                 <span className="num">{eur(-result.actual.purchasePrice)}</span>
-              </div>
-              <div className="kv">
-                <span>{t('sale.row.purchaseCosts')}</span>
-                <span className="num">{eur(-result.actual.purchaseCosts)}</span>
               </div>
               {ACQUISITION_KINDS.filter((k) => result.actual.byKind[k] !== undefined).map((k) => (
                 <div className="kv" key={k}>
@@ -226,7 +258,7 @@ export default function Sale({ apt, onChanged }: Props) {
               </div>
               <div className="kv">
                 <span>{t('sale.row.price')}</span>
-                <span className="num">{eur(apt.settings.salePrice)}</span>
+                <span className="num">{eur(apt.mySale!.salePrice)}</span>
               </div>
               <div className="kv">
                 <span>{t('sale.assumedRate', { rate: result.assumed.rate * 100 })}</span>
@@ -242,12 +274,6 @@ export default function Sale({ apt, onChanged }: Props) {
           <section className="section">
             <Heading>{t('sale.myTax')}</Heading>
             <div className="card pad">
-              {apt.mySharePct !== 100 && (
-                <div className="kv">
-                  <span>{t('sale.myShare', { pct: apt.mySharePct })}</span>
-                  <span className="num">{eur(result.myGain)}</span>
-                </div>
-              )}
               <Label
                 htmlFor="sale-other-income"
                 info={<Info about={t('sale.otherIncomeAbout')}>{t('sale.otherIncomeInfo', params)}</Info>}

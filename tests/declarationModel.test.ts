@@ -26,6 +26,7 @@ const apartment = (settings: Partial<ApartmentView['settings']>, costs: CostEntr
   invites: [],
   recurring: [],
   acquisitionCosts: [],
+  mySale: null,
   rents,
   costs,
   mySharePct: pct,

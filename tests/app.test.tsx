@@ -69,6 +69,7 @@ function view(id: string, name: string, over: Partial<ApartmentView> = {}): Apar
     invites: [],
     recurring: [],
     acquisitionCosts: [],
+    mySale: null,
     mySharePct: 100,
     ...over,
   };

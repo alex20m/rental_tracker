@@ -38,6 +38,7 @@ const flat: ApartmentView = {
   invites: [],
   recurring: [],
   acquisitionCosts: [],
+  mySale: null,
   mySharePct: 100,
 };
 

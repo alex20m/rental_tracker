@@ -98,16 +98,26 @@ export interface ApartmentSettings {
   belowMarketRent: boolean;
   /** The share of the home that is let, in percent; the costs of the whole home count only by this much. */
   letSharePct: number;
+}
+
+/**
+ * One owner's own sale of their part of the apartment, and what their part
+ * cost. Personal: no other owner sees it, and every amount is the owner's own
+ * part, not the whole apartment's.
+ */
+export interface SaleDetails {
+  purchaseDate: string; // YYYY-MM-DD or ''
+  purchasePrice: number;
   /** The day the sale was agreed (the deed or other binding contract), YYYY-MM-DD, or '' while nothing is being sold. */
   saleDate: string;
-  salePrice: number; // the whole apartment's selling price, not one owner's part of it
-  /** What selling cost (agent, delivery, listing, registration) — the whole apartment's. */
+  salePrice: number;
+  /** What selling cost (agent, delivery, listing, registration). */
   saleCosts: number;
 }
 
 /**
- * What else counts towards the cost of acquiring the apartment when it is
- * sold, besides the price and `purchaseCosts`: the transfer tax, the agent's
+ * What counts towards the cost of acquiring the owner's part of the apartment
+ * when it is sold, besides the purchase price: the transfer tax, the agent's
  * and other fees of the purchase, an inspection, a basic improvement made
  * during ownership, and a financing charge the housing company booked as an
  * investment (rahastoitu) instead of income.
@@ -128,7 +138,7 @@ export interface AcquisitionCost {
   date: string; // YYYY-MM-DD
   kind: AcquisitionKind;
   description: string;
-  amount: number; // EUR, the whole apartment's
+  amount: number; // EUR, the owner's own part
 }
 
 /** Everything the tax calculation needs about one apartment. */
@@ -176,7 +186,10 @@ export interface ApartmentView extends Ledger {
   owners: Owner[];
   invites: PendingInvite[];
   recurring: RecurringEntry[];
+  /** The viewer's own, which no other owner sees. */
   acquisitionCosts: AcquisitionCost[];
+  /** The viewer's own sale, or null while they have entered none. */
+  mySale: SaleDetails | null;
   /** The viewer's own ownership share, in percent. */
   mySharePct: number;
 }
@@ -210,9 +223,6 @@ export const defaultSettings: ApartmentSettings = {
   roomClass: 'larger',
   belowMarketRent: false,
   letSharePct: 100,
-  saleDate: '',
-  salePrice: 0,
-  saleCosts: 0,
 };
 
 /**
