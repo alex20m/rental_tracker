@@ -218,12 +218,13 @@ export const fi: Record<MessageKey, string> = {
   'sale.heroLoss': 'Sinun myyntitappiosi',
   'sale.heroNone': 'Myyntiä ei ole syötetty',
   'sale.heroNoneHint': 'Syötä oma osuutesi myynnistä alle, niin näet voiton ja siitä maksettavan veron. Vain sinä näet sen.',
+  'sale.heroSaved': 'Ostosi on tallennettu. Palaa syöttämään myynti, kun myyt.',
   'sale.tax': 'Arvioitu vero',
   'sale.taxFreeShort': 'verovapaa',
   'sale.details': 'Sinun myyntisi',
   'sale.detailsAbout': 'myynti',
   'sale.purchaseInfo':
-    'Mitä maksoit osuudestasi. Se alkaa asunnon asetusten hinnan ja päivän osuutenasi; muuta se siihen, mitä todella maksoit. Päivä ratkaisee, pätevätkö {assumedLong} % (omistettu {assumedLongYears} vuotta) ja voiko myynti olla verovapaa.',
+    'Mitä maksoit osuudestasi. Se alkaa asunnon asetusten hinnan ja päivän osuutenasi; muuta se siihen, mitä todella maksoit. Voit tallentaa sen jo nyt, kauan ennen myyntiä, jotta se ei unohdu, kun aika koittaa. Päivä ratkaisee, pätevätkö {assumedLong} % (omistettu {assumedLongYears} vuotta) ja voiko myynti olla verovapaa.',
   'sale.purchaseAbout': 'sinun ostosi',
   'sale.purchasePrice': 'Sinun ostohintasi (€)',
   'sale.purchaseDate': 'Ostopäivä',
@@ -235,7 +236,7 @@ export const fi: Record<MessageKey, string> = {
   'sale.costsAbout': 'myyntikulut',
   'sale.costsInfo':
     'Osuutesi välityspalkkiosta, toimitus- ja rekisteröintimaksuista ja muista myynnin kuluista. Ei käytetä hankintameno-olettaman kanssa.',
-  'sale.clear': 'Poista myynti',
+  'sale.clear': 'Poista merkintäni',
   'sale.acq': 'Hankintamenot',
   'sale.acqAbout': 'hankintamenot',
   'sale.acqInfo':

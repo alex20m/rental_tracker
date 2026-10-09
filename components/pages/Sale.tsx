@@ -111,7 +111,7 @@ export default function Sale({ apt, onChanged }: Props) {
             </div>
           </>
         ) : (
-          <p className="lead">{t('sale.heroNoneHint')}</p>
+          <p className="lead">{apt.mySale ? t('sale.heroSaved') : t('sale.heroNoneHint')}</p>
         )}
       </section>
 

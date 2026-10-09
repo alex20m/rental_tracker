@@ -219,12 +219,13 @@ export const sv: Record<MessageKey, string> = {
   'sale.heroLoss': 'Din förlust på försäljningen',
   'sale.heroNone': 'Ingen försäljning angiven',
   'sale.heroNoneHint': 'Ange din egen del av försäljningen nedan så ser du vinsten och skatten på den. Bara du ser den.',
+  'sale.heroSaved': 'Ditt köp är sparat. Kom tillbaka och ange försäljningen när du säljer.',
   'sale.tax': 'Beräknad skatt',
   'sale.taxFreeShort': 'skattefri',
   'sale.details': 'Din försäljning',
   'sale.detailsAbout': 'försäljningen',
   'sale.purchaseInfo':
-    'Vad du betalade för din del. Den börjar som din andel av priset och datumet i lägenhetens inställningar; ändra till det du faktiskt betalade. Datumet avgör om {assumedLong} % gäller (ägd i {assumedLongYears} år) och om försäljningen kan vara skattefri.',
+    'Vad du betalade för din del. Den börjar som din andel av priset och datumet i lägenhetens inställningar; ändra till det du faktiskt betalade. Du kan spara den redan nu, långt före försäljningen, så att den inte glöms bort när det är dags. Datumet avgör om {assumedLong} % gäller (ägd i {assumedLongYears} år) och om försäljningen kan vara skattefri.',
   'sale.purchaseAbout': 'ditt köp',
   'sale.purchasePrice': 'Ditt inköpspris (€)',
   'sale.purchaseDate': 'Köpdatum',
@@ -236,7 +237,7 @@ export const sv: Record<MessageKey, string> = {
   'sale.costsAbout': 'försäljningskostnaderna',
   'sale.costsInfo':
     'Din del av mäklararvodet, leverans- och registreringsavgifter och annat som försäljningen kostade. Används inte med den antagna anskaffningsutgiften.',
-  'sale.clear': 'Ta bort försäljningen',
+  'sale.clear': 'Ta bort mina uppgifter',
   'sale.acq': 'Anskaffningsutgifter',
   'sale.acqAbout': 'anskaffningsutgifter',
   'sale.acqInfo':
