@@ -293,8 +293,10 @@ export class FakeApi {
       }
     }
     if (sub === 'sale') {
-      if (method === 'PUT') apt.mySale = body as unknown as ApartmentView['mySale'];
-      if (method === 'DELETE') apt.mySale = null;
+      // One whole part per request, merged into what is kept; nothing left means nothing kept.
+      const kept = { purchaseDate: '', purchasePrice: 0, saleDate: '', salePrice: 0, saleCosts: 0, ...apt.mySale, ...body };
+      const empty = !kept.purchaseDate && !kept.purchasePrice && !kept.saleDate && !kept.salePrice && !kept.saleCosts;
+      apt.mySale = empty ? null : (kept as ApartmentView['mySale']);
       return ok;
     }
     if (sub === 'acquisition') {

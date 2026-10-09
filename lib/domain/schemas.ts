@@ -116,16 +116,20 @@ export const costSchema = z
   })
   .strict();
 
-/** One owner's own purchase and sale of their part, which can be saved before it is complete. */
-export const saleSchema = z
-  .object({
-    purchaseDate: z.union([z.literal(''), isoDate]),
-    purchasePrice: money,
-    saleDate: z.union([z.literal(''), isoDate]),
-    salePrice: money,
-    saleCosts: money,
-  })
+/**
+ * An owner's own purchase of their part, and their own sale of it, are saved
+ * separately: a request carries one whole or the other, never half of one, so a
+ * purchase saved years ahead is not overwritten by a sale entered later.
+ */
+export const purchaseSchema = z
+  .object({ purchaseDate: z.union([z.literal(''), isoDate]), purchasePrice: money })
   .strict();
+
+export const saleSchema = z
+  .object({ saleDate: z.union([z.literal(''), isoDate]), salePrice: money, saleCosts: money })
+  .strict();
+
+export const salePatchSchema = z.union([purchaseSchema, saleSchema]);
 
 /** What counts towards the cost of acquiring the owner's part, for when it is sold; any day, since it may be years old. */
 export const acquisitionSchema = z

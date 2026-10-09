@@ -192,6 +192,8 @@ input[type="date"], input[type="month"] { display: block; appearance: none; -web
 .choice { min-height: 40px; border: 1px solid var(--line); background: var(--card); border-radius: 99px; padding: 6px 14px; font-weight: 550; font-size: 14px; }
 .choice[aria-checked='true'] { background: var(--brand-soft); border-color: var(--brand); color: var(--brand); font-weight: 650; }
 
+.switch-row { display: flex; align-items: center; gap: 2px; }
+.switch-row .switch { flex: 1; min-width: 0; width: auto; }
 .switch { display: flex; align-items: center; gap: 12px; width: 100%; min-height: 48px; padding: 8px 0; background: none; border: 0; text-align: left; font-weight: 550; }
 .switch .track { position: relative; width: 44px; height: 26px; flex: none; border-radius: 99px; background: var(--line); transition: background 0.15s; }
 .switch .knob { position: absolute; top: 3px; left: 3px; width: 20px; height: 20px; border-radius: 99px; background: #fff; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3); transition: transform 0.15s; }
@@ -221,6 +223,12 @@ input[type="date"], input[type="month"] { display: block; appearance: none; -web
 .sheet-foot { display: flex; gap: 10px; margin-top: 20px; }
 .sheet-foot .btn { flex: 1; }
 .sheet-foot .btn.primary { flex: 2; }
+/* The actions under a form on a page (not in a sheet): their own size, on the right, a destructive one on the left. */
+.form-foot { display: flex; align-items: center; justify-content: flex-end; gap: 10px; margin: 16px 0 12px; }
+.form-foot .btn.danger { margin-right: auto; }
+/* A method of counting a gain: its name and, on the better one, a mark; the better one has an outline. */
+.method-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; min-height: 48px; border-bottom: 1px solid var(--line); font-size: 16px; }
+.card.best { border-color: var(--brand); }
 @keyframes fade { from { opacity: 0; } }
 @keyframes rise { from { transform: translateY(24px); opacity: 0; } }
 
@@ -347,11 +355,11 @@ input[type="date"], input[type="month"] { display: block; appearance: none; -web
   .topbar .brand { visibility: hidden; } /* the sidebar already names the app */
 
   /* Columns, not a grid: sections of unequal height pack without gaps. */
-  .page-home, .page-portfolio, .page-tax { display: block; column-count: 2; column-gap: 56px; }
-  .page-home > *, .page-portfolio > *, .page-tax > * { break-inside: avoid; margin-bottom: 28px; }
+  .page-home, .page-portfolio, .page-tax, .page-sale { display: block; column-count: 2; column-gap: 56px; }
+  .page-home > *, .page-portfolio > *, .page-tax > *, .page-sale > * { break-inside: avoid; margin-bottom: 28px; }
   /* Pages that are one short list read better narrow than stretched across the screen. */
   .shell > .page-settings, .shell > .page-account { max-width: 640px; margin-left: 0; }
-  .page > .notice, .page > .allset, .page > .btn.block, .page > .empty, .page > .pagehead, .page > .seg { column-span: all; }
+  .page > .notice, .page > .allset, .page > .btn.block, .page > .empty, .page > .pagehead, .page > .seg, .page-sale > .hero { column-span: all; }
   .months { grid-template-columns: repeat(6, 1fr); }
   .bars { height: 150px; gap: 10px; }
   .fab { right: 40px; bottom: 32px; }
