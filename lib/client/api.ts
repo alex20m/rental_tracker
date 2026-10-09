@@ -77,8 +77,9 @@ export const api = {
   putReceipt: (id: string, costId: string, dataUrl: string) => call('PUT', `${apt(id)}/costs/${costId}/receipt`, { dataUrl }),
   deleteReceipt: (id: string, costId: string) => call('DELETE', `${apt(id)}/costs/${costId}/receipt`),
 
-  putSale: (id: string, sale: SaleDetails) => call('PUT', `${apt(id)}/sale`, sale),
-  deleteSale: (id: string) => call('DELETE', `${apt(id)}/sale`),
+  /** The purchase, or the sale: one whole or the other. */
+  saveSale: (id: string, part: Pick<SaleDetails, 'purchaseDate' | 'purchasePrice'> | Pick<SaleDetails, 'saleDate' | 'salePrice' | 'saleCosts'>) =>
+    call('PATCH', `${apt(id)}/sale`, part),
   createAcquisition: (id: string, cost: AcquisitionInput) => call<{ id: string }>('POST', `${apt(id)}/acquisition`, cost),
   updateAcquisition: (id: string, costId: string, cost: AcquisitionInput) =>
     call('PUT', `${apt(id)}/acquisition/${costId}`, cost),

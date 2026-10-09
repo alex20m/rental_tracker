@@ -11,18 +11,36 @@ type Page = import('@playwright/test').Page;
 const card = (page: Page, title: string) => page.locator('.card', { hasText: title });
 /** A section by its heading. */
 const section_ = (page: Page, heading: string) =>
-  page.locator('section').filter({ has: page.getByRole('heading', { name: heading, exact: true }) });
+  page.locator('section').filter({ has: page.getByRole('heading', { name: new RegExp(`^${heading}`) }) });
 
 type Sale = { bought: string; paid: string; date: string; price: string; costs?: string };
 
-/** Types the owner's own purchase and sale into the form and saves it. */
-async function enterSale(page: import('@playwright/test').Page, sale: Sale) {
-  await page.getByLabel('Purchase date').fill(sale.bought);
-  await page.getByLabel('Your purchase price (€)').fill(sale.paid);
+const purchaseCard = (page: Page) => section_(page, 'Your purchase');
+const saleCard = (page: Page) => section_(page, 'Your sale');
+const save = (card: ReturnType<typeof section_>) => card.getByRole('button', { name: 'Save', exact: true });
+const saved = (card: ReturnType<typeof section_>) => card.getByText('Saved', { exact: true });
+
+/** Types the owner's own purchase into its card and saves it. */
+async function enterPurchase(page: Page, purchase: { bought: string; paid: string }) {
+  await page.getByLabel('Purchase date').fill(purchase.bought);
+  await page.getByLabel('Your purchase price (€)').fill(purchase.paid);
+  await save(purchaseCard(page)).click();
+  await expect(saved(purchaseCard(page))).toBeVisible();
+}
+
+/** Types the owner's own sale into its card and saves it. */
+async function enterSaleOnly(page: Page, sale: { date: string; price: string; costs?: string }) {
   await page.getByLabel('Sale date').fill(sale.date);
   await page.getByLabel('Your selling price (€)').fill(sale.price);
   await page.getByLabel('Your costs of selling (€)').fill(sale.costs ?? '');
-  await page.getByRole('button', { name: 'Save', exact: true }).click();
+  await save(saleCard(page)).click();
+}
+
+/** Both cards, one after the other, as a person selling would. */
+async function enterSale(page: Page, sale: Sale) {
+  await enterPurchase(page, sale);
+  await enterSaleOnly(page, sale);
+  await expect(saved(saleCard(page))).toBeVisible();
 }
 
 test.describe('selling your part of the apartment', () => {
@@ -55,13 +73,16 @@ test.describe('selling your part of the apartment', () => {
     const apt = api.addApartment(FLAT);
     await page.goto('/');
     await section(page, 'Sale');
-    await page.getByLabel('Purchase date').fill('2018-03-01');
-    await page.getByLabel('Your purchase price (€)').fill('62000');
 
-    await page.getByRole('button', { name: 'Save', exact: true }).click();
+    await enterPurchase(page, { bought: '2018-03-01', paid: '62000' });
 
+    await expect(save(purchaseCard(page))).toBeDisabled();
+    await expect(saved(saleCard(page))).toHaveCount(0);
     await expect(hero(page)).toContainText('No sale entered');
     await expect(hero(page)).toContainText('Your purchase is saved. Come back and enter the sale when you sell.');
+    expect(api.callsTo('PATCH')).toEqual([
+      { call: `PATCH /api/apartments/${apt.id}/sale`, body: { purchaseDate: '2018-03-01', purchasePrice: 62000 } },
+    ]);
     expect(apt.mySale).toEqual({ purchaseDate: '2018-03-01', purchasePrice: 62000, saleDate: '', salePrice: 0, saleCosts: 0 });
 
     // Years later: the purchase is there, and only the sale is left to enter.
@@ -69,13 +90,38 @@ test.describe('selling your part of the apartment', () => {
     await section(page, 'Sale');
     await expect(page.getByLabel('Purchase date')).toHaveValue('2018-03-01');
     await expect(page.getByLabel('Your purchase price (€)')).toHaveValue('62000');
-    await page.getByLabel('Sale date').fill('2025-06-15');
-    await page.getByLabel('Your selling price (€)').fill('160000');
-    await page.getByRole('button', { name: 'Save', exact: true }).click();
+    await enterSaleOnly(page, { date: '2025-06-15', price: '160000' });
     await expect(hero(page)).toContainText('Your gain from the sale');
     await expect(hero(page)).toContainText('98 000,00 €');
+    expect(api.callsTo('PATCH').at(-1)!.body).toEqual({ saleDate: '2025-06-15', salePrice: 160000, saleCosts: 0 });
   });
 
+  test('saves the purchase and the sale separately, and offers to save again only what changed', async ({ page, api }) => {
+    api.addApartment(FLAT);
+    await page.goto('/');
+    await section(page, 'Sale');
+    await enterSale(page, { bought: '2018-03-01', paid: '100000', date: '2025-06-15', price: '160000' });
+    await expect(save(purchaseCard(page))).toBeDisabled();
+    await expect(save(saleCard(page))).toBeDisabled();
+
+    await page.getByLabel('Your purchase price (€)').fill('90000');
+
+    await expect(save(purchaseCard(page))).toBeEnabled();
+    await expect(saved(purchaseCard(page))).toHaveCount(0);
+    await expect(save(saleCard(page))).toBeDisabled();
+    await expect(saved(saleCard(page))).toBeVisible();
+
+    await page.getByLabel('Your selling price (€)').fill('170000');
+
+    await expect(save(saleCard(page))).toBeEnabled();
+    await expect(saved(saleCard(page))).toHaveCount(0);
+    // Neither change is kept until its own card is saved.
+    await expect(hero(page)).toContainText('60 000,00 €');
+    await save(saleCard(page)).click();
+    await expect(hero(page)).toContainText('70 000,00 €'); // 170 000 − 100 000: the purchase is still the saved one
+    await save(purchaseCard(page)).click();
+    await expect(hero(page)).toContainText('80 000,00 €');
+  });
 
   test('works out the gain by the actual costs, with your acquisition costs listed, and the tax on it', async ({ page, api }) => {
     const apt = api.addApartment(FLAT, {
@@ -88,11 +134,9 @@ test.describe('selling your part of the apartment', () => {
     await section(page, 'Sale');
     await enterSale(page, { bought: '2018-03-01', paid: '100000', date: '2025-06-15', price: '160000', costs: '4000' });
 
-    expect(api.callsTo('PUT /api/apartments')).toEqual([
-      {
-        call: `PUT /api/apartments/${apt.id}/sale`,
-        body: { purchaseDate: '2018-03-01', purchasePrice: 100000, saleDate: '2025-06-15', salePrice: 160000, saleCosts: 4000 },
-      },
+    expect(api.callsTo('PATCH')).toEqual([
+      { call: `PATCH /api/apartments/${apt.id}/sale`, body: { purchaseDate: '2018-03-01', purchasePrice: 100000 } },
+      { call: `PATCH /api/apartments/${apt.id}/sale`, body: { saleDate: '2025-06-15', salePrice: 160000, saleCosts: 4000 } },
     ]);
     // 160 000 − 100 000 − 900 − 300 − 4 000 = 54 800; tax 30 % of 30 000 and 34 % of 24 800.
     await expect(hero(page)).toContainText('Your gain from the sale');
@@ -288,7 +332,7 @@ test.describe('selling your part of the apartment', () => {
     await expect(sheet.getByRole('button', { name: 'Save' })).toBeEnabled();
   });
 
-  test('takes your sale back, starting the form over from your share of the apartment’s purchase', async ({ page, api }) => {
+  test('takes your sale back and keeps your purchase', async ({ page, api }) => {
     const apt = api.addApartment(
       { ...FLAT, purchaseDate: '2018-03-01', purchasePrice: 200000 },
       {
@@ -301,27 +345,30 @@ test.describe('selling your part of the apartment', () => {
     await expect(page.getByLabel('Your selling price (€)')).toHaveValue('160000');
     await expect(page.getByLabel('Your costs of selling (€)')).toHaveValue('4000');
 
-    await page.getByRole('button', { name: 'Remove my entries' }).click();
+    await page.getByRole('button', { name: 'Remove the sale' }).click();
 
-    await expect(hero(page)).toContainText('No sale entered');
-    await expect(page.getByLabel('Purchase date')).toHaveValue('2018-03-01');
-    await expect(page.getByLabel('Your purchase price (€)')).toHaveValue('200000');
+    await expect(hero(page)).toContainText('Your purchase is saved.');
+    await expect(page.getByLabel('Purchase date')).toHaveValue('2019-01-01');
+    await expect(page.getByLabel('Your purchase price (€)')).toHaveValue('120000');
     await expect(page.getByLabel('Sale date')).toHaveValue('');
     await expect(page.getByLabel('Your selling price (€)')).toHaveValue('');
     await expect(page.getByLabel('Your costs of selling (€)')).toHaveValue('');
-    expect(apt.mySale).toBeNull();
+    await expect(page.getByRole('button', { name: 'Remove the sale' })).toHaveCount(0);
+    expect(apt.mySale).toEqual({ purchaseDate: '2019-01-01', purchasePrice: 120000, saleDate: '', salePrice: 0, saleCosts: 0 });
   });
 
   test('says why the sale could not be saved and keeps what was typed', async ({ page, api }) => {
     api.addApartment(FLAT);
     await page.goto('/');
     await section(page, 'Sale');
-    api.failNext('PUT', /\/sale$/, { status: 400, body: { error: 'salePrice: At most two decimals' } });
+    await enterPurchase(page, { bought: '2018-03-01', paid: '100000' });
+    api.failNext('PATCH', /\/sale$/, { status: 400, body: { error: 'salePrice: At most two decimals' } });
 
-    await enterSale(page, { bought: '2018-03-01', paid: '100000', date: '2025-06-15', price: '160000.123' });
+    await enterSaleOnly(page, { date: '2025-06-15', price: '160000.123' });
 
     await expect(alert(page)).toHaveText('salePrice: At most two decimals');
     await expect(page.getByLabel('Your selling price (€)')).toHaveValue('160000.123');
+    await expect(save(saleCard(page))).toBeEnabled();
     await expect(hero(page)).toContainText('No sale entered');
   });
 });

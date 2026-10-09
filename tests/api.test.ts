@@ -6,6 +6,7 @@ import * as apartment from '@/app/api/apartments/[id]/route';
 import * as rents from '@/app/api/apartments/[id]/rents/[month]/route';
 import * as costs from '@/app/api/apartments/[id]/costs/route';
 import * as cost from '@/app/api/apartments/[id]/costs/[costId]/route';
+import * as sale from '@/app/api/apartments/[id]/sale/route';
 import * as acquisitions from '@/app/api/apartments/[id]/acquisition/route';
 import * as acquisition from '@/app/api/apartments/[id]/acquisition/[acquisitionId]/route';
 import * as receipt from '@/app/api/apartments/[id]/costs/[costId]/receipt/route';
@@ -89,6 +90,7 @@ describe('every route, signed out', () => {
       costs.POST(req('POST', { date: '2025-01-01', category: 'other', description: '', amount: 1 }), p),
       cost.PUT(req('PUT', { date: '2025-01-01', category: 'other', description: '', amount: 1 }), p),
       cost.DELETE(req('DELETE'), p),
+      sale.PATCH(req('PATCH', { saleDate: '2025-01-01', salePrice: 1, saleCosts: 0 }), p),
       acquisitions.POST(req('POST', acquired), p),
       acquisition.PUT(req('PUT', acquired), p),
       acquisition.DELETE(req('DELETE'), p),

@@ -111,6 +111,14 @@ const SETTINGS_FIELDS: Record<keyof ApartmentSettings, string> = {
   letSharePct: 'let_share_pct',
 };
 
+const SALE_FIELDS: Record<keyof SaleDetails, string> = {
+  purchaseDate: 'purchase_date',
+  purchasePrice: 'purchase_price',
+  saleDate: 'sale_date',
+  salePrice: 'sale_price',
+  saleCosts: 'sale_costs',
+};
+
 const toDbValue = (key: keyof ApartmentSettings, value: unknown) =>
   key === 'purchaseDate' && value === '' ? null : value;
 
@@ -479,31 +487,28 @@ export function portfolio(db: Queryable, clock: () => Date = () => new Date()) {
       return rows.length > 0;
     },
 
-    /** Saves the owner's own sale, replacing the one they had. Nobody else's is touched or seen. */
-    async putSale(userId: string, apartmentId: string, sale: SaleInput): Promise<boolean> {
+    /**
+     * Saves the owner's own purchase, or their own sale, whichever part is given,
+     * and leaves the other as it was. Nobody else's is touched or seen. A row
+     * with nothing left in it is removed.
+     */
+    async patchSale(userId: string, apartmentId: string, part: Partial<SaleInput>): Promise<boolean> {
       if (!(await owns(userId, apartmentId))) return false;
+      const keys = (Object.keys(part) as (keyof SaleInput)[]).filter((k) => k in SALE_FIELDS);
+      const values = keys.map((k) => (part[k] === '' ? null : part[k]));
+      const columns = keys.map((k) => SALE_FIELDS[k]);
       await db.query(
-        `insert into sales (apartment_id, user_id, purchase_date, purchase_price, sale_date, sale_price, sale_costs)
-         values ($1, $2, $3, $4, $5, $6, $7)
-         on conflict (apartment_id, user_id) do update
-           set purchase_date = excluded.purchase_date, purchase_price = excluded.purchase_price,
-               sale_date = excluded.sale_date, sale_price = excluded.sale_price, sale_costs = excluded.sale_costs`,
-        [
-          apartmentId,
-          userId,
-          sale.purchaseDate || null,
-          sale.purchasePrice,
-          sale.saleDate || null,
-          sale.salePrice,
-          sale.saleCosts,
-        ],
+        `insert into sales (apartment_id, user_id, ${columns.join(', ')})
+         values ($1, $2, ${keys.map((_, i) => `$${i + 3}`).join(', ')})
+         on conflict (apartment_id, user_id) do update set ${columns.map((c) => `${c} = excluded.${c}`).join(', ')}`,
+        [apartmentId, userId, ...values],
       );
-      return true;
-    },
-
-    async deleteSale(userId: string, apartmentId: string): Promise<boolean> {
-      if (!(await owns(userId, apartmentId))) return false;
-      await db.query('delete from sales where apartment_id = $1 and user_id = $2', [apartmentId, userId]);
+      await db.query(
+        `delete from sales
+          where apartment_id = $1 and user_id = $2 and purchase_date is null and purchase_price = 0
+            and sale_date is null and sale_price = 0 and sale_costs = 0`,
+        [apartmentId, userId],
+      );
       return true;
     },
 

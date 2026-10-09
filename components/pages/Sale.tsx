@@ -2,14 +2,14 @@
 
 import { useState } from 'react';
 import { ACQUISITION_KINDS } from '@/lib/domain/types';
-import type { AcquisitionCost, AcquisitionKind, ApartmentView } from '@/lib/domain/types';
+import type { AcquisitionCost, AcquisitionKind, ApartmentView, SaleDetails } from '@/lib/domain/types';
 import { api } from '@/lib/client/api';
 import { computeSale, suggestedSale } from '@/lib/domain/sale';
 import { eur } from '@/lib/domain/tax';
 import { shortDate } from '@/lib/ui/format';
 import { ruleParams } from '@/lib/ui/ruleParams';
 import { useI18n } from '@/components/I18nProvider';
-import { ErrorNote, Heading, Info, Label, Money, Sheet, Switch } from '@/components/ui';
+import { ErrorNote, Heading, Icon, Info, Label, Money, Sheet, Switch } from '@/components/ui';
 
 const todayIso = () => {
   const d = new Date();
@@ -20,14 +20,17 @@ type Props = { apt: ApartmentView; onChanged: () => Promise<void> };
 
 const text = (n: number) => (n ? String(n) : '');
 
+const NOTHING: SaleDetails = { purchaseDate: '', purchasePrice: 0, saleDate: '', salePrice: 0, saleCosts: 0 };
+
 /**
  * Selling one's own part of the apartment: what it cost to acquire, what it
  * sold for, the gain by the actual costs and by the assumed acquisition cost,
  * and the tax on the better of the two. Everything here is the viewer's own and
  * private to them — their purchase, their sale, their acquisition costs, each
- * as their own part — so no ownership share is applied to it. What they say
- * about their other capital income and whether it was their home is not even
- * stored.
+ * as their own part — so no ownership share is applied to it. The purchase and
+ * the sale are saved separately, so a purchase noted years ahead is there when
+ * it is time to sell. What the viewer says about their other capital income and
+ * whether it was their home is not even stored.
  */
 export default function Sale({ apt, onChanged }: Props) {
   const { t, tn, lang } = useI18n();
@@ -42,6 +45,11 @@ export default function Sale({ apt, onChanged }: Props) {
   const [editing, setEditing] = useState<AcquisitionCost | 'new' | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
+
+  const kept = apt.mySale ?? NOTHING;
+  const purchaseSaved = purchaseDate === kept.purchaseDate && Number(purchasePrice) === kept.purchasePrice;
+  const saleSaved = saleDate === kept.saleDate && Number(salePrice) === kept.salePrice && Number(saleCosts) === kept.saleCosts;
+  const hasPurchase = kept.purchaseDate !== '' || kept.purchasePrice > 0;
 
   const result = apt.mySale
     ? computeSale(apt, apt.mySale, {
@@ -64,23 +72,14 @@ export default function Sale({ apt, onChanged }: Props) {
     setBusy(false);
   };
 
-  const save = () =>
-    run(() =>
-      api.putSale(apt.id, {
-        purchaseDate,
-        purchasePrice: Number(purchasePrice),
-        saleDate,
-        salePrice: Number(salePrice),
-        saleCosts: Number(saleCosts),
-      }),
-    );
+  const savePurchase = () => run(() => api.saveSale(apt.id, { purchaseDate, purchasePrice: Number(purchasePrice) }));
 
-  const clear = async () => {
-    await run(() => api.deleteSale(apt.id));
-    // Back to where an owner with no sale starts, not to the sale just removed.
-    const fresh = suggestedSale(apt.settings, apt.mySharePct);
-    setPurchaseDate(fresh.purchaseDate);
-    setPurchasePrice(text(fresh.purchasePrice));
+  const saveSale = () =>
+    run(() => api.saveSale(apt.id, { saleDate, salePrice: Number(salePrice), saleCosts: Number(saleCosts) }));
+
+  /** Takes the sale back and leaves the purchase as it is. */
+  const clearSale = async () => {
+    await run(() => api.saveSale(apt.id, { saleDate: '', salePrice: 0, saleCosts: 0 }));
     setSaleDate('');
     setSalePrice('');
     setSaleCosts('');
@@ -116,37 +115,65 @@ export default function Sale({ apt, onChanged }: Props) {
       </section>
 
       <section className="section">
-        <Heading info={<Info about={t('sale.detailsAbout')}>{t('sale.detailsInfo')}</Info>}>{t('sale.details')}</Heading>
+        <Heading
+          info={<Info about={t('sale.purchaseAbout')}>{t('sale.purchaseInfo', params)}</Info>}
+          action={purchaseSaved && hasPurchase ? <span className="chip">{t('sale.saved')}</span> : undefined}
+        >
+          {t('sale.purchaseHeading')}
+        </Heading>
         <div className="card pad">
-          <Label
-            htmlFor="sale-purchase-date"
-            info={<Info about={t('sale.purchaseAbout')}>{t('sale.purchaseInfo', params)}</Info>}
-          >
-            {t('sale.purchaseDate')}
-          </Label>
-          <input id="sale-purchase-date" type="date" value={purchaseDate} onChange={(e) => setPurchaseDate(e.target.value)} />
-          <label htmlFor="sale-purchase-price">{t('sale.purchasePrice')}</label>
-          <input
-            id="sale-purchase-price"
-            type="number"
-            inputMode="decimal"
-            min="0"
-            step="0.01"
-            value={purchasePrice}
-            onChange={(e) => setPurchasePrice(e.target.value)}
-          />
-          <label htmlFor="sale-date">{t('sale.date')}</label>
-          <input id="sale-date" type="date" value={saleDate} onChange={(e) => setSaleDate(e.target.value)} />
-          <label htmlFor="sale-price">{t('sale.price')}</label>
-          <input
-            id="sale-price"
-            type="number"
-            inputMode="decimal"
-            min="0"
-            step="0.01"
-            value={salePrice}
-            onChange={(e) => setSalePrice(e.target.value)}
-          />
+          <div className="cols">
+            <div>
+              <label htmlFor="sale-purchase-date">{t('sale.purchaseDate')}</label>
+              <input id="sale-purchase-date" type="date" value={purchaseDate} onChange={(e) => setPurchaseDate(e.target.value)} />
+            </div>
+            <div>
+              <label htmlFor="sale-purchase-price">{t('sale.purchasePrice')}</label>
+              <input
+                id="sale-purchase-price"
+                type="number"
+                inputMode="decimal"
+                min="0"
+                step="0.01"
+                value={purchasePrice}
+                onChange={(e) => setPurchasePrice(e.target.value)}
+              />
+            </div>
+          </div>
+          <div className="form-foot">
+            <button className="btn primary small" disabled={busy || purchaseSaved} onClick={savePurchase}>
+              {t('common.save')}
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <section className="section">
+        <Heading
+          info={<Info about={t('sale.detailsAbout')}>{t('sale.detailsInfo')}</Info>}
+          action={saleSaved && kept.saleDate !== '' ? <span className="chip">{t('sale.saved')}</span> : undefined}
+        >
+          {t('sale.details')}
+        </Heading>
+        <div className="card pad">
+          <div className="cols">
+            <div>
+              <label htmlFor="sale-date">{t('sale.date')}</label>
+              <input id="sale-date" type="date" value={saleDate} onChange={(e) => setSaleDate(e.target.value)} />
+            </div>
+            <div>
+              <label htmlFor="sale-price">{t('sale.price')}</label>
+              <input
+                id="sale-price"
+                type="number"
+                inputMode="decimal"
+                min="0"
+                step="0.01"
+                value={salePrice}
+                onChange={(e) => setSalePrice(e.target.value)}
+              />
+            </div>
+          </div>
           <Label htmlFor="sale-costs" info={<Info about={t('sale.costsAbout')}>{t('sale.costsInfo')}</Info>}>
             {t('sale.costs')}
           </Label>
@@ -160,13 +187,13 @@ export default function Sale({ apt, onChanged }: Props) {
             onChange={(e) => setSaleCosts(e.target.value)}
           />
           <ErrorNote message={error} />
-          <div className="sheet-foot">
-            {apt.mySale && (
-              <button className="btn danger" onClick={clear} disabled={busy}>
+          <div className="form-foot">
+            {kept.saleDate !== '' && (
+              <button className="btn danger small" onClick={clearSale} disabled={busy}>
                 {t('sale.clear')}
               </button>
             )}
-            <button className="btn primary" disabled={busy} onClick={save}>
+            <button className="btn primary small" disabled={busy || saleSaved} onClick={saveSale}>
               {t('common.save')}
             </button>
           </div>
@@ -177,8 +204,9 @@ export default function Sale({ apt, onChanged }: Props) {
         <Heading
           info={<Info about={t('sale.acqAbout')}>{t('sale.acqInfo')}</Info>}
           action={
-            <button className="btn" onClick={() => setEditing('new')}>
-              {t('sale.acqAdd')}
+            <button className="btn small" aria-label={t('sale.acqAdd')} onClick={() => setEditing('new')}>
+              {Icon.plus}
+              {t('sale.acqAddShort')}
             </button>
           }
         >
@@ -212,12 +240,12 @@ export default function Sale({ apt, onChanged }: Props) {
             <Heading info={<Info about={t('sale.compareAbout')}>{t('sale.compareInfo', params)}</Info>}>
               {t('sale.compare')}
             </Heading>
-            <p className="msg">
+            <p className="msg" style={{ marginBottom: 12 }}>
               {result.ownedYears === null ? t('sale.ownedUnknown', params) : tn('sale.owned', result.ownedYears)}
             </p>
 
-            <div className="card pad">
-              <div className="kv">
+            <div className={'card pad' + (result.best === 'actual' ? ' best' : '')}>
+              <div className="method-head">
                 <b>{t('sale.actual')}</b>
                 {result.best === 'actual' && <span className="chip">{t('sale.better')}</span>}
               </div>
@@ -251,8 +279,8 @@ export default function Sale({ apt, onChanged }: Props) {
               </div>
             </div>
 
-            <div className="card pad" style={{ marginTop: 12 }}>
-              <div className="kv">
+            <div className={'card pad' + (result.best === 'assumed' ? ' best' : '')} style={{ marginTop: 12 }}>
+              <div className="method-head">
                 <b>{t('sale.assumed')}</b>
                 {result.best === 'assumed' && <span className="chip">{t('sale.better')}</span>}
               </div>
@@ -289,24 +317,26 @@ export default function Sale({ apt, onChanged }: Props) {
                 value={otherIncome}
                 onChange={(e) => setOtherIncome(e.target.value)}
               />
-              <div style={{ marginTop: 12 }}>
+              <div className="switch-row" style={{ margin: '14px 0 4px' }}>
                 <Switch checked={livedIn} onChange={setLivedIn}>
                   {t('sale.livedIn', params)}
                 </Switch>
                 <Info about={t('sale.livedInAbout')}>{t('sale.livedInInfo', params)}</Info>
               </div>
               {result.taxFree ? (
-                <p className="msg">{t('sale.taxFree', params)}</p>
+                <p className="msg" style={{ margin: '8px 0 12px' }}>{t('sale.taxFree', params)}</p>
               ) : (
-                <div className="kv sum">
+                <div className="kv sum" style={{ marginTop: 12 }}>
                   <span>{t('sale.taxLine')}</span>
                   <span className="num">{eur(result.tax)}</span>
                 </div>
               )}
               {result.loss > 0 && (
-                <p className="msg">{result.lossDeductible ? t('sale.lossDeductible', params) : t('sale.lossNotDeductible')}</p>
+                <p className="msg" style={{ marginBottom: 12 }}>
+                  {result.lossDeductible ? t('sale.lossDeductible', params) : t('sale.lossNotDeductible')}
+                </p>
               )}
-              <p className="msg">{t('sale.report')}</p>
+              <p className="msg" style={{ margin: '4px 0 12px' }}>{t('sale.report')}</p>
             </div>
           </section>
         </>

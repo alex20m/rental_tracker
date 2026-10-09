@@ -156,6 +156,16 @@ describe('the acquisition costs of an owner', () => {
 });
 
 const mySale = { purchaseDate: '2018-03-01', purchasePrice: 62000, saleDate: '2025-06-15', salePrice: 111000, saleCosts: 2400.5 };
+const purchaseOf = (d: typeof mySale) => ({ purchaseDate: d.purchaseDate, purchasePrice: d.purchasePrice });
+const saleOf = (d: typeof mySale) => ({ saleDate: d.saleDate, salePrice: d.salePrice, saleCosts: d.saleCosts });
+
+/** Saves the signed-in owner's purchase and sale, each on its own as the page does. */
+async function saveBoth(as: Session, id: string, d = mySale) {
+  signIn(as);
+  const purchase = await sale.PATCH(req('PATCH', purchaseOf(d)), ctx({ id }));
+  const selling = await sale.PATCH(req('PATCH', saleOf(d)), ctx({ id }));
+  expect([purchase.status, selling.status]).toEqual([200, 200]);
+}
 
 /** Alice invites Bob for 40 %, who then joins by signing in with his verified email. */
 async function sharedWithBob(): Promise<string> {
@@ -168,46 +178,64 @@ async function sharedWithBob(): Promise<string> {
 }
 
 describe('the sale of an owner’s own part', () => {
-  it('starts as none, is saved with the purchase it follows from, and is read back exactly', async () => {
+  it('starts as none, and is read back exactly once the purchase and the sale are saved', async () => {
     const id = await createApartment(alice);
     expect((await view(alice, id)).mySale).toBeNull();
 
-    signIn(alice);
-    const res = await sale.PUT(req('PUT', mySale), ctx({ id }));
+    await saveBoth(alice, id);
 
-    expect(res.status).toBe(200);
     expect((await view(alice, id)).mySale).toEqual(mySale);
   });
 
-  it('can be saved before it is complete, with only the purchase, and then replaced', async () => {
+  it('keeps the purchase on its own, long before a sale, and saving the sale later does not change it', async () => {
     const id = await createApartment(alice);
     signIn(alice);
-    const onlyPurchase = { purchaseDate: '2018-03-01', purchasePrice: 62000, saleDate: '', salePrice: 0, saleCosts: 0 };
-    await sale.PUT(req('PUT', onlyPurchase), ctx({ id }));
-    expect((await view(alice, id)).mySale).toEqual(onlyPurchase);
+    await sale.PATCH(req('PATCH', purchaseOf(mySale)), ctx({ id }));
+    expect((await view(alice, id)).mySale).toEqual({ ...purchaseOf(mySale), saleDate: '', salePrice: 0, saleCosts: 0 });
 
     signIn(alice);
-    await sale.PUT(req('PUT', mySale), ctx({ id }));
+    await sale.PATCH(req('PATCH', saleOf(mySale)), ctx({ id }));
     expect((await view(alice, id)).mySale).toEqual(mySale);
     expect(await db.query('select 1 from sales')).toHaveLength(1);
   });
 
-  it('can be taken back', async () => {
+  it('changes the purchase without touching the sale, and the other way round', async () => {
     const id = await createApartment(alice);
-    signIn(alice);
-    await sale.PUT(req('PUT', mySale), ctx({ id }));
-    signIn(alice);
+    await saveBoth(alice, id);
 
-    const res = await sale.DELETE(req('DELETE'), ctx({ id }));
+    signIn(alice);
+    await sale.PATCH(req('PATCH', { purchaseDate: '2019-01-01', purchasePrice: 70000 }), ctx({ id }));
+    expect((await view(alice, id)).mySale).toEqual({ ...mySale, purchaseDate: '2019-01-01', purchasePrice: 70000 });
 
-    expect(res.status).toBe(200);
+    signIn(alice);
+    await sale.PATCH(req('PATCH', { saleDate: '2026-01-01', salePrice: 1, saleCosts: 0 }), ctx({ id }));
+    expect((await view(alice, id)).mySale).toEqual({
+      purchaseDate: '2019-01-01',
+      purchasePrice: 70000,
+      saleDate: '2026-01-01',
+      salePrice: 1,
+      saleCosts: 0,
+    });
+  });
+
+  it('takes the sale back by clearing it, keeping the purchase, and keeps nothing once both are empty', async () => {
+    const id = await createApartment(alice);
+    await saveBoth(alice, id);
+
+    signIn(alice);
+    await sale.PATCH(req('PATCH', { saleDate: '', salePrice: 0, saleCosts: 0 }), ctx({ id }));
+    expect((await view(alice, id)).mySale).toEqual({ ...purchaseOf(mySale), saleDate: '', salePrice: 0, saleCosts: 0 });
+
+    signIn(alice);
+    await sale.PATCH(req('PATCH', { purchaseDate: '', purchasePrice: 0 }), ctx({ id }));
     expect((await view(alice, id)).mySale).toBeNull();
+    expect(await db.query('select 1 from sales')).toEqual([]);
   });
 
   it('is private: a co-owner neither sees it nor, by saving their own, changes it', async () => {
     const id = await sharedWithBob();
     signIn(alice);
-    await sale.PUT(req('PUT', mySale), ctx({ id }));
+    await saveBoth(alice, id);
     signIn(alice);
     await acquisitions.POST(req('POST', fuktmatning), ctx({ id }));
 
@@ -215,8 +243,7 @@ describe('the sale of an owner’s own part', () => {
     expect(bobSees.mySale).toBeNull();
     expect(bobSees.acquisitionCosts).toEqual([]);
 
-    signIn(bob);
-    await sale.PUT(req('PUT', { ...mySale, salePrice: 5 }), ctx({ id }));
+    await saveBoth(bob, id, { ...mySale, salePrice: 5 });
     expect((await view(alice, id)).mySale).toEqual(mySale);
     expect((await view(bob, id)).mySale).toMatchObject({ salePrice: 5 });
   });
@@ -236,22 +263,24 @@ describe('the sale of an owner’s own part', () => {
     expect((await view(alice, id)).acquisitionCosts).toMatchObject([{ id: created.id, amount: 300 }]);
   });
 
-  it('refuses a day that does not exist, amounts below zero or with fractions of a cent, and unknown fields', async () => {
+  it('refuses a day that does not exist, amounts below zero or with fractions of a cent, unknown fields, and anything but a whole purchase or a whole sale', async () => {
     const id = await createApartment(alice);
     signIn(alice);
-    const put = (body: unknown) => sale.PUT(req('PUT', body), ctx({ id }));
+    const patch = (body: unknown) => sale.PATCH(req('PATCH', body), ctx({ id }));
 
     const refused = await Promise.all([
-      put({ ...mySale, saleDate: '2025-02-30' }),
-      put({ ...mySale, purchaseDate: '2018-13-01' }),
-      put({ ...mySale, salePrice: -1 }),
-      put({ ...mySale, saleCosts: 1.234 }),
-      put({ ...mySale, purchasePrice: -5 }),
-      put({ ...mySale, extra: 1 }),
-      put({ saleDate: '2025-06-15' }),
+      patch({ ...saleOf(mySale), saleDate: '2025-02-30' }),
+      patch({ ...purchaseOf(mySale), purchaseDate: '2018-13-01' }),
+      patch({ ...saleOf(mySale), salePrice: -1 }),
+      patch({ ...saleOf(mySale), saleCosts: 1.234 }),
+      patch({ ...purchaseOf(mySale), purchasePrice: -5 }),
+      patch({ ...saleOf(mySale), extra: 1 }),
+      patch(mySale), // both at once: the page saves them separately
+      patch({ saleDate: '2025-06-15' }), // half a sale
+      patch({}),
     ]);
 
-    expect(refused.map((r) => r.status)).toEqual([400, 400, 400, 400, 400, 400, 400]);
+    expect(refused.map((r) => r.status)).toEqual([400, 400, 400, 400, 400, 400, 400, 400, 400]);
     expect((await view(alice, id)).mySale).toBeNull();
   });
 
@@ -259,20 +288,18 @@ describe('the sale of an owner’s own part', () => {
     const id = await createApartment(alice);
     signIn(bob);
 
-    const attempts = await Promise.all([sale.PUT(req('PUT', mySale), ctx({ id })), sale.DELETE(req('DELETE'), ctx({ id }))]);
+    const attempt = await sale.PATCH(req('PATCH', saleOf(mySale)), ctx({ id }));
 
-    expect(attempts.map((r) => r.status)).toEqual([404, 404]);
+    expect(attempt.status).toBe(404);
     expect(await db.query('select 1 from sales')).toEqual([]);
   });
 
   it('is deleted with the apartment, and with the account or ownership of the person who made it', async () => {
     const id = await sharedWithBob();
-    signIn(bob);
-    await sale.PUT(req('PUT', mySale), ctx({ id }));
+    await saveBoth(bob, id);
     signIn(bob);
     await acquisitions.POST(req('POST', fuktmatning), ctx({ id }));
-    signIn(alice);
-    await sale.PUT(req('PUT', mySale), ctx({ id }));
+    await saveBoth(alice, id);
 
     // Bob gives his share away and leaves: what he kept for himself goes with him.
     signIn(alice);
@@ -302,10 +329,8 @@ describe('the sale of an owner’s own part', () => {
 
   it('is deleted with the account of a co-owner who leaves the others’ apartment behind', async () => {
     const id = await sharedWithBob();
-    signIn(bob);
-    await sale.PUT(req('PUT', mySale), ctx({ id }));
-    signIn(alice);
-    await sale.PUT(req('PUT', mySale), ctx({ id }));
+    await saveBoth(bob, id);
+    await saveBoth(alice, id);
 
     signIn(bob);
     await me.DELETE(req('DELETE'));
