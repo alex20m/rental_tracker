@@ -58,8 +58,11 @@ export default function Checklist({ apt, onChanged }: Props) {
       waiting.current -= 1;
       if (waiting.current === 0) {
         await onChanged();
-        latest.current = null;
-        setShown(null);
+        // A change made while reloading is still to be saved, so keep showing it over the reloaded list.
+        if (waiting.current === 0) {
+          latest.current = null;
+          setShown(null);
+        }
       }
       return ok;
     });

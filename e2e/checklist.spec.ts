@@ -123,6 +123,31 @@ test.describe('the apartment’s checklist', () => {
     ]);
   });
 
+  test('keeps a box ticked right after adding it, while the list is reloaded from the save before', async ({ page, api }) => {
+    const apt = api.addApartment({ name: 'Flat' });
+    await page.goto('/');
+    await section(page, 'Checklist');
+    const reloaded = api.holdNext('GET', new RegExp(`/api/apartments/${apt.id}$`));
+
+    await newItem(page).fill('Call the plumber');
+    await newItem(page).press('Enter');
+    await expect.poll(() => apt.checklist).toEqual([PLUMBER]); // saved; the reload is now held
+    const ticked = api.holdNext('PUT', /\/checklist$/);
+    await list(page).getByRole('checkbox', { name: 'Call the plumber' }).check();
+    await expect(progress(page)).toHaveText('1 of 1 done');
+
+    // The reload comes back with the item still unticked; only after it is the tick sent, and held unanswered.
+    reloaded();
+    await expect.poll(() => api.callsTo('PUT')).toHaveLength(2);
+
+    await expect(list(page).getByRole('checkbox', { name: 'Call the plumber' })).toBeChecked();
+    await expect(progress(page)).toHaveText('1 of 1 done');
+    ticked();
+
+    await expect.poll(() => apt.checklist).toEqual([{ ...PLUMBER, done: true }]);
+    await expect(list(page).getByRole('checkbox', { name: 'Call the plumber' })).toBeChecked();
+  });
+
   test('removes one item with its ×, leaving the rest in order', async ({ page, api }) => {
     const apt = api.addApartment({ name: 'Flat' }, { checklist: SEEDED });
     await page.goto('/');
