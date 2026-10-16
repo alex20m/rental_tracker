@@ -216,6 +216,16 @@ export const en = {
   'cat.other.label': 'Other deductible',
   'cat.other.hint': 'Any other cost of earning the rent that fits no category above.',
 
+  // — checklist —
+  'nav.checklist': 'Checklist',
+  'checklist.shared': 'Shared with every owner of this apartment.',
+  'checklist.progress': '{done} of {total} done',
+  'checklist.items': 'Checklist items',
+  'checklist.empty': 'Nothing here yet. Add what is worth remembering about this apartment — the same list is seen by every owner.',
+  'checklist.newItem': 'New item',
+  'checklist.remove': 'Remove {item}',
+  'checklist.add': 'Add',
+
   // — sale —
   'nav.sale': 'Sale',
   'sale.heroGain': 'Your gain from the sale',

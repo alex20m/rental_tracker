@@ -22,6 +22,7 @@ const apt: ApartmentView = {
   ],
   invites: [],
   recurring: [],
+  checklist: [],
   acquisitionCosts: [],
   mySale: null,
   rents: [{ month: '2025-01', status: 'paid', amount: 800, receivedDate: '2025-01-03', note: '' }],

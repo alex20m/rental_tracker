@@ -213,6 +213,16 @@ export const sv: Record<MessageKey, string> = {
   'cat.other.label': 'Övriga avdragsgilla',
   'cat.other.hint': 'Annan kostnad för att förvärva hyresinkomsten som inte passar i någon kategori ovan.',
 
+  // — checklist —
+  'nav.checklist': 'Checklista',
+  'checklist.shared': 'Delas med alla ägare av den här lägenheten.',
+  'checklist.progress': '{done} av {total} klara',
+  'checklist.items': 'Punkter i checklistan',
+  'checklist.empty': 'Inget här ännu. Lägg till det som är värt att komma ihåg om lägenheten — alla ägare ser samma lista.',
+  'checklist.newItem': 'Ny punkt',
+  'checklist.remove': 'Ta bort {item}',
+  'checklist.add': 'Lägg till',
+
   // — sale —
   'nav.sale': 'Försäljning',
   'sale.heroGain': 'Din vinst på försäljningen',

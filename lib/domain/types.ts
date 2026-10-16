@@ -1,3 +1,5 @@
+import type { ChecklistItem } from './apartmentChecklist';
+
 export type RentStatus = 'paid' | 'vacant' | 'unpaid';
 
 export const RENT_STATUSES: readonly RentStatus[] = ['paid', 'vacant', 'unpaid'];
@@ -186,6 +188,8 @@ export interface ApartmentView extends Ledger {
   owners: Owner[];
   invites: PendingInvite[];
   recurring: RecurringEntry[];
+  /** The apartment's checklist, shared by all its owners: every item a checkbox. */
+  checklist: ChecklistItem[];
   /** The viewer's own, which no other owner sees. */
   acquisitionCosts: AcquisitionCost[];
   /** The viewer's own sale, or null while they have entered none. */

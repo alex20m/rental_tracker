@@ -425,6 +425,7 @@ export const Icon = {
     </>,
   ),
   sale: svg(<path d="M20.6 13.4 13.4 20.6a2 2 0 0 1-2.8 0L3 13V3h10l7.6 7.6a2 2 0 0 1 0 2.8zM7.5 7.5h.01" />),
+  checklist: svg(<path d="M3.5 6.5 5 8l2.5-3M3.5 12.5 5 14l2.5-3M3.5 18.5 5 20l2.5-3M11 6.5h10M11 12.5h10M11 18.5h10" />),
   menu: svg(<path d="M4 6h16M4 12h16M4 18h16" />),
   user: svg(
     <>

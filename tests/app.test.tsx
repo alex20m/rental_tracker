@@ -68,6 +68,7 @@ function view(id: string, name: string, over: Partial<ApartmentView> = {}): Apar
     owners: [{ userId: 'u1', email: 'me@example.test', sharePct: 100 }],
     invites: [],
     recurring: [],
+    checklist: [],
     acquisitionCosts: [],
     mySale: null,
     mySharePct: 100,
@@ -406,7 +407,7 @@ describe('the home screen', () => {
     expect(jun.textContent).not.toMatch(/\+|0,00/);
   });
 
-  it('lists the apartment’s five places, then the portfolio and the account, with history inside Tax rather than a place of its own', async () => {
+  it('lists the apartment’s six places, then the portfolio and the account, with history inside Tax rather than a place of its own', async () => {
     serve([view('a1', 'Alpha')]);
     render(<RentalApp />);
     const nav = await screen.findByRole('navigation', { name: 'Sections' });
@@ -414,7 +415,7 @@ describe('the home screen', () => {
       within(nav)
         .getAllByRole('button')
         .map((b) => b.textContent),
-    ).toEqual(['Home', 'Rent & costs', 'Tax', 'Sale', 'Settings', 'All apartments', 'Account settings']);
+    ).toEqual(['Home', 'Rent & costs', 'Tax', 'Sale', 'Checklist', 'Settings', 'All apartments', 'Account settings']);
   });
 
   it('shows at most three to-do items and counts the rest, leading to the Tax checklist', async () => {

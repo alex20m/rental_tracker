@@ -29,6 +29,7 @@ import type {
   SaleDetails,
 } from '@/lib/domain/types';
 import { nextMonth, repeatDay } from '@/lib/domain/recurring';
+import { parseChecklist, serializeChecklist, type ChecklistItem } from '@/lib/domain/apartmentChecklist';
 
 /** Just enough of a Postgres client: Neon's HTTP driver in the app, PGlite in tests. */
 export interface Queryable {
@@ -255,7 +256,10 @@ export function portfolio(db: Queryable, clock: () => Date = () => new Date()) {
       await bookDue(apartmentId);
 
       const [settingsRows, owners, invites, rents, costs, recurring, acquisitionCosts, sales] = await Promise.all([
-        db.query<ApartmentSettings>(`select ${SETTINGS_COLUMNS} from apartments a where a.id = $1`, [apartmentId]),
+        db.query<ApartmentSettings & { checklist: string }>(
+          `select ${SETTINGS_COLUMNS}, a.checklist from apartments a where a.id = $1`,
+          [apartmentId],
+        ),
         db.query<Owner>(
           `select user_id as "userId", email, share_pct::float8 as "sharePct"
              from apartment_owners where apartment_id = $1 order by joined_at, user_id`,
@@ -298,13 +302,13 @@ export function portfolio(db: Queryable, clock: () => Date = () => new Date()) {
           [apartmentId, userId],
         ),
       ]);
-      const settings = settingsRows[0];
-      if (!settings) return null;
+      if (!settingsRows[0]) return null;
+      const { checklist, ...settings } = settingsRows[0];
 
       // A cost has a category and the rent has none; leave the key out rather than send null.
       for (const r of recurring) if (r.category === null) delete r.category;
 
-      return { id: apartmentId, settings, owners, invites, rents, costs, recurring, acquisitionCosts, mySale: sales[0] ?? null, mySharePct: share };
+      return { id: apartmentId, settings, checklist: parseChecklist(checklist), owners, invites, rents, costs, recurring, acquisitionCosts, mySale: sales[0] ?? null, mySharePct: share };
     },
 
     async updateSettings(userId: string, apartmentId: string, patch: Partial<ApartmentSettings>): Promise<boolean> {
@@ -316,6 +320,13 @@ export function portfolio(db: Queryable, clock: () => Date = () => new Date()) {
         apartmentId,
         ...keys.map((k) => toDbValue(k, patch[k])),
       ]);
+      return true;
+    },
+
+    /** Replaces the checklist every owner of the apartment shares. */
+    async setChecklist(userId: string, apartmentId: string, items: ChecklistItem[]): Promise<boolean> {
+      if (!(await owns(userId, apartmentId))) return false;
+      await db.query('update apartments set checklist = $2 where id = $1', [apartmentId, serializeChecklist(items)]);
       return true;
     },
 
