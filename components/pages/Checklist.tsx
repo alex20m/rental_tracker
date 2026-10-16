@@ -93,7 +93,7 @@ export default function Checklist({ apt, onChanged }: Props) {
             ) : (
               <ul className="checklist" aria-label={t('checklist.items')}>
                 {items.map((it, i) => (
-                  <li key={i} className={it.done ? 'ticked' : undefined}>
+                  <li key={i}>
                     <label>
                       <input
                         type="checkbox"
