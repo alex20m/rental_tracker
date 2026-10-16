@@ -18,7 +18,7 @@ import {
 } from '@/lib/domain/types';
 import { RULES } from '@/lib/domain/taxRules';
 import { RECURRING_CATEGORIES } from '@/lib/domain/recurring';
-import { CHECKLIST_MAX } from '@/lib/domain/apartmentChecklist';
+import { CHECKLIST_ITEM_MAX, CHECKLIST_ITEMS_MAX } from '@/lib/domain/apartmentChecklist';
 
 const isRealDate = (s: string) => {
   const d = new Date(`${s}T00:00:00Z`);
@@ -185,8 +185,23 @@ export const recurringPatchSchema = z
   .object({ category: recurringCategory.optional(), description: text(500), amount: recurringAmount, dayOfMonth })
   .strict();
 
-/** The apartment's checklist as typed: not trimmed, because leading spaces and a final newline are the owner's. */
-export const checklistSchema = z.object({ text: z.string().max(CHECKLIST_MAX) }).strict();
+/** The apartment's checklist: every item a line of text and whether it is ticked. */
+export const checklistSchema = z
+  .object({
+    items: z
+      .array(
+        z
+          .object({
+            text: text(CHECKLIST_ITEM_MAX)
+              .min(1, 'An item needs a text')
+              .refine((t) => !/[\r\n]/.test(t), 'An item is one line'),
+            done: z.boolean(),
+          })
+          .strict(),
+      )
+      .max(CHECKLIST_ITEMS_MAX),
+  })
+  .strict();
 
 export const inviteSchema = z
   .object({

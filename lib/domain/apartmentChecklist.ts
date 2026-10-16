@@ -1,54 +1,55 @@
 /**
- * An apartment's own checklist: free text, shared by all its owners, in which a
- * line written `- [ ] thing` (or `* [ ] thing`) is a task that can be ticked.
- * Not to be confused with `checklist.ts`, the app's own list of what to check
- * before the declaration is filed.
+ * An apartment's own checklist: a list of items, shared by all its owners,
+ * every one of which is a checkbox. Not to be confused with `checklist.ts`,
+ * the app's own list of what to check before the declaration is filed.
  *
- * The text is the whole truth. Ticking a task flips the brackets on its line
- * and nothing else, so what is saved is what the owner would have typed.
+ * Owners only ever see items and plain lines. In the database the list is one
+ * text, a line per item marked `- [ ]` or `- [x]`, which nobody types.
  */
 
-/** The longest checklist that is stored; the same limit is a check on the column. */
-export const CHECKLIST_MAX = 20_000;
+export type ChecklistItem = { text: string; done: boolean };
 
-export type ChecklistLine =
-  /** `line`: the task's line in the text, which is how it is named when ticked. */
-  | { kind: 'task'; line: number; done: boolean; text: string }
-  | { kind: 'bullet'; text: string }
-  | { kind: 'text'; text: string };
+/** How many items a checklist holds, and how long one may be: together they fit the column's 20 000 characters. */
+export const CHECKLIST_ITEMS_MAX = 100;
+export const CHECKLIST_ITEM_MAX = 190;
 
-const TASK = /^\s*[-*]\s+\[([ xX])\]\s+(\S.*)$/;
-const BULLET = /^\s*[-*]\s+(\S.*)$/;
-const LINE_BREAK = /\r?\n/;
+const MARKED = /^\s*(?:[-*]\s+)?\[([ xX])\]\s?(.*)$/;
 
-/** What to show, line by line; blank lines are left out. */
-export function parseChecklist(text: string): ChecklistLine[] {
-  const lines: ChecklistLine[] = [];
-  text.split(LINE_BREAK).forEach((raw, line) => {
-    const task = TASK.exec(raw);
-    const bullet = BULLET.exec(raw);
-    if (task) lines.push({ kind: 'task', line, done: task[1] !== ' ', text: task[2]!.trim() });
-    else if (bullet) lines.push({ kind: 'bullet', text: bullet[1]!.trim() });
-    else if (raw.trim() !== '') lines.push({ kind: 'text', text: raw.trim() });
-  });
-  return lines;
+/** The stored text: one line per item, marked with whether it is ticked. */
+export function serializeChecklist(items: ChecklistItem[]): string {
+  return items.map((i) => `- [${i.done ? 'x' : ' '}] ${i.text}`).join('\n');
 }
 
-/** How many of the tasks are ticked. */
-export function progress(text: string): { done: number; total: number } {
-  const tasks = parseChecklist(text).filter((l) => l.kind === 'task');
-  return { done: tasks.filter((l) => l.done).length, total: tasks.length };
+/** The items in the stored text. A line without a mark is an item not ticked; blank lines are none. */
+export function parseChecklist(text: string): ChecklistItem[] {
+  return text
+    .split(/\r?\n/)
+    .filter((line) => line.trim() !== '')
+    .map((line) => {
+      const marked = MARKED.exec(line);
+      return marked ? { text: marked[2]!.trim(), done: marked[1] !== ' ' } : { text: line.trim(), done: false };
+    });
 }
 
-/** The text with the task on `line` ticked, or unticked if it was ticked. */
-export function toggleTask(text: string, line: number): string {
-  const lines = text.split(LINE_BREAK);
-  lines[line] = lines[line]!.replace(/\[([ xX])\]/, (_, mark: string) => (mark === ' ' ? '[x]' : '[ ]'));
-  return lines.join('\n');
+/** The items as the owner edits them: their texts, one per line. */
+export function toLines(items: ChecklistItem[]): string {
+  return items.map((i) => i.text).join('\n');
 }
 
-/** The text with a new, unticked task under everything that is there. */
-export function addTask(text: string, item: string): string {
-  const kept = text.replace(/\s+$/, '');
-  return `${kept ? kept + '\n' : ''}- [ ] ${item}`;
+/**
+ * The items an edit leaves: one per non-blank line. A line whose text is that
+ * of a ticked item stays ticked, wherever it was moved, so editing the list
+ * never quietly unticks what was done; each ticked item lends its tick once.
+ */
+export function fromLines(lines: string, before: ChecklistItem[]): ChecklistItem[] {
+  const ticked = before.filter((i) => i.done).map((i) => i.text);
+  return lines
+    .split('\n')
+    .map((line) => line.trim())
+    .filter((text) => text !== '')
+    .map((text) => {
+      const at = ticked.indexOf(text);
+      if (at !== -1) ticked.splice(at, 1);
+      return { text, done: at !== -1 };
+    });
 }

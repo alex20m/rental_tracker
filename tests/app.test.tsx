@@ -68,7 +68,7 @@ function view(id: string, name: string, over: Partial<ApartmentView> = {}): Apar
     owners: [{ userId: 'u1', email: 'me@example.test', sharePct: 100 }],
     invites: [],
     recurring: [],
-    checklist: '',
+    checklist: [],
     acquisitionCosts: [],
     mySale: null,
     mySharePct: 100,

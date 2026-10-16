@@ -29,6 +29,7 @@ import type {
   SaleDetails,
 } from '@/lib/domain/types';
 import { nextMonth, repeatDay } from '@/lib/domain/recurring';
+import { parseChecklist, serializeChecklist, type ChecklistItem } from '@/lib/domain/apartmentChecklist';
 
 /** Just enough of a Postgres client: Neon's HTTP driver in the app, PGlite in tests. */
 export interface Queryable {
@@ -307,7 +308,7 @@ export function portfolio(db: Queryable, clock: () => Date = () => new Date()) {
       // A cost has a category and the rent has none; leave the key out rather than send null.
       for (const r of recurring) if (r.category === null) delete r.category;
 
-      return { id: apartmentId, settings, checklist, owners, invites, rents, costs, recurring, acquisitionCosts, mySale: sales[0] ?? null, mySharePct: share };
+      return { id: apartmentId, settings, checklist: parseChecklist(checklist), owners, invites, rents, costs, recurring, acquisitionCosts, mySale: sales[0] ?? null, mySharePct: share };
     },
 
     async updateSettings(userId: string, apartmentId: string, patch: Partial<ApartmentSettings>): Promise<boolean> {
@@ -323,9 +324,9 @@ export function portfolio(db: Queryable, clock: () => Date = () => new Date()) {
     },
 
     /** Replaces the checklist every owner of the apartment shares. */
-    async setChecklist(userId: string, apartmentId: string, text: string): Promise<boolean> {
+    async setChecklist(userId: string, apartmentId: string, items: ChecklistItem[]): Promise<boolean> {
       if (!(await owns(userId, apartmentId))) return false;
-      await db.query('update apartments set checklist = $2 where id = $1', [apartmentId, text]);
+      await db.query('update apartments set checklist = $2 where id = $1', [apartmentId, serializeChecklist(items)]);
       return true;
     },
 

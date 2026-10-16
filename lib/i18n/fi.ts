@@ -222,7 +222,7 @@ export const fi: Record<MessageKey, string> = {
   'checklist.add': 'Lisää',
   'checklist.edit': 'Muokkaa',
   'checklist.editLabel': 'Tarkistuslistan teksti',
-  'checklist.hint': 'Aloita rivi merkinnällä ”- [ ]”, niin siitä tulee valintaruutu, tai merkinnällä ”-”, niin siitä tulee luetelmakohta. Muu teksti pysyy tavallisena tekstinä.',
+  'checklist.hint': 'Yksi kohta riviä kohden. Valittu kohta pysyy valittuna, kunhan sen tekstiä ei muuteta.',
 
   // — sale —
   'nav.sale': 'Myynti',

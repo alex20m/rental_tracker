@@ -62,105 +62,114 @@ async function sharedApartment(): Promise<string> {
 }
 
 const view = async (id: string) => (await (await apartment.GET(req('GET'), ctx({ id }))).json()) as ApartmentView;
-const save = (id: string, text: unknown) => checklist.PUT(req('PUT', { text }), ctx({ id }));
+const save = (id: string, items: unknown) => checklist.PUT(req('PUT', { items }), ctx({ id }));
+
+const PLUMBER = { text: 'Call the plumber', done: false };
+const INSURANCE = { text: 'Renew the insurance', done: true };
 
 describe('the checklist route', () => {
   it('answers 401 to anyone signed out and stores nothing', async () => {
     const id = await createApartment(alice);
     signIn(null);
 
-    expect((await save(id, '- [ ] Sneaky')).status).toBe(401);
+    expect((await save(id, [PLUMBER])).status).toBe(401);
 
     expect(await db.query('select 1 from apartments where checklist <> $1', [''])).toEqual([]);
   });
 
-  it('starts empty and keeps what its owner writes, with the apartment', async () => {
+  it('starts empty and keeps the items its owner saves, in order, with their ticks', async () => {
     const id = await createApartment(alice);
-    expect((await view(id)).checklist).toBe('');
+    expect((await view(id)).checklist).toEqual([]);
 
-    const res = await save(id, 'Keys in the drawer\n- [ ] Call the plumber\n- [x] Renew the insurance');
+    const res = await save(id, [PLUMBER, INSURANCE]);
 
     expect(res.status).toBe(200);
-    expect((await view(id)).checklist).toBe('Keys in the drawer\n- [ ] Call the plumber\n- [x] Renew the insurance');
+    expect((await view(id)).checklist).toEqual([PLUMBER, INSURANCE]);
   });
 
-  it('replaces the whole text each time, and clears it when saved empty', async () => {
+  it('replaces the whole list each time, and clears it when saved empty', async () => {
     const id = await createApartment(alice);
-    await save(id, '- [ ] One');
-    await save(id, '- [x] One');
-    expect((await view(id)).checklist).toBe('- [x] One');
+    await save(id, [PLUMBER]);
+    await save(id, [{ ...PLUMBER, done: true }]);
+    expect((await view(id)).checklist).toEqual([{ text: 'Call the plumber', done: true }]);
 
-    await save(id, '');
+    await save(id, []);
 
-    expect((await view(id)).checklist).toBe('');
+    expect((await view(id)).checklist).toEqual([]);
   });
 
-  it('is shared: a co-owner sees the owner’s checklist and their ticks show for the owner', async () => {
+  it('is shared: a co-owner sees the owner’s items and their ticks show for the owner', async () => {
     const id = await sharedApartment();
     signIn(alice);
-    await save(id, '- [ ] Call the plumber');
+    await save(id, [PLUMBER]);
 
     signIn(bob);
-    expect((await view(id)).checklist).toBe('- [ ] Call the plumber');
-    expect((await save(id, '- [x] Call the plumber')).status).toBe(200);
+    expect((await view(id)).checklist).toEqual([PLUMBER]);
+    expect((await save(id, [{ ...PLUMBER, done: true }])).status).toBe(200);
 
     signIn(alice);
-    expect((await view(id)).checklist).toBe('- [x] Call the plumber');
+    expect((await view(id)).checklist).toEqual([{ text: 'Call the plumber', done: true }]);
   });
 
   it('is per apartment: another apartment of the same owner has its own', async () => {
     const first = await createApartment(alice);
     const second = await createApartment(alice);
 
-    await save(first, '- [ ] Only here');
+    await save(first, [PLUMBER]);
 
-    expect((await view(second)).checklist).toBe('');
+    expect((await view(second)).checklist).toEqual([]);
   });
 
-  it('answers 404 to someone who does not own the apartment, and leaves the text alone', async () => {
+  it('answers 404 to someone who does not own the apartment, and leaves the list alone', async () => {
     const id = await createApartment(alice);
-    await save(id, '- [ ] Mine');
+    await save(id, [PLUMBER]);
     signIn(carol);
 
-    expect((await save(id, 'overwritten')).status).toBe(404);
+    expect((await save(id, [INSURANCE])).status).toBe(404);
 
     signIn(alice);
-    expect((await view(id)).checklist).toBe('- [ ] Mine');
+    expect((await view(id)).checklist).toEqual([PLUMBER]);
   });
 
   it('answers 404 for an id that is not a uuid', async () => {
     signIn(alice);
 
-    expect((await save('not-a-uuid', 'x')).status).toBe(404);
+    expect((await save('not-a-uuid', [PLUMBER])).status).toBe(404);
   });
 
-  it('refuses a body that is not exactly a string called text, or that is too long', async () => {
+  it('trims an item’s text', async () => {
     const id = await createApartment(alice);
-    await save(id, '- [ ] Kept');
+
+    await save(id, [{ text: '  Call the plumber  ', done: false }]);
+
+    expect((await view(id)).checklist).toEqual([PLUMBER]);
+  });
+
+  it('refuses items that are not a list of a text and a tick, and lists that are too long', async () => {
+    const id = await createApartment(alice);
+    await save(id, [PLUMBER]);
 
     const refused = await Promise.all([
-      save(id, 42),
-      save(id, null),
-      save(id, 'x'.repeat(20_001)),
-      checklist.PUT(req('PUT', {}), ctx({ id })),
-      checklist.PUT(req('PUT', { text: 'ok', extra: 1 }), ctx({ id })),
+      save(id, 'Call the plumber'),
+      save(id, [{ text: 'No tick' }]),
+      save(id, [{ text: '   ', done: false }]),
+      save(id, [{ text: 'Two\nlines', done: false }]),
+      save(id, [{ text: 'x'.repeat(191), done: false }]),
+      save(id, [{ ...PLUMBER, extra: 1 }]),
+      save(id, Array.from({ length: 101 }, (_, i) => ({ text: `Item ${i}`, done: false }))),
+      checklist.PUT(req('PUT', { items: [], extra: 1 }), ctx({ id })),
     ]);
 
-    expect(refused.map((r) => r.status)).toEqual([400, 400, 400, 400, 400]);
-    expect((await view(id)).checklist).toBe('- [ ] Kept');
+    expect(refused.map((r) => r.status)).toEqual([400, 400, 400, 400, 400, 400, 400, 400]);
+    expect((await view(id)).checklist).toEqual([PLUMBER]);
   });
 
-  it('accepts exactly the longest text allowed', async () => {
+  it('accepts the longest list allowed, every item at its longest', async () => {
     const id = await createApartment(alice);
+    const longest = Array.from({ length: 100 }, (_, i) => ({ text: String(i).padEnd(190, 'x'), done: i % 2 === 0 }));
 
-    expect((await save(id, 'x'.repeat(20_000))).status).toBe(200);
-  });
+    expect((await save(id, longest)).status).toBe(200);
 
-  it('keeps a line’s leading spaces and a trailing newline exactly as typed', async () => {
-    const id = await createApartment(alice);
-
-    await save(id, '  - [ ] Indented\n');
-
-    expect((await view(id)).checklist).toBe('  - [ ] Indented\n');
+    expect((await view(id)).checklist).toEqual(longest);
   });
 });

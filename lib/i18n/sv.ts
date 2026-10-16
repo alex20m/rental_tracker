@@ -223,7 +223,7 @@ export const sv: Record<MessageKey, string> = {
   'checklist.add': 'Lägg till',
   'checklist.edit': 'Redigera',
   'checklist.editLabel': 'Checklistans text',
-  'checklist.hint': 'Börja en rad med ”- [ ]” för en kryssruta eller ”-” för en punkt. Allt annat förblir vanlig text.',
+  'checklist.hint': 'En punkt per rad. En ikryssad punkt förblir ikryssad så länge dess text inte ändras.',
 
   // — sale —
   'nav.sale': 'Försäljning',

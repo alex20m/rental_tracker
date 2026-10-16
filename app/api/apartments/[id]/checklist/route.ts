@@ -7,6 +7,6 @@ export async function PUT(request: Request, { params }: Params<'id'>): Promise<R
     const { id } = await params;
     const body = await parseBody(request, checklistSchema);
     if (!body.ok) return body.response;
-    return (await store.setChecklist(session.userId, id, body.value.text)) ? json({ ok: true }) : notFound();
+    return (await store.setChecklist(session.userId, id, body.value.items)) ? json({ ok: true }) : notFound();
   });
 }

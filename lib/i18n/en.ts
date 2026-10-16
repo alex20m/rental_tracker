@@ -226,7 +226,7 @@ export const en = {
   'checklist.add': 'Add',
   'checklist.edit': 'Edit',
   'checklist.editLabel': 'Checklist text',
-  'checklist.hint': 'Start a line with “- [ ]” for a checkbox or “-” for a bullet. Anything else stays plain text.',
+  'checklist.hint': 'One item per line. A ticked item stays ticked as long as its text is unchanged.',
 
   // — sale —
   'nav.sale': 'Sale',

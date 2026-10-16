@@ -70,7 +70,7 @@ export class FakeApi {
       owners: [{ ...ME, sharePct: 100 }],
       invites: [],
       recurring: [],
-      checklist: '',
+      checklist: [],
       acquisitionCosts: [],
       mySale: null,
       rents: [],
@@ -215,7 +215,7 @@ export class FakeApi {
       }
     }
     if (sub === 'checklist' && method === 'PUT') {
-      apt.checklist = (body as { text: string }).text;
+      apt.checklist = (body as { items: ApartmentView['checklist'] }).items.map((i) => ({ ...i, text: i.text.trim() }));
       return ok;
     }
     if (sub === 'rents' && subId) {

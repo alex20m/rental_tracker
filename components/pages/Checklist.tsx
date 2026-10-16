@@ -4,18 +4,17 @@ import { useState } from 'react';
 import type { FormEvent } from 'react';
 import type { ApartmentView } from '@/lib/domain/types';
 import { api } from '@/lib/client/api';
-import { addTask, CHECKLIST_MAX, parseChecklist, progress, toggleTask } from '@/lib/domain/apartmentChecklist';
+import { fromLines, toLines, type ChecklistItem } from '@/lib/domain/apartmentChecklist';
 import { useI18n } from '@/components/I18nProvider';
 import { ErrorNote, Heading } from '@/components/ui';
 
 type Props = { apt: ApartmentView; onChanged: () => Promise<void> };
 
 /**
- * The apartment's checklist: one text shared by all its owners, in which a line
- * written `- [ ] thing` is a task to tick. It is read as a list; a task is
- * added from the box under it, and the text itself is edited in one textarea,
- * so a bullet or a plain note is just a line written that way. Every change
- * saves the whole text, which is what the other owners then read.
+ * The apartment's checklist, shared by all its owners: every item a checkbox.
+ * An item is added from the box under the list; Edit turns the list into plain
+ * lines, one item each, to reword, reorder or remove them all at once. Every
+ * change saves the whole list, which is what the other owners then see.
  */
 export default function Checklist({ apt, onChanged }: Props) {
   const { t } = useI18n();
@@ -25,15 +24,16 @@ export default function Checklist({ apt, onChanged }: Props) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
 
-  const lines = parseChecklist(apt.checklist);
-  const { done, total } = progress(apt.checklist);
+  const items = apt.checklist;
+  const total = items.length;
+  const done = items.filter((i) => i.done).length;
 
-  /** Saves `text`; false, with the reason shown, if it could not be. */
-  const save = async (text: string) => {
+  /** Saves `next`; false, with the reason shown, if it could not be. */
+  const save = async (next: ChecklistItem[]) => {
     setBusy(true);
     setError('');
     try {
-      await api.setChecklist(apt.id, text);
+      await api.setChecklist(apt.id, next);
       await onChanged();
       return true;
     } catch (e) {
@@ -46,17 +46,17 @@ export default function Checklist({ apt, onChanged }: Props) {
 
   const addItem = async (e: FormEvent) => {
     e.preventDefault();
-    if (await save(addTask(apt.checklist, item.trim()))) setItem('');
+    if (await save([...items, { text: item.trim(), done: false }])) setItem('');
   };
 
   const startEditing = () => {
-    setDraft(apt.checklist);
+    setDraft(toLines(items));
     setError('');
     setEditing(true);
   };
 
   const saveDraft = async () => {
-    if (await save(draft)) setEditing(false);
+    if (await save(fromLines(draft, items))) setEditing(false);
   };
 
   return (
@@ -72,7 +72,6 @@ export default function Checklist({ apt, onChanged }: Props) {
             <textarea
               id="checklist-text"
               rows={12}
-              maxLength={CHECKLIST_MAX}
               value={draft}
               onChange={(e) => setDraft(e.target.value)}
             />
@@ -89,25 +88,21 @@ export default function Checklist({ apt, onChanged }: Props) {
           </>
         ) : (
           <>
-            {lines.length === 0 ? (
+            {total === 0 ? (
               <p className="checklist-hint">{t('checklist.empty')}</p>
             ) : (
               <ul className="checklist" aria-label={t('checklist.items')}>
-                {lines.map((l, i) => (
-                  <li key={i} className={l.kind === 'task' ? 'task' + (l.done ? ' ticked' : '') : l.kind}>
-                    {l.kind === 'task' ? (
-                      <label>
-                        <input
-                          type="checkbox"
-                          checked={l.done}
-                          disabled={busy}
-                          onChange={() => save(toggleTask(apt.checklist, l.line))}
-                        />
-                        <span>{l.text}</span>
-                      </label>
-                    ) : (
-                      l.text
-                    )}
+                {items.map((it, i) => (
+                  <li key={i} className={it.done ? 'ticked' : undefined}>
+                    <label>
+                      <input
+                        type="checkbox"
+                        checked={it.done}
+                        disabled={busy}
+                        onChange={() => save(items.map((x, j) => (j === i ? { ...x, done: !x.done } : x)))}
+                      />
+                      <span>{it.text}</span>
+                    </label>
                   </li>
                 ))}
               </ul>
