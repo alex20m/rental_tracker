@@ -216,6 +216,18 @@ export const en = {
   'cat.other.label': 'Other deductible',
   'cat.other.hint': 'Any other cost of earning the rent that fits no category above.',
 
+  // — checklist —
+  'nav.checklist': 'Checklist',
+  'checklist.shared': 'Shared with every owner of this apartment.',
+  'checklist.progress': '{done} of {total} done',
+  'checklist.items': 'Checklist items',
+  'checklist.empty': 'Nothing here yet. Add what is worth remembering about this apartment — the same list is seen by every owner.',
+  'checklist.newItem': 'New item',
+  'checklist.add': 'Add',
+  'checklist.edit': 'Edit',
+  'checklist.editLabel': 'Checklist text',
+  'checklist.hint': 'Start a line with “- [ ]” for a checkbox or “-” for a bullet. Anything else stays plain text.',
+
   // — sale —
   'nav.sale': 'Sale',
   'sale.heroGain': 'Your gain from the sale',

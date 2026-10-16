@@ -212,6 +212,18 @@ export const fi: Record<MessageKey, string> = {
   'cat.other.label': 'Muut vähennyskelpoiset',
   'cat.other.hint': 'Muu vuokratulon hankkimisesta johtuva kulu, joka ei sovi yllä oleviin luokkiin.',
 
+  // — checklist —
+  'nav.checklist': 'Tarkistuslista',
+  'checklist.shared': 'Jaettu kaikkien tämän asunnon omistajien kanssa.',
+  'checklist.progress': '{done}/{total} tehty',
+  'checklist.items': 'Tarkistuslistan kohdat',
+  'checklist.empty': 'Ei vielä mitään. Lisää tähän asioita, jotka kannattaa muistaa tästä asunnosta — kaikki omistajat näkevät saman listan.',
+  'checklist.newItem': 'Uusi kohta',
+  'checklist.add': 'Lisää',
+  'checklist.edit': 'Muokkaa',
+  'checklist.editLabel': 'Tarkistuslistan teksti',
+  'checklist.hint': 'Aloita rivi merkinnällä ”- [ ]”, niin siitä tulee valintaruutu, tai merkinnällä ”-”, niin siitä tulee luetelmakohta. Muu teksti pysyy tavallisena tekstinä.',
+
   // — sale —
   'nav.sale': 'Myynti',
   'sale.heroGain': 'Sinun myyntivoittosi',

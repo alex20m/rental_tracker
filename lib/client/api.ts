@@ -65,6 +65,8 @@ export const api = {
   createApartment: (settings: Partial<ApartmentSettings>) => call<{ id: string }>('POST', '/api/apartments', settings),
   updateSettings: (id: string, patch: Partial<ApartmentSettings>) => call('PATCH', apt(id), patch),
   deleteApartment: (id: string) => call('DELETE', apt(id)),
+  /** Replaces the checklist every owner of the apartment shares. */
+  setChecklist: (id: string, text: string) => call('PUT', `${apt(id)}/checklist`, { text }),
 
   putRent: (id: string, month: string, rent: RentInput & { repeatMonthly?: boolean }) =>
     call('PUT', `${apt(id)}/rents/${month}`, rent),

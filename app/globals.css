@@ -224,6 +224,17 @@ input[type="date"], input[type="month"] { display: block; appearance: none; -web
 .sheet-foot .btn { flex: 1; }
 .sheet-foot .btn.primary { flex: 2; }
 /* The actions under a form on a page (not in a sheet): their own size, on the right, a destructive one on the left. */
+/* The apartment's checklist: a task is a checkbox with its text beside it; bullets and notes are plain lines. */
+.checklist { list-style: none; margin: 0; padding: 0; }
+.checklist > li { padding: 10px 0; border-bottom: 1px solid var(--line); }
+.checklist > li:last-child { border-bottom: 0; }
+.checklist label { margin: 0; min-height: 28px; gap: 12px; font-size: 16px; font-weight: 400; color: var(--text); }
+.checklist input[type=checkbox] { flex: none; width: 24px; min-height: 24px; height: 24px; padding: 0; accent-color: var(--brand); }
+.checklist .task.ticked span { color: var(--muted); text-decoration: line-through; }
+.checklist .bullet::before { content: '•'; margin-right: 12px; color: var(--muted); }
+.checklist-add { display: flex; gap: 10px; margin: 12px 0 4px; }
+.checklist-add .btn { flex: none; }
+.checklist-hint { font-size: 14px; color: var(--muted); margin: 8px 0 0; }
 .form-foot { display: flex; align-items: center; justify-content: flex-end; gap: 10px; margin: 16px 0 12px; }
 .form-foot .btn.danger { margin-right: auto; }
 /* A method of counting a gain: its name and, on the better one, a mark; the better one has an outline. */
@@ -358,7 +369,7 @@ input[type="date"], input[type="month"] { display: block; appearance: none; -web
   .page-home, .page-portfolio, .page-tax, .page-sale { display: block; column-count: 2; column-gap: 56px; }
   .page-home > *, .page-portfolio > *, .page-tax > *, .page-sale > * { break-inside: avoid; margin-bottom: 28px; }
   /* Pages that are one short list read better narrow than stretched across the screen. */
-  .shell > .page-settings, .shell > .page-account { max-width: 640px; margin-left: 0; }
+  .shell > .page-settings, .shell > .page-account, .shell > .page-checklist { max-width: 640px; margin-left: 0; }
   .page > .notice, .page > .allset, .page > .btn.block, .page > .empty, .page > .pagehead, .page > .seg, .page-sale > .hero { column-span: all; }
   .months { grid-template-columns: repeat(6, 1fr); }
   .bars { height: 150px; gap: 10px; }

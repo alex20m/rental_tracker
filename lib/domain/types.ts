@@ -186,6 +186,8 @@ export interface ApartmentView extends Ledger {
   owners: Owner[];
   invites: PendingInvite[];
   recurring: RecurringEntry[];
+  /** The apartment's checklist, one text shared by all its owners (see apartmentChecklist.ts). */
+  checklist: string;
   /** The viewer's own, which no other owner sees. */
   acquisitionCosts: AcquisitionCost[];
   /** The viewer's own sale, or null while they have entered none. */
