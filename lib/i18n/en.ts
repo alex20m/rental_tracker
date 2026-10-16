@@ -223,10 +223,8 @@ export const en = {
   'checklist.items': 'Checklist items',
   'checklist.empty': 'Nothing here yet. Add what is worth remembering about this apartment — the same list is seen by every owner.',
   'checklist.newItem': 'New item',
+  'checklist.remove': 'Remove {item}',
   'checklist.add': 'Add',
-  'checklist.edit': 'Edit',
-  'checklist.editLabel': 'Checklist text',
-  'checklist.hint': 'One item per line. A ticked item stays ticked as long as its text is unchanged.',
 
   // — sale —
   'nav.sale': 'Sale',

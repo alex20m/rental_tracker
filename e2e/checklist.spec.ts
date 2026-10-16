@@ -9,7 +9,6 @@ const list = (page: Page) => page.getByRole('list', { name: 'Checklist items' })
 const progress = (page: Page) => page.getByText(/^\d+ of \d+ done$/);
 const newItem = (page: Page) => page.getByRole('textbox', { name: 'New item' });
 const add = (page: Page) => page.getByRole('button', { name: 'Add', exact: true });
-const editBox = (page: Page) => page.getByRole('textbox', { name: 'Checklist text' });
 
 const PLUMBER = { text: 'Call the plumber', done: false };
 const SEEDED = [
@@ -56,25 +55,36 @@ test.describe('the apartment’s checklist', () => {
     expect(apt.checklist).toEqual([PLUMBER, { text: '- Buy a smoke alarm', done: false }]);
   });
 
-  test('shows every item as a checkbox and ticks and unticks one, leaving the others alone', async ({ page, api }) => {
+  test('shows every item as a row of its own, a checkbox and its text, and ticks and unticks one at once', async ({ page, api }) => {
     const apt = api.addApartment({ name: 'Flat' }, { checklist: SEEDED });
     await page.goto('/');
     await section(page, 'Checklist');
+    await expect(list(page).getByRole('listitem')).toHaveText(SEEDED.map((i) => i.text));
     await expect(list(page).getByRole('checkbox')).toHaveCount(3);
     await expect(progress(page)).toHaveText('1 of 3 done');
     await expect(list(page).getByRole('checkbox', { name: 'Renew the insurance' })).toBeChecked();
 
-    await list(page).getByRole('checkbox', { name: 'Call the plumber' }).click();
+    await list(page).getByRole('checkbox', { name: 'Call the plumber' }).check();
 
-    await expect(list(page).getByRole('checkbox', { name: 'Call the plumber' })).toBeChecked();
     await expect(progress(page)).toHaveText('2 of 3 done');
-    expect(apt.checklist).toEqual([SEEDED[0], { ...PLUMBER, done: true }, SEEDED[2]]);
+    await expect.poll(() => apt.checklist).toEqual([SEEDED[0], { ...PLUMBER, done: true }, SEEDED[2]]);
 
-    await list(page).getByRole('checkbox', { name: 'Renew the insurance' }).click();
+    await list(page).getByRole('checkbox', { name: 'Renew the insurance' }).uncheck();
 
-    await expect(list(page).getByRole('checkbox', { name: 'Renew the insurance' })).not.toBeChecked();
     await expect(progress(page)).toHaveText('1 of 3 done');
-    expect(apt.checklist).toEqual([SEEDED[0], { ...PLUMBER, done: true }, { ...SEEDED[2]!, done: false }]);
+    await expect.poll(() => apt.checklist).toEqual([SEEDED[0], { ...PLUMBER, done: true }, { ...SEEDED[2]!, done: false }]);
+  });
+
+  test('ticks the box the moment it is tapped, before the save has come back', async ({ page, api }) => {
+    api.addApartment({ name: 'Flat' }, { checklist: [PLUMBER] });
+    await page.goto('/');
+    await section(page, 'Checklist');
+    const release = api.holdNext('PUT', /\/checklist$/);
+
+    await list(page).getByRole('checkbox', { name: 'Call the plumber' }).check();
+
+    await expect(progress(page)).toHaveText('1 of 1 done');
+    release();
   });
 
   test('is shared: what another owner wrote is there, and ticking it saves for them too', async ({ page, api }) => {
@@ -83,65 +93,70 @@ test.describe('the apartment’s checklist', () => {
     await page.goto('/');
     await section(page, 'Checklist');
 
-    await list(page).getByRole('checkbox', { name: 'Ask Bob about the roof' }).click();
+    await list(page).getByRole('checkbox', { name: 'Ask Bob about the roof' }).check();
 
     await expect(progress(page)).toHaveText('1 of 1 done');
     expect(apt.owners.map((o) => o.userId)).toEqual([ME.userId, 'usr_bob']);
-    expect(apt.checklist).toEqual([{ text: 'Ask Bob about the roof', done: true }]);
+    await expect.poll(() => apt.checklist).toEqual([{ text: 'Ask Bob about the roof', done: true }]);
   });
 
-  test('edits the items as plain lines, one each, keeping the ticks of the ones left unchanged', async ({ page, api }) => {
+  test('keeps the box focused and free after adding, so the next item can be typed before the first has saved', async ({ page, api }) => {
+    const apt = api.addApartment({ name: 'Flat' });
+    await page.goto('/');
+    await section(page, 'Checklist');
+    const release = api.holdNext('PUT', /\/checklist$/);
+
+    await newItem(page).fill('Call the plumber');
+    await newItem(page).press('Enter');
+    await expect(list(page).getByRole('checkbox', { name: 'Call the plumber' })).toBeVisible();
+    await expect(newItem(page)).toBeFocused();
+    await expect(newItem(page)).toHaveValue('');
+    await page.keyboard.type('Buy a smoke alarm');
+    await page.keyboard.press('Enter');
+    await expect(list(page).getByRole('listitem')).toHaveText(['Call the plumber', 'Buy a smoke alarm']);
+    release();
+
+    await expect.poll(() => apt.checklist).toEqual([PLUMBER, { text: 'Buy a smoke alarm', done: false }]);
+    expect(api.callsTo('PUT').map((c) => c.body)).toEqual([
+      { items: [PLUMBER] },
+      { items: [PLUMBER, { text: 'Buy a smoke alarm', done: false }] },
+    ]);
+  });
+
+  test('removes one item with its ×, leaving the rest in order', async ({ page, api }) => {
     const apt = api.addApartment({ name: 'Flat' }, { checklist: SEEDED });
     await page.goto('/');
     await section(page, 'Checklist');
 
-    await page.getByRole('button', { name: 'Edit', exact: true }).click();
+    await list(page).getByRole('button', { name: 'Remove Call the plumber' }).click();
 
-    await expect(editBox(page)).toHaveValue('Spare keys are in the drawer\nCall the plumber\nRenew the insurance');
-    await expect(page.getByText('One item per line.')).toBeVisible();
-    await expect(newItem(page)).toHaveCount(0); // one way of editing at a time
-    await editBox(page).fill('Renew the insurance\n\nCall the plumber about the tap\nDoor code 1234');
-    await page.getByRole('button', { name: 'Save', exact: true }).click();
-
-    await expect(editBox(page)).toHaveCount(0);
-    await expect(list(page).getByRole('checkbox')).toHaveCount(3);
-    await expect(list(page).getByRole('checkbox', { name: 'Renew the insurance' })).toBeChecked();
-    expect(apt.checklist).toEqual([
-      { text: 'Renew the insurance', done: true },
-      { text: 'Call the plumber about the tap', done: false },
-      { text: 'Door code 1234', done: false },
-    ]);
+    await expect(list(page).getByRole('listitem')).toHaveText(['Spare keys are in the drawer', 'Renew the insurance']);
+    await expect(progress(page)).toHaveText('1 of 2 done');
+    expect(apt.checklist).toEqual([SEEDED[0], SEEDED[2]]);
   });
 
-  test('throws the edit away on Cancel and keeps what was saved', async ({ page, api }) => {
+  test('brings back the empty page when the last item is removed', async ({ page, api }) => {
     const apt = api.addApartment({ name: 'Flat' }, { checklist: [PLUMBER] });
     await page.goto('/');
     await section(page, 'Checklist');
-    await page.getByRole('button', { name: 'Edit', exact: true }).click();
-    await editBox(page).fill('something else');
 
-    await page.getByRole('button', { name: 'Cancel', exact: true }).click();
-
-    await expect(list(page).getByRole('checkbox', { name: 'Call the plumber' })).toBeVisible();
-    expect(api.callsTo('PUT')).toEqual([]);
-    expect(apt.checklist).toEqual([PLUMBER]);
-    await page.getByRole('button', { name: 'Edit', exact: true }).click();
-    await expect(editBox(page)).toHaveValue('Call the plumber'); // not the thrown-away draft
-  });
-
-  test('can be emptied, which brings back the empty page', async ({ page, api }) => {
-    const apt = api.addApartment({ name: 'Flat' }, { checklist: [PLUMBER] });
-    await page.goto('/');
-    await section(page, 'Checklist');
-    await page.getByRole('button', { name: 'Edit', exact: true }).click();
-    await editBox(page).fill('');
-    await page.getByRole('button', { name: 'Save', exact: true }).click();
+    await list(page).getByRole('button', { name: 'Remove Call the plumber' }).click();
 
     await expect(page.getByText('Nothing here yet.')).toBeVisible();
+    await expect(progress(page)).toHaveCount(0);
     expect(apt.checklist).toEqual([]);
   });
 
-  test('says when a tick could not be saved, and leaves the item as it was', async ({ page, api }) => {
+  test('has no editing mode: items are only added, ticked and removed one by one', async ({ page, api }) => {
+    api.addApartment({ name: 'Flat' }, { checklist: [PLUMBER] });
+    await page.goto('/');
+    await section(page, 'Checklist');
+
+    await expect(page.getByRole('button', { name: 'Edit', exact: true })).toHaveCount(0);
+    await expect(page.locator('textarea')).toHaveCount(0);
+  });
+
+  test('says when a tick could not be saved, and puts the box back as it was', async ({ page, api }) => {
     const apt = api.addApartment({ name: 'Flat' }, { checklist: [PLUMBER] });
     await page.goto('/');
     await section(page, 'Checklist');
@@ -151,10 +166,11 @@ test.describe('the apartment’s checklist', () => {
 
     await expect(alert(page)).toHaveText('Try again shortly');
     await expect(list(page).getByRole('checkbox', { name: 'Call the plumber' })).not.toBeChecked();
+    await expect(progress(page)).toHaveText('0 of 1 done');
     expect(apt.checklist).toEqual([PLUMBER]);
   });
 
-  test('keeps the typed item when it could not be added, and the draft when an edit could not be saved', async ({ page, api }) => {
+  test('keeps the typed item when it could not be added, and the item when it could not be removed', async ({ page, api }) => {
     const apt = api.addApartment({ name: 'Flat' }, { checklist: [PLUMBER] });
     await page.goto('/');
     await section(page, 'Checklist');
@@ -164,16 +180,49 @@ test.describe('the apartment’s checklist', () => {
 
     await expect(alert(page)).toHaveText('items: Too big');
     await expect(newItem(page)).toHaveValue('Buy a smoke alarm');
+    await expect(list(page).getByRole('listitem')).toHaveText(['Call the plumber']);
 
-    await page.getByRole('button', { name: 'Edit', exact: true }).click();
-    await expect(alert(page)).toHaveCount(0); // a new try starts clean
-    await editBox(page).fill('A new item');
     api.failNext('PUT', /\/checklist$/, { abort: true });
-    await page.getByRole('button', { name: 'Save', exact: true }).click();
+    await list(page).getByRole('button', { name: 'Remove Call the plumber' }).click();
 
     await expect(alert(page)).toContainText('Could not reach the server');
-    await expect(editBox(page)).toHaveValue('A new item');
+    await expect(list(page).getByRole('listitem')).toHaveText(['Call the plumber']);
     expect(apt.checklist).toEqual([PLUMBER]);
+  });
+
+  test('drops the changes queued behind a save that failed, and puts the list back as it was saved', async ({ page, api }) => {
+    const apt = api.addApartment({ name: 'Flat' }, { checklist: SEEDED });
+    await page.goto('/');
+    await section(page, 'Checklist');
+    const release = api.holdNext('PUT', /\/checklist$/);
+    api.failNext('PUT', /\/checklist$/, { status: 503, body: { error: 'Try again shortly' } });
+
+    await list(page).getByRole('checkbox', { name: 'Call the plumber' }).check();
+    await list(page).getByRole('checkbox', { name: 'Spare keys are in the drawer' }).check();
+    await expect(progress(page)).toHaveText('3 of 3 done');
+    release();
+
+    await expect(alert(page)).toHaveText('Try again shortly');
+    await expect(progress(page)).toHaveText('1 of 3 done');
+    expect(api.callsTo('PUT')).toHaveLength(1); // the second change was never sent
+    expect(apt.checklist).toEqual(SEEDED);
+  });
+
+  test('does not overwrite what was typed next when the item before it could not be added', async ({ page, api }) => {
+    api.addApartment({ name: 'Flat' });
+    await page.goto('/');
+    await section(page, 'Checklist');
+    const release = api.holdNext('PUT', /\/checklist$/);
+    api.failNext('PUT', /\/checklist$/, { status: 400, body: { error: 'items: Too big' } });
+    await newItem(page).fill('Call the plumber');
+    await newItem(page).press('Enter');
+    await newItem(page).fill('Buy a smoke alarm');
+
+    release();
+
+    await expect(alert(page)).toHaveText('items: Too big');
+    await expect(newItem(page)).toHaveValue('Buy a smoke alarm');
+    await expect(page.getByText('Nothing here yet.')).toBeVisible();
   });
 
   test('is each apartment’s own', async ({ page, api }) => {

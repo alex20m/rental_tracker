@@ -30,26 +30,3 @@ export function parseChecklist(text: string): ChecklistItem[] {
       return marked ? { text: marked[2]!.trim(), done: marked[1] !== ' ' } : { text: line.trim(), done: false };
     });
 }
-
-/** The items as the owner edits them: their texts, one per line. */
-export function toLines(items: ChecklistItem[]): string {
-  return items.map((i) => i.text).join('\n');
-}
-
-/**
- * The items an edit leaves: one per non-blank line. A line whose text is that
- * of a ticked item stays ticked, wherever it was moved, so editing the list
- * never quietly unticks what was done; each ticked item lends its tick once.
- */
-export function fromLines(lines: string, before: ChecklistItem[]): ChecklistItem[] {
-  const ticked = before.filter((i) => i.done).map((i) => i.text);
-  return lines
-    .split('\n')
-    .map((line) => line.trim())
-    .filter((text) => text !== '')
-    .map((text) => {
-      const at = ticked.indexOf(text);
-      if (at !== -1) ticked.splice(at, 1);
-      return { text, done: at !== -1 };
-    });
-}

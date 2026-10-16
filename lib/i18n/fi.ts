@@ -219,10 +219,8 @@ export const fi: Record<MessageKey, string> = {
   'checklist.items': 'Tarkistuslistan kohdat',
   'checklist.empty': 'Ei vielä mitään. Lisää tähän asioita, jotka kannattaa muistaa tästä asunnosta — kaikki omistajat näkevät saman listan.',
   'checklist.newItem': 'Uusi kohta',
+  'checklist.remove': 'Poista {item}',
   'checklist.add': 'Lisää',
-  'checklist.edit': 'Muokkaa',
-  'checklist.editLabel': 'Tarkistuslistan teksti',
-  'checklist.hint': 'Yksi kohta riviä kohden. Valittu kohta pysyy valittuna, kunhan sen tekstiä ei muuteta.',
 
   // — sale —
   'nav.sale': 'Myynti',

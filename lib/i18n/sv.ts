@@ -220,10 +220,8 @@ export const sv: Record<MessageKey, string> = {
   'checklist.items': 'Punkter i checklistan',
   'checklist.empty': 'Inget här ännu. Lägg till det som är värt att komma ihåg om lägenheten — alla ägare ser samma lista.',
   'checklist.newItem': 'Ny punkt',
+  'checklist.remove': 'Ta bort {item}',
   'checklist.add': 'Lägg till',
-  'checklist.edit': 'Redigera',
-  'checklist.editLabel': 'Checklistans text',
-  'checklist.hint': 'En punkt per rad. En ikryssad punkt förblir ikryssad så länge dess text inte ändras.',
 
   // — sale —
   'nav.sale': 'Försäljning',
