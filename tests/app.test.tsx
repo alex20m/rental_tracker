@@ -71,6 +71,7 @@ function view(id: string, name: string, over: Partial<ApartmentView> = {}): Apar
     checklist: [],
     acquisitionCosts: [],
     mySale: null,
+    myPurchaseHasPhoto: false,
     mySharePct: 100,
     ...over,
   };

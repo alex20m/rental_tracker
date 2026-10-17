@@ -25,6 +25,7 @@ const apt: ApartmentView = {
   checklist: [],
   acquisitionCosts: [],
   mySale: null,
+  myPurchaseHasPhoto: false,
   rents: [{ month: '2025-01', status: 'paid', amount: 800, receivedDate: '2025-01-03', note: '' }],
   costs: [{ id: 'c1', date: '2025-02-01', category: 'repairs', description: 'Tap "kitchen"', amount: 120, hasReceipt: true }],
   mySharePct: 25,

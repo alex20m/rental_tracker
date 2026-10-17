@@ -106,6 +106,7 @@ describe('the checklist in another language', () => {
     checklist: [],
     acquisitionCosts: [],
     mySale: null,
+    myPurchaseHasPhoto: false,
     mySharePct: 100,
   };
 

@@ -7,13 +7,30 @@
 import type { z } from 'zod';
 import { sessionFor, type Session } from '@/lib/auth';
 import { queryable } from '@/lib/db';
-import { portfolio, type Portfolio } from '@/lib/portfolio';
+import { portfolio, type Portfolio, type Receipt } from '@/lib/portfolio';
 
 export type Context = { session: Session; store: Portfolio };
 
 export const json = (body: unknown, status = 200) => Response.json(body, { status });
 
 export const notFound = () => json({ error: 'Not found' }, 404);
+
+/**
+ * A stored photo, served only to whoever the store gave it to. `nosniff` and a
+ * private cache keep a browser from reinterpreting it or a shared cache from
+ * keeping a copy.
+ */
+export function imageResponse(photo: Receipt | null): Response {
+  if (!photo) return notFound();
+  return new Response(Buffer.from(photo.base64, 'base64'), {
+    headers: {
+      'Content-Type': photo.contentType,
+      'Content-Disposition': 'inline',
+      'Cache-Control': 'private, no-store',
+      'X-Content-Type-Options': 'nosniff',
+    },
+  });
+}
 
 /** Runs `handle` for a signed-in caller; anyone else gets 401 and nothing else. */
 export async function withUser(request: Request, handle: (ctx: Context) => Promise<Response>): Promise<Response> {

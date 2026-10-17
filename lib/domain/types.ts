@@ -141,6 +141,8 @@ export interface AcquisitionCost {
   kind: AcquisitionKind;
   description: string;
   amount: number; // EUR, the owner's own part
+  /** A photo of its receipt or invoice is kept. */
+  hasPhoto: boolean;
 }
 
 /** Everything the tax calculation needs about one apartment. */
@@ -194,6 +196,8 @@ export interface ApartmentView extends Ledger {
   acquisitionCosts: AcquisitionCost[];
   /** The viewer's own sale, or null while they have entered none. */
   mySale: SaleDetails | null;
+  /** The viewer keeps a photo of their purchase (the deed of sale), whether or not a purchase is entered. */
+  myPurchaseHasPhoto: boolean;
   /** The viewer's own ownership share, in percent. */
   mySharePct: number;
 }
