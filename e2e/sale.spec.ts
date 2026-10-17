@@ -1,6 +1,10 @@
 import { expect, test } from './fixtures';
 import { ME } from './fakeApi';
+import { pngOfSize } from './images';
+import { readFileSync } from 'node:fs';
 import { alert, section } from './nav';
+
+const photo = `${__dirname}/receipt.jpg`;
 
 /** A flat; what the owner paid and sold for is typed on the Sale page, and is theirs alone. */
 const FLAT = { name: 'Flat' };
@@ -126,8 +130,8 @@ test.describe('selling your part of the apartment', () => {
   test('works out the gain by the actual costs, with your acquisition costs listed, and the tax on it', async ({ page, api }) => {
     const apt = api.addApartment(FLAT, {
       acquisitionCosts: [
-        { id: 'a1', date: '2018-03-02', kind: 'transfer_tax', description: '', amount: 900 },
-        { id: 'a2', date: '2025-02-10', kind: 'inspection', description: 'Fuktmätning', amount: 300 },
+        { id: 'a1', date: '2018-03-02', kind: 'transfer_tax', description: '', amount: 900, hasPhoto: false },
+        { id: 'a2', date: '2025-02-10', kind: 'inspection', description: 'Fuktmätning', amount: 300, hasPhoto: false },
       ],
     });
     await page.goto('/');
@@ -307,10 +311,10 @@ test.describe('selling your part of the apartment', () => {
     await edit.getByRole('button', { name: 'Save' }).click();
 
     // Without a description the list names the kind.
-    await expect(page.getByRole('button', { name: /^Other/ })).toContainText('300,00 €');
+    await expect(page.getByRole('button', { name: /^No photo of the receipt Other/ })).toContainText('300,00 €');
     expect(apt.acquisitionCosts).toMatchObject([{ kind: 'other', description: '', amount: 300 }]);
 
-    await page.getByRole('button', { name: /^Other/ }).click();
+    await page.getByRole('button', { name: /^No photo of the receipt Other/ }).click();
     await page.getByRole('dialog').getByRole('button', { name: 'Delete' }).click();
     await expect(page.getByText('Nothing listed yet.')).toBeVisible();
     expect(apt.acquisitionCosts).toEqual([]);
@@ -370,5 +374,193 @@ test.describe('selling your part of the apartment', () => {
     await expect(page.getByLabel('Your selling price (€)')).toHaveValue('160000.123');
     await expect(save(saleCard(page))).toBeEnabled();
     await expect(hero(page)).toContainText('No sale entered');
+  });
+});
+
+test.describe('photos on the Sale page', () => {
+  const deed = (page: Page) => purchaseCard(page).getByRole('button', { name: 'Photo of the deed of sale' });
+  const deedPreview = (page: Page) => purchaseCard(page).getByAltText('Preview of the deed of sale');
+  /** The requests that changed something, with the apartment's id taken out. */
+  const changes = (api: import('./fakeApi').FakeApi, id: string) => api.calls.map((c) => c.call.replace(id, ':id'));
+
+  test('keeps a photo of the deed with your purchase before any price is typed, shows it again later, and removes it', async ({ page, api }) => {
+    const apt = api.addApartment(FLAT);
+    await page.goto('/');
+    await section(page, 'Sale');
+    await expect(deed(page)).toHaveText('Add photo');
+    await expect(save(purchaseCard(page))).toBeDisabled();
+
+    const [chooser] = await Promise.all([page.waitForEvent('filechooser'), deed(page).click()]);
+    await chooser.setFiles(photo);
+    await expect(deedPreview(page)).toBeVisible();
+    await expect(deed(page)).toHaveText('Replace photo');
+    await save(purchaseCard(page)).click();
+
+    await expect(saved(purchaseCard(page))).toBeVisible();
+    await expect(save(purchaseCard(page))).toBeDisabled();
+    // Only the photo changed, so only the photo is sent: no purchase is made up for it.
+    expect(changes(api, apt.id)).toEqual(['PUT /api/apartments/:id/sale/purchase-photo']);
+    expect(apt.mySale).toBeNull();
+    expect(api.purchasePhotos.get(apt.id)!.contentType).toBe('image/jpeg');
+
+    await page.reload();
+    await section(page, 'Sale');
+    await expect(deedPreview(page)).toHaveAttribute('src', `/api/apartments/${apt.id}/sale/purchase-photo`);
+    await expect.poll(() => deedPreview(page).evaluate((img: HTMLImageElement) => img.naturalWidth)).toBeGreaterThan(0);
+    await expect(saved(purchaseCard(page))).toBeVisible();
+
+    await purchaseCard(page).getByRole('button', { name: 'Remove' }).click();
+    await expect(deedPreview(page)).toHaveCount(0);
+    await expect(deed(page)).toHaveText('Add photo');
+    await expect(saved(purchaseCard(page))).toHaveCount(0);
+    await save(purchaseCard(page)).click();
+
+    await expect(save(purchaseCard(page))).toBeDisabled();
+    expect(changes(api, apt.id).at(-1)).toBe('DELETE /api/apartments/:id/sale/purchase-photo');
+    expect(apt.myPurchaseHasPhoto).toBe(false);
+    expect(api.purchasePhotos.size).toBe(0);
+  });
+
+  test('saves a changed price and a new photo of the purchase with one Save, and keeps showing the photo picked', async ({ page, api }) => {
+    const apt = api.addApartment(FLAT, { myPurchaseHasPhoto: true });
+    api.purchasePhotos.set(apt.id, { contentType: 'image/png', data: pngOfSize(4, 4) });
+    await page.goto('/');
+    await section(page, 'Sale');
+
+    await page.getByLabel('Purchase date').fill('2018-03-01');
+    await page.getByLabel('Your purchase price (€)').fill('62000');
+    await purchaseCard(page).locator('input[type=file]').setInputFiles(photo);
+    await save(purchaseCard(page)).click();
+
+    await expect(saved(purchaseCard(page))).toBeVisible();
+    expect(changes(api, apt.id)).toEqual(['PATCH /api/apartments/:id/sale', 'PUT /api/apartments/:id/sale/purchase-photo']);
+    expect(apt.mySale).toMatchObject({ purchaseDate: '2018-03-01', purchasePrice: 62000 });
+    expect(api.purchasePhotos.get(apt.id)!.contentType).toBe('image/jpeg');
+    // What was picked stays in view, not the photo it replaced.
+    await expect(deedPreview(page)).toHaveAttribute('src', /^data:image\/jpeg;base64,/);
+  });
+
+  test('drops a photo of the purchase picked and removed again, sending nothing', async ({ page, api }) => {
+    const apt = api.addApartment(FLAT);
+    await page.goto('/');
+    await section(page, 'Sale');
+    await enterPurchase(page, { bought: '2018-03-01', paid: '62000' });
+
+    await purchaseCard(page).locator('input[type=file]').setInputFiles(photo);
+    await expect(save(purchaseCard(page))).toBeEnabled();
+    await purchaseCard(page).getByRole('button', { name: 'Remove' }).click();
+
+    await expect(save(purchaseCard(page))).toBeDisabled();
+    await expect(saved(purchaseCard(page))).toBeVisible();
+    expect(changes(api, apt.id)).toEqual(['PATCH /api/apartments/:id/sale']);
+  });
+
+  test('says in the purchase card when a photo cannot be read or saved, and keeps it to try again', async ({ page, api }) => {
+    api.addApartment(FLAT);
+    await page.goto('/');
+    await section(page, 'Sale');
+    const file = purchaseCard(page).locator('input[type=file]');
+
+    await file.setInputFiles({ name: 'broken.jpg', mimeType: 'image/jpeg', buffer: Buffer.from('not an image') });
+    await expect(purchaseCard(page).locator('.alert[role=alert]')).toHaveText('Could not read that image.');
+    await expect(deedPreview(page)).toHaveCount(0);
+    await file.setInputFiles([]);
+
+    await file.setInputFiles(photo);
+    api.failNext('PUT', /\/purchase-photo$/, { status: 400, body: { error: 'Photo is too large' } });
+    await save(purchaseCard(page)).click();
+
+    await expect(purchaseCard(page).locator('.alert[role=alert]')).toHaveText('Photo is too large');
+    await expect(saleCard(page).locator('.alert[role=alert]')).toHaveCount(0);
+    await expect(deedPreview(page)).toBeVisible();
+    await expect(save(purchaseCard(page))).toBeEnabled();
+  });
+
+  test('adds an acquisition cost with a photo of its receipt, and shows its thumbnail in the list', async ({ page, api }) => {
+    const apt = api.addApartment(FLAT);
+    await page.goto('/');
+    await section(page, 'Sale');
+    await page.getByRole('button', { name: 'Add an acquisition cost' }).click();
+    const sheet = page.getByRole('dialog', { name: 'Add an acquisition cost' });
+    await sheet.getByLabel('Amount (€)').fill('911.25');
+    const receipt = sheet.getByRole('button', { name: 'Receipt or invoice' });
+    await expect(receipt).toHaveText('Add photo');
+    const [chooser] = await Promise.all([page.waitForEvent('filechooser'), receipt.click()]);
+    await chooser.setFiles(photo);
+    await expect(sheet.getByAltText('Preview of the receipt or invoice')).toBeVisible();
+    await sheet.getByRole('button', { name: 'Save' }).click();
+
+    await expect(sheet).toHaveCount(0);
+    const thumb = page.locator('.list img.thumb');
+    await expect(thumb).toHaveAttribute('alt', 'Receipt or invoice');
+    await expect.poll(() => thumb.evaluate((img: HTMLImageElement) => img.naturalWidth)).toBeGreaterThan(0);
+    const id = apt.acquisitionCosts[0]!.id;
+    expect(changes(api, apt.id)).toEqual(['POST /api/apartments/:id/acquisition', `PUT /api/apartments/:id/acquisition/${id}/photo`]);
+    expect(apt.acquisitionCosts[0]!.hasPhoto).toBe(true);
+    expect(api.acquisitionPhotos.get(id)!.contentType).toBe('image/jpeg');
+  });
+
+  test('replaces nothing until saved: removes a cost’s photo, adds one to another, and drops one picked and removed', async ({ page, api }) => {
+    const apt = api.addApartment(FLAT, {
+      acquisitionCosts: [
+        { id: 'a1', date: '2018-03-02', kind: 'transfer_tax', description: '', amount: 900, hasPhoto: true },
+        { id: 'a2', date: '2025-02-10', kind: 'inspection', description: 'Fuktmätning', amount: 300, hasPhoto: false },
+      ],
+    });
+    api.acquisitionPhotos.set('a1', { contentType: 'image/jpeg', data: readFileSync(photo) });
+    await page.goto('/');
+    await section(page, 'Sale');
+    await expect(page.locator('.list img.thumb')).toHaveCount(1);
+    await expect(page.getByRole('img', { name: 'No photo of the receipt' })).toHaveCount(1);
+    const sheet = page.getByRole('dialog');
+
+    await page.getByRole('button', { name: /Transfer tax/ }).click();
+    await expect(sheet.getByRole('button', { name: 'Receipt or invoice' })).toHaveText('Replace photo');
+    await expect(sheet.getByAltText('Preview of the receipt or invoice')).toHaveAttribute('src', `/api/apartments/${apt.id}/acquisition/a1/photo`);
+    await sheet.getByRole('button', { name: 'Remove' }).click();
+    await sheet.getByRole('button', { name: 'Save' }).click();
+    await expect(sheet).toHaveCount(0);
+    await expect(page.getByRole('img', { name: 'No photo of the receipt' })).toHaveCount(2);
+    expect(apt.acquisitionCosts[0]!.hasPhoto).toBe(false);
+
+    // A photo picked and removed again on a cost that never had one sends no DELETE.
+    await page.getByRole('button', { name: /Fuktmätning/ }).click();
+    await sheet.locator('input[type=file]').setInputFiles(photo);
+    await sheet.getByRole('button', { name: 'Remove' }).click();
+    await sheet.getByRole('button', { name: 'Save' }).click();
+    await expect(sheet).toHaveCount(0);
+
+    await page.getByRole('button', { name: /Fuktmätning/ }).click();
+    await sheet.locator('input[type=file]').setInputFiles(photo);
+    await sheet.getByRole('button', { name: 'Save' }).click();
+    await expect(page.locator('.list img.thumb')).toHaveCount(1);
+    expect(apt.acquisitionCosts[1]!.hasPhoto).toBe(true);
+
+    expect(changes(api, apt.id)).toEqual([
+      'PUT /api/apartments/:id/acquisition/a1',
+      'DELETE /api/apartments/:id/acquisition/a1/photo',
+      'PUT /api/apartments/:id/acquisition/a2',
+      'PUT /api/apartments/:id/acquisition/a2',
+      'PUT /api/apartments/:id/acquisition/a2/photo',
+    ]);
+  });
+
+  test('adds an acquisition cost after a photo was picked and removed again, uploading nothing, and says when a photo cannot be read', async ({ page, api }) => {
+    const apt = api.addApartment(FLAT);
+    await page.goto('/');
+    await section(page, 'Sale');
+    await page.getByRole('button', { name: 'Add an acquisition cost' }).click();
+    const sheet = page.getByRole('dialog');
+    await sheet.getByLabel('Amount (€)').fill('300');
+
+    await sheet.locator('input[type=file]').setInputFiles({ name: 'broken.jpg', mimeType: 'image/jpeg', buffer: Buffer.from('not an image') });
+    await expect(alert(page)).toHaveText('Could not read that image.');
+    await sheet.locator('input[type=file]').setInputFiles(photo);
+    await sheet.getByRole('button', { name: 'Remove' }).click();
+    await sheet.getByRole('button', { name: 'Save' }).click();
+
+    await expect(sheet).toHaveCount(0);
+    expect(changes(api, apt.id)).toEqual(['POST /api/apartments/:id/acquisition']);
+    expect(apt.acquisitionCosts[0]!.hasPhoto).toBe(false);
   });
 });
