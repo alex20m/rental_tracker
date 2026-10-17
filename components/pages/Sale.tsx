@@ -1,9 +1,9 @@
 'use client';
 
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { ACQUISITION_KINDS } from '@/lib/domain/types';
 import type { AcquisitionCost, AcquisitionKind, ApartmentView, SaleDetails } from '@/lib/domain/types';
-import { api } from '@/lib/client/api';
+import { api, compressImage } from '@/lib/client/api';
 import { computeSale, suggestedSale } from '@/lib/domain/sale';
 import { eur } from '@/lib/domain/tax';
 import { shortDate } from '@/lib/ui/format';
@@ -29,7 +29,9 @@ const NOTHING: SaleDetails = { purchaseDate: '', purchasePrice: 0, saleDate: '',
  * private to them — their purchase, their sale, their acquisition costs, each
  * as their own part — so no ownership share is applied to it. The purchase and
  * the sale are saved separately, so a purchase noted years ahead is there when
- * it is time to sell. What the viewer says about their other capital income and
+ * it is time to sell. A photo can be kept with the purchase (the deed of sale)
+ * and with each acquisition cost (its receipt or invoice), the proof the Tax
+ * Administration can ask for. What the viewer says about their other capital income and
  * whether it was their home is not even stored.
  */
 export default function Sale({ apt, onChanged }: Props) {
@@ -43,13 +45,22 @@ export default function Sale({ apt, onChanged }: Props) {
   const [otherIncome, setOtherIncome] = useState('');
   const [livedIn, setLivedIn] = useState(false);
   const [editing, setEditing] = useState<AcquisitionCost | 'new' | null>(null);
+  // The photo of the purchase as last picked, shown in place of the stored one
+  // even once saved, and whether it still has to be saved or removed.
+  const [picked, setPicked] = useState<string>();
+  const [photoChange, setPhotoChange] = useState<'none' | 'new' | 'removed'>('none');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
+  const [purchaseError, setPurchaseError] = useState('');
 
   const kept = apt.mySale ?? NOTHING;
-  const purchaseSaved = purchaseDate === kept.purchaseDate && Number(purchasePrice) === kept.purchasePrice;
+  const purchaseFieldsSaved = purchaseDate === kept.purchaseDate && Number(purchasePrice) === kept.purchasePrice;
+  const photoPending = photoChange === 'new' || (photoChange === 'removed' && apt.myPurchaseHasPhoto);
+  const purchaseSaved = purchaseFieldsSaved && !photoPending;
   const saleSaved = saleDate === kept.saleDate && Number(salePrice) === kept.salePrice && Number(saleCosts) === kept.saleCosts;
-  const hasPurchase = kept.purchaseDate !== '' || kept.purchasePrice > 0;
+  const hasPurchase = kept.purchaseDate !== '' || kept.purchasePrice > 0 || apt.myPurchaseHasPhoto;
+  const purchasePhoto =
+    photoChange === 'removed' ? undefined : (picked ?? (apt.myPurchaseHasPhoto ? api.purchasePhotoUrl(apt.id) : undefined));
 
   const result = apt.mySale
     ? computeSale(apt, apt.mySale, {
@@ -60,26 +71,34 @@ export default function Sale({ apt, onChanged }: Props) {
     : null;
   const params = ruleParams(result?.year ?? new Date().getFullYear(), lang);
 
-  const run = async (action: () => Promise<unknown>) => {
+  /** Runs `action` and reloads; a failure is said in the card it came from. */
+  const run = async (fail: (message: string) => void, action: () => Promise<unknown>) => {
     setBusy(true);
-    setError('');
+    fail('');
     try {
       await action();
       await onChanged();
     } catch (e) {
-      setError((e as Error).message);
+      fail((e as Error).message);
     }
     setBusy(false);
   };
 
-  const savePurchase = () => run(() => api.saveSale(apt.id, { purchaseDate, purchasePrice: Number(purchasePrice) }));
+  /** Saves what changed of the purchase: its date and price, its photo, or both. */
+  const savePurchase = () =>
+    run(setPurchaseError, async () => {
+      if (!purchaseFieldsSaved) await api.saveSale(apt.id, { purchaseDate, purchasePrice: Number(purchasePrice) });
+      if (photoChange === 'new') await api.putPurchasePhoto(apt.id, picked!);
+      else if (photoPending) await api.deletePurchasePhoto(apt.id);
+      setPhotoChange('none');
+    });
 
   const saveSale = () =>
-    run(() => api.saveSale(apt.id, { saleDate, salePrice: Number(salePrice), saleCosts: Number(saleCosts) }));
+    run(setError, () => api.saveSale(apt.id, { saleDate, salePrice: Number(salePrice), saleCosts: Number(saleCosts) }));
 
   /** Takes the sale back and leaves the purchase as it is. */
   const clearSale = async () => {
-    await run(() => api.saveSale(apt.id, { saleDate: '', salePrice: 0, saleCosts: 0 }));
+    await run(setError, () => api.saveSale(apt.id, { saleDate: '', salePrice: 0, saleCosts: 0 }));
     setSaleDate('');
     setSalePrice('');
     setSaleCosts('');
@@ -140,6 +159,24 @@ export default function Sale({ apt, onChanged }: Props) {
               />
             </div>
           </div>
+          <PhotoPicker
+            id="sale-purchase-photo"
+            label={t('sale.purchasePhoto')}
+            previewAlt={t('sale.purchasePhotoPreview')}
+            preview={purchasePhoto}
+            busy={busy}
+            onBusy={setBusy}
+            onPick={(dataUrl) => {
+              setPicked(dataUrl);
+              setPhotoChange('new');
+            }}
+            onRemove={() => {
+              setPicked(undefined);
+              setPhotoChange('removed');
+            }}
+            onUnreadable={() => setPurchaseError(t('common.imageUnreadable'))}
+          />
+          <ErrorNote message={purchaseError} />
           <div className="form-foot">
             <button className="btn primary small" disabled={busy || purchaseSaved} onClick={savePurchase}>
               {t('common.save')}
@@ -219,6 +256,14 @@ export default function Sale({ apt, onChanged }: Props) {
             {apt.acquisitionCosts.map((c) => (
               <li key={c.id}>
                 <button className="row-btn" onClick={() => setEditing(c)}>
+                  {c.hasPhoto ? (
+                    // eslint-disable-next-line @next/next/no-img-element -- a private, per-user image; not for the image optimizer
+                    <img className="thumb" src={api.acquisitionPhotoUrl(apt.id, c.id)} alt={t('sale.acqPhoto')} loading="lazy" />
+                  ) : (
+                    <span className="thumb missing" role="img" aria-label={t('sale.acqNoPhoto')}>
+                      {Icon.camera}
+                    </span>
+                  )}
                   <div className="main">
                     <div className="t">{c.description || t(`sale.kind.${c.kind}`)}</div>
                     <div className="s">
@@ -370,8 +415,11 @@ function AcquisitionForm({
   const [kind, setKind] = useState<AcquisitionKind>(cost?.kind ?? 'transfer_tax');
   const [description, setDescription] = useState(cost?.description ?? '');
   const [amount, setAmount] = useState(cost ? String(cost.amount) : '');
+  const [newImage, setNewImage] = useState<string>();
+  const [removeImage, setRemoveImage] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
+  const existing = cost?.hasPhoto ? api.acquisitionPhotoUrl(apt.id, cost.id) : undefined;
 
   const run = async (action: () => Promise<unknown>) => {
     setBusy(true);
@@ -387,9 +435,13 @@ function AcquisitionForm({
   };
 
   const save = () =>
-    run(() => {
+    run(async () => {
       const entry = { date, kind, description: description.trim(), amount: Number(amount) };
-      return cost ? api.updateAcquisition(apt.id, cost.id, entry) : api.createAcquisition(apt.id, entry);
+      const id = cost
+        ? (await api.updateAcquisition(apt.id, cost.id, entry), cost.id)
+        : (await api.createAcquisition(apt.id, entry)).id;
+      if (newImage) await api.putAcquisitionPhoto(apt.id, id, newImage);
+      else if (removeImage && cost?.hasPhoto) await api.deleteAcquisitionPhoto(apt.id, id);
     });
 
   return (
@@ -429,6 +481,24 @@ function AcquisitionForm({
       <label htmlFor="acq-date">{t('sale.acqDate')}</label>
       <input id="acq-date" type="date" value={date} onChange={(e) => setDate(e.target.value)} />
 
+      <PhotoPicker
+        id="acq-photo"
+        label={t('sale.acqPhoto')}
+        previewAlt={t('sale.acqPhotoPreview')}
+        preview={removeImage ? undefined : (newImage ?? existing)}
+        busy={busy}
+        onBusy={setBusy}
+        onPick={(dataUrl) => {
+          setNewImage(dataUrl);
+          setRemoveImage(false);
+        }}
+        onRemove={() => {
+          setNewImage(undefined);
+          setRemoveImage(true);
+        }}
+        onUnreadable={() => setError(t('common.imageUnreadable'))}
+      />
+
       <ErrorNote message={error} />
       <div className="sheet-foot">
         {cost && (
@@ -441,5 +511,76 @@ function AcquisitionForm({
         </button>
       </div>
     </Sheet>
+  );
+}
+
+/**
+ * A photo kept with an entry: a button that picks one from the camera, the
+ * photo library or files — shrunk as a cost's receipt is — and, once there is
+ * one, its preview with a button to remove it. Nothing is uploaded here; the
+ * form it is in saves it.
+ */
+function PhotoPicker({
+  id,
+  label,
+  previewAlt,
+  preview,
+  busy,
+  onBusy,
+  onPick,
+  onRemove,
+  onUnreadable,
+}: {
+  id: string;
+  label: string;
+  previewAlt: string;
+  preview: string | undefined;
+  busy: boolean;
+  onBusy: (busy: boolean) => void;
+  onPick: (dataUrl: string) => void;
+  onRemove: () => void;
+  onUnreadable: () => void;
+}) {
+  const { t } = useI18n();
+  const fileRef = useRef<HTMLInputElement>(null);
+
+  const pick = async (f?: File) => {
+    if (!f) return;
+    onBusy(true);
+    try {
+      onPick(await compressImage(f));
+    } catch {
+      onUnreadable();
+    }
+    onBusy(false);
+  };
+
+  return (
+    <>
+      <label htmlFor={id}>{label}</label>
+      <input ref={fileRef} type="file" accept="image/*" hidden onChange={(e) => pick(e.target.files?.[0])} />
+      <button
+        id={id}
+        type="button"
+        className="btn block"
+        style={{ padding: '11px 8px' }}
+        onClick={() => fileRef.current!.click()}
+        disabled={busy}
+      >
+        {Icon.camera}
+        {busy ? t('costs.processing') : preview ? t('costs.replacePhoto') : t('costs.addPhoto')}
+      </button>
+      {preview && (
+        <div className="receipt-box" style={{ marginTop: 12 }}>
+          {/* eslint-disable-next-line @next/next/no-img-element -- a data URL or a private, per-user image */}
+          <img className="receipt-img" src={preview} alt={previewAlt} />
+          <div className="receipt-tools">
+            <button type="button" className="btn danger" onClick={onRemove}>
+              {t('common.remove')}
+            </button>
+          </div>
+        </div>
+      )}
+    </>
   );
 }

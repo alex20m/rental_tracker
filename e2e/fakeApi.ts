@@ -34,6 +34,9 @@ export class FakeApi {
   emailVerified = true;
   apartments = new Map<string, ApartmentView>();
   receipts = new Map<string, { contentType: string; data: Buffer }>();
+  /** Acquisition costs' photos, by the cost's id, and each apartment's purchase photo, by the apartment's. */
+  acquisitionPhotos = new Map<string, { contentType: string; data: Buffer }>();
+  purchasePhotos = new Map<string, { contentType: string; data: Buffer }>();
   /** Neon Auth accounts, by email. */
   accounts = new Map<string, Account>();
   sentCodes: string[] = [];
@@ -61,7 +64,7 @@ export class FakeApi {
   /** An apartment as the viewer sees it, owned by them alone unless `owners` says otherwise. */
   addApartment(
     settings: Partial<ApartmentSettings> = {},
-    more: Partial<Pick<ApartmentView, 'owners' | 'invites' | 'rents' | 'costs' | 'recurring' | 'acquisitionCosts' | 'mySale' | 'mySharePct' | 'checklist'>> = {},
+    more: Partial<Pick<ApartmentView, 'owners' | 'invites' | 'rents' | 'costs' | 'recurring' | 'acquisitionCosts' | 'mySale' | 'myPurchaseHasPhoto' | 'mySharePct' | 'checklist'>> = {},
   ): ApartmentView {
     const id = uuid();
     const apt: ApartmentView = {
@@ -73,6 +76,7 @@ export class FakeApi {
       checklist: [],
       acquisitionCosts: [],
       mySale: null,
+      myPurchaseHasPhoto: false,
       rents: [],
       costs: [],
       mySharePct: 100,
@@ -297,6 +301,10 @@ export class FakeApi {
         return ok;
       }
     }
+    if (sub === 'sale' && subId === 'purchase-photo') {
+      const photo = photoRoute(method, body, this.purchasePhotos, id, (has) => (apt.myPurchaseHasPhoto = has));
+      return photo === 'ok' ? ok : photo === undefined ? notFound : photo;
+    }
     if (sub === 'sale') {
       // One whole part per request, merged into what is kept; nothing left means nothing kept.
       const kept = { purchaseDate: '', purchasePrice: 0, saleDate: '', salePrice: 0, saleCosts: 0, ...apt.mySale, ...body };
@@ -306,12 +314,16 @@ export class FakeApi {
     }
     if (sub === 'acquisition') {
       if (!subId && method === 'POST') {
-        const cost: AcquisitionCost = { id: uuid(), ...(body as Omit<AcquisitionCost, 'id'>) };
+        const cost: AcquisitionCost = { id: uuid(), ...(body as Omit<AcquisitionCost, 'id' | 'hasPhoto'>), hasPhoto: false };
         apt.acquisitionCosts.push(cost);
         return { status: 201, body: { id: cost.id } };
       }
       const cost = apt.acquisitionCosts.find((c) => c.id === subId);
       if (!cost) return notFound;
+      if (leaf === 'photo') {
+        const photo = photoRoute(method, body, this.acquisitionPhotos, cost.id, (has) => (cost.hasPhoto = has));
+        return photo === 'ok' ? ok : photo === undefined ? notFound : photo;
+      }
       if (method === 'PUT') {
         Object.assign(cost, body);
         return ok;
@@ -409,6 +421,33 @@ export class FakeApi {
 }
 
 type Answer = { status: number; body: unknown };
+
+/**
+ * GET, PUT and DELETE of one stored photo, as the real photo routes answer
+ * them: the image itself, 'ok', or undefined for a photo that is not there.
+ * `mark` keeps the flag the apartment view carries for it in step.
+ */
+function photoRoute(
+  method: string,
+  body: Record<string, unknown>,
+  store: Map<string, { contentType: string; data: Buffer }>,
+  key: string,
+  mark: (has: boolean) => void,
+): Binary | 'ok' | undefined {
+  if (method === 'GET') {
+    const photo = store.get(key);
+    return photo && new Binary(photo.contentType, photo.data);
+  }
+  if (method === 'PUT') {
+    const [, contentType, base64] = /^data:([^;]+);base64,(.*)$/.exec(String(body.dataUrl))!;
+    store.set(key, { contentType: contentType!, data: Buffer.from(base64!, 'base64') });
+    mark(true);
+  } else {
+    store.delete(key);
+    mark(false);
+  }
+  return 'ok';
+}
 
 class Binary {
   constructor(

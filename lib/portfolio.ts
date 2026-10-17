@@ -43,7 +43,7 @@ export interface Actor {
 
 export type CostInput = Omit<CostEntry, 'id' | 'hasReceipt'>;
 export type RentInput = Omit<RentEntry, 'month'>;
-export type AcquisitionInput = Omit<AcquisitionCost, 'id'>;
+export type AcquisitionInput = Omit<AcquisitionCost, 'id' | 'hasPhoto'>;
 export type SaleInput = SaleDetails;
 export type RecurringInput = {
   kind: 'cost' | 'rent';
@@ -58,6 +58,7 @@ export type RecurringInput = {
 export type RecurringPatch = { category?: CostCategory; description: string; amount: number; dayOfMonth: number };
 /** `repeat`: also book the same again every month, from the month after this one. */
 export type RepeatOption = { repeat?: boolean };
+/** A stored photo: a cost's receipt, an acquisition cost's, or the deed of a purchase. */
 export type Receipt = { contentType: string; base64: string };
 export type ShareAssignment = {
   owners: { userId: string; sharePct: number }[];
@@ -122,6 +123,10 @@ const SALE_FIELDS: Record<keyof SaleDetails, string> = {
 
 const toDbValue = (key: keyof ApartmentSettings, value: unknown) =>
   key === 'purchaseDate' && value === '' ? null : value;
+
+/** Postgres wraps base64 output at 76 characters; a data URL must not. */
+const unwrapped = (photo: Receipt | undefined): Receipt | null =>
+  photo ? { ...photo, base64: photo.base64.replace(/\s+/g, '') } : null;
 
 /** Ownership shares are compared in hundredths, never as floats. */
 const cents = (pct: number) => Math.round(pct * 100);
@@ -189,9 +194,10 @@ export function portfolio(db: Queryable, clock: () => Date = () => new Date()) {
 
   const owns = async (userId: string, apartmentId: string) => (await myShare(userId, apartmentId)) !== null;
 
-  /** Erases what one owner kept for themselves in an apartment they no longer own: their sale and acquisition costs. */
+  /** Erases what one owner kept for themselves in an apartment they no longer own: their sale, its photo and acquisition costs. */
   async function forgetPersonal(apartmentId: string, userId: string) {
     await db.query('delete from sales where apartment_id = $1 and user_id = $2', [apartmentId, userId]);
+    await db.query('delete from purchase_photos where apartment_id = $1 and user_id = $2', [apartmentId, userId]);
     await db.query('delete from acquisition_costs where apartment_id = $1 and user_id = $2', [apartmentId, userId]);
   }
 
@@ -255,7 +261,7 @@ export function portfolio(db: Queryable, clock: () => Date = () => new Date()) {
       if (share === null) return null;
       await bookDue(apartmentId);
 
-      const [settingsRows, owners, invites, rents, costs, recurring, acquisitionCosts, sales] = await Promise.all([
+      const [settingsRows, owners, invites, rents, costs, recurring, acquisitionCosts, sales, purchasePhotos] = await Promise.all([
         db.query<ApartmentSettings & { checklist: string }>(
           `select ${SETTINGS_COLUMNS}, a.checklist from apartments a where a.id = $1`,
           [apartmentId],
@@ -290,8 +296,9 @@ export function portfolio(db: Queryable, clock: () => Date = () => new Date()) {
           [apartmentId],
         ),
         db.query<AcquisitionCost>(
-          `select id, date::text as date, kind, description, amount::float8 as amount
-             from acquisition_costs where apartment_id = $1 and user_id = $2 order by date, created_at, id`,
+          `select a.id, a.date::text as date, a.kind, a.description, a.amount::float8 as amount,
+                  exists (select 1 from acquisition_photos p where p.acquisition_id = a.id) as "hasPhoto"
+             from acquisition_costs a where a.apartment_id = $1 and a.user_id = $2 order by a.date, a.created_at, a.id`,
           [apartmentId, userId],
         ),
         db.query<SaleDetails>(
@@ -301,6 +308,7 @@ export function portfolio(db: Queryable, clock: () => Date = () => new Date()) {
              from sales where apartment_id = $1 and user_id = $2`,
           [apartmentId, userId],
         ),
+        db.query('select 1 from purchase_photos where apartment_id = $1 and user_id = $2', [apartmentId, userId]),
       ]);
       if (!settingsRows[0]) return null;
       const { checklist, ...settings } = settingsRows[0];
@@ -308,7 +316,7 @@ export function portfolio(db: Queryable, clock: () => Date = () => new Date()) {
       // A cost has a category and the rent has none; leave the key out rather than send null.
       for (const r of recurring) if (r.category === null) delete r.category;
 
-      return { id: apartmentId, settings, checklist: parseChecklist(checklist), owners, invites, rents, costs, recurring, acquisitionCosts, mySale: sales[0] ?? null, mySharePct: share };
+      return { id: apartmentId, settings, checklist: parseChecklist(checklist), owners, invites, rents, costs, recurring, acquisitionCosts, mySale: sales[0] ?? null, myPurchaseHasPhoto: purchasePhotos.length > 0, mySharePct: share };
     },
 
     async updateSettings(userId: string, apartmentId: string, patch: Partial<ApartmentSettings>): Promise<boolean> {
@@ -523,6 +531,69 @@ export function portfolio(db: Queryable, clock: () => Date = () => new Date()) {
       return true;
     },
 
+    /** The photo of an owner's own acquisition cost; false when the cost is not theirs. */
+    async putAcquisitionPhoto(userId: string, apartmentId: string, acquisitionId: string, photo: Receipt): Promise<boolean> {
+      if (!isUuid(acquisitionId) || !(await owns(userId, apartmentId))) return false;
+      const rows = await db.query(
+        `insert into acquisition_photos (acquisition_id, content_type, data)
+         select a.id, $4, decode($5, 'base64') from acquisition_costs a
+          where a.id = $1 and a.apartment_id = $2 and a.user_id = $3
+         on conflict (acquisition_id) do update set content_type = excluded.content_type, data = excluded.data
+         returning acquisition_id`,
+        [acquisitionId, apartmentId, userId, photo.contentType, photo.base64],
+      );
+      return rows.length > 0;
+    },
+
+    async getAcquisitionPhoto(userId: string, apartmentId: string, acquisitionId: string): Promise<Receipt | null> {
+      if (!isUuid(acquisitionId) || !(await owns(userId, apartmentId))) return null;
+      const rows = await db.query<Receipt>(
+        `select p.content_type as "contentType", encode(p.data, 'base64') as base64
+           from acquisition_photos p join acquisition_costs a on a.id = p.acquisition_id
+          where a.id = $1 and a.apartment_id = $2 and a.user_id = $3`,
+        [acquisitionId, apartmentId, userId],
+      );
+      return unwrapped(rows[0]);
+    },
+
+    async deleteAcquisitionPhoto(userId: string, apartmentId: string, acquisitionId: string): Promise<boolean> {
+      if (!isUuid(acquisitionId) || !(await owns(userId, apartmentId))) return false;
+      await db.query(
+        `delete from acquisition_photos p using acquisition_costs a
+          where p.acquisition_id = a.id and a.id = $1 and a.apartment_id = $2 and a.user_id = $3`,
+        [acquisitionId, apartmentId, userId],
+      );
+      return true;
+    },
+
+    /** The photo of the owner's own purchase. It is kept apart from the purchase, so it can come first. */
+    async putPurchasePhoto(userId: string, apartmentId: string, photo: Receipt): Promise<boolean> {
+      if (!(await owns(userId, apartmentId))) return false;
+      await db.query(
+        `insert into purchase_photos (apartment_id, user_id, content_type, data)
+         values ($1, $2, $3, decode($4, 'base64'))
+         on conflict (apartment_id, user_id) do update set content_type = excluded.content_type, data = excluded.data`,
+        [apartmentId, userId, photo.contentType, photo.base64],
+      );
+      return true;
+    },
+
+    async getPurchasePhoto(userId: string, apartmentId: string): Promise<Receipt | null> {
+      if (!(await owns(userId, apartmentId))) return null;
+      const rows = await db.query<Receipt>(
+        `select content_type as "contentType", encode(data, 'base64') as base64
+           from purchase_photos where apartment_id = $1 and user_id = $2`,
+        [apartmentId, userId],
+      );
+      return unwrapped(rows[0]);
+    },
+
+    async deletePurchasePhoto(userId: string, apartmentId: string): Promise<boolean> {
+      if (!(await owns(userId, apartmentId))) return false;
+      await db.query('delete from purchase_photos where apartment_id = $1 and user_id = $2', [apartmentId, userId]);
+      return true;
+    },
+
     async putReceipt(userId: string, apartmentId: string, costId: string, receipt: Receipt): Promise<boolean> {
       if (!isUuid(costId) || !(await owns(userId, apartmentId))) return false;
       const rows = await db.query(
@@ -543,8 +614,7 @@ export function portfolio(db: Queryable, clock: () => Date = () => new Date()) {
           where c.id = $1 and c.apartment_id = $2`,
         [costId, apartmentId],
       );
-      // Postgres wraps base64 output at 76 characters; a data URL must not.
-      return rows[0] ? { ...rows[0], base64: rows[0].base64.replace(/\s+/g, '') } : null;
+      return unwrapped(rows[0]);
     },
 
     async deleteReceipt(userId: string, apartmentId: string, costId: string): Promise<boolean> {
@@ -753,6 +823,7 @@ export function portfolio(db: Queryable, clock: () => Date = () => new Date()) {
         [userId],
       );
       await db.query('delete from sales where user_id = $1', [userId]);
+      await db.query('delete from purchase_photos where user_id = $1', [userId]);
       await db.query('delete from acquisition_costs where user_id = $1', [userId]);
       await db.query('delete from apartment_owners where user_id = $1', [userId]);
       await db.query('delete from apartment_invites where email = lower($1)', [email]);

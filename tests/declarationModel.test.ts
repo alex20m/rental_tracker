@@ -28,6 +28,7 @@ const apartment = (settings: Partial<ApartmentView['settings']>, costs: CostEntr
   checklist: [],
   acquisitionCosts: [],
   mySale: null,
+  myPurchaseHasPhoto: false,
   rents,
   costs,
   mySharePct: pct,

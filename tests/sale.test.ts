@@ -8,6 +8,7 @@ const extra = (kind: AcquisitionCost['kind'], amount: number): AcquisitionCost =
   kind,
   description: '',
   amount,
+  hasPhoto: false,
 });
 
 const ledger = (settings: Partial<ApartmentSettings> = {}, acquisitionCosts: AcquisitionCost[] = []): SaleLedger => ({

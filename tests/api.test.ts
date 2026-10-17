@@ -10,6 +10,8 @@ import * as sale from '@/app/api/apartments/[id]/sale/route';
 import * as acquisitions from '@/app/api/apartments/[id]/acquisition/route';
 import * as acquisition from '@/app/api/apartments/[id]/acquisition/[acquisitionId]/route';
 import * as receipt from '@/app/api/apartments/[id]/costs/[costId]/receipt/route';
+import * as acquisitionPhoto from '@/app/api/apartments/[id]/acquisition/[acquisitionId]/photo/route';
+import * as purchasePhoto from '@/app/api/apartments/[id]/sale/purchase-photo/route';
 import * as invites from '@/app/api/apartments/[id]/invites/route';
 import * as invite from '@/app/api/apartments/[id]/invites/[inviteId]/route';
 import * as shares from '@/app/api/apartments/[id]/shares/route';
@@ -97,6 +99,12 @@ describe('every route, signed out', () => {
       receipt.GET(req('GET'), p),
       receipt.PUT(req('PUT', { dataUrl: 'data:image/png;base64,AAAA' }), p),
       receipt.DELETE(req('DELETE'), p),
+      acquisitionPhoto.GET(req('GET'), p),
+      acquisitionPhoto.PUT(req('PUT', { dataUrl: 'data:image/png;base64,AAAA' }), p),
+      acquisitionPhoto.DELETE(req('DELETE'), p),
+      purchasePhoto.GET(req('GET'), p),
+      purchasePhoto.PUT(req('PUT', { dataUrl: 'data:image/png;base64,AAAA' }), p),
+      purchasePhoto.DELETE(req('DELETE'), p),
       invites.POST(req('POST', { email: 'eve@example.test', sharePct: 50 }), p),
       invite.DELETE(req('DELETE'), p),
       shares.PUT(req('PUT', { owners: [], invites: [] }), p),

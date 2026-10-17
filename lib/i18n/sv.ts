@@ -241,6 +241,8 @@ export const sv: Record<MessageKey, string> = {
   'sale.purchaseAbout': 'ditt köp',
   'sale.purchasePrice': 'Ditt inköpspris (€)',
   'sale.purchaseDate': 'Köpdatum',
+  'sale.purchasePhoto': 'Bild av köpebrevet',
+  'sale.purchasePhotoPreview': 'Förhandsvisning av köpebrevet',
   'sale.detailsInfo':
     'Bara din egen del, och bara du ser den: varje ägare anger sitt eget, så ingen annan ser dina uppgifter. Försäljningsdagen är dagen då köpebrevet eller ett annat bindande avtal undertecknades: vinsten beskattas som kapitalinkomst det året, oavsett när pengarna kommer.',
   'sale.date': 'Försäljningsdag',
@@ -263,6 +265,9 @@ export const sv: Record<MessageKey, string> = {
   'sale.acqDescription': 'Beskrivning',
   'sale.acqDescriptionPlaceholder': 't.ex. fuktmätning',
   'sale.acqDate': 'Datum',
+  'sale.acqPhoto': 'Kvitto eller faktura',
+  'sale.acqPhotoPreview': 'Förhandsvisning av kvittot eller fakturan',
+  'sale.acqNoPhoto': 'Ingen bild av kvittot',
   'sale.kind.transfer_tax': 'Överlåtelseskatt',
   'sale.kind.purchase_fees': 'Mäklararvode och andra avgifter vid köpet',
   'sale.kind.inspection': 'Besiktning eller undersökning',

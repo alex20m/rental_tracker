@@ -10,6 +10,8 @@ import * as invites from '@/app/api/apartments/[id]/invites/route';
 import * as me from '@/app/api/me/route';
 import * as acquisitions from '@/app/api/apartments/[id]/acquisition/route';
 import * as acquisition from '@/app/api/apartments/[id]/acquisition/[acquisitionId]/route';
+import * as acquisitionPhoto from '@/app/api/apartments/[id]/acquisition/[acquisitionId]/photo/route';
+import * as purchasePhoto from '@/app/api/apartments/[id]/sale/purchase-photo/route';
 import { testDb, type TestDb } from './support/testDb';
 import type { ApartmentView } from '@/lib/domain/types';
 
@@ -72,8 +74,8 @@ describe('the acquisition costs of an owner', () => {
     expect(tax.status).toBe(201);
     expect(survey.status).toBe(201);
     expect((await view(alice, id)).acquisitionCosts).toEqual([
-      { id: ((await tax.json()) as { id: string }).id, date: '2018-03-02', kind: 'transfer_tax', description: '', amount: 911.25 },
-      { id: ((await survey.json()) as { id: string }).id, ...fuktmatning },
+      { id: ((await tax.json()) as { id: string }).id, date: '2018-03-02', kind: 'transfer_tax', description: '', amount: 911.25, hasPhoto: false },
+      { id: ((await survey.json()) as { id: string }).id, ...fuktmatning, hasPhoto: false },
     ]);
   });
 
@@ -87,7 +89,7 @@ describe('the acquisition costs of an owner', () => {
       ctx({ id, acquisitionId: created.id }),
     );
     expect(changed.status).toBe(200);
-    expect((await view(alice, id)).acquisitionCosts).toEqual([{ id: created.id, ...fuktmatning, kind: 'other', amount: 350.5 }]);
+    expect((await view(alice, id)).acquisitionCosts).toEqual([{ id: created.id, ...fuktmatning, kind: 'other', amount: 350.5, hasPhoto: false }]);
 
     signIn(alice);
     const removed = await acquisition.DELETE(req('DELETE'), ctx({ id, acquisitionId: created.id }));
@@ -336,5 +338,227 @@ describe('the sale of an owner’s own part', () => {
     await me.DELETE(req('DELETE'));
 
     expect(await db.query('select user_id from sales')).toEqual([{ user_id: alice.userId }]);
+  });
+});
+
+const png = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 1, 2, 3]);
+const jpeg = Buffer.from([0xff, 0xd8, 0xff, 0xe0, 4, 5, 6]);
+const dataUrl = (type: string, bytes: Buffer) => ({ dataUrl: `data:${type};base64,${bytes.toString('base64')}` });
+
+async function addFuktmatning(as: Session, id: string): Promise<string> {
+  signIn(as);
+  return ((await (await acquisitions.POST(req('POST', fuktmatning), ctx({ id }))).json()) as { id: string }).id;
+}
+
+describe('the photo of an acquisition cost', () => {
+  it('is stored, served back byte for byte as the image it is, replaced, and removed', async () => {
+    const id = await createApartment(alice);
+    const acquisitionId = await addFuktmatning(alice, id);
+    const at = ctx({ id, acquisitionId });
+
+    signIn(alice);
+    expect((await acquisitionPhoto.PUT(req('PUT', dataUrl('image/png', png)), at)).status).toBe(200);
+    expect((await view(alice, id)).acquisitionCosts[0]!.hasPhoto).toBe(true);
+    signIn(alice);
+    const got = await acquisitionPhoto.GET(req('GET'), at);
+    expect(got.status).toBe(200);
+    expect(got.headers.get('content-type')).toBe('image/png');
+    expect(got.headers.get('x-content-type-options')).toBe('nosniff');
+    expect(got.headers.get('cache-control')).toBe('private, no-store');
+    expect(Buffer.from(await got.arrayBuffer())).toEqual(png);
+
+    signIn(alice);
+    await acquisitionPhoto.PUT(req('PUT', dataUrl('image/jpeg', jpeg)), at);
+    signIn(alice);
+    const replaced = await acquisitionPhoto.GET(req('GET'), at);
+    expect(replaced.headers.get('content-type')).toBe('image/jpeg');
+    expect(Buffer.from(await replaced.arrayBuffer())).toEqual(jpeg);
+
+    signIn(alice);
+    expect((await acquisitionPhoto.DELETE(req('DELETE'), at)).status).toBe(200);
+    expect((await view(alice, id)).acquisitionCosts[0]!.hasPhoto).toBe(false);
+    signIn(alice);
+    expect((await acquisitionPhoto.GET(req('GET'), at)).status).toBe(404);
+  });
+
+  it('keeps its photo when the cost is changed, and goes with the cost when it is deleted', async () => {
+    const id = await createApartment(alice);
+    const acquisitionId = await addFuktmatning(alice, id);
+    signIn(alice);
+    await acquisitionPhoto.PUT(req('PUT', dataUrl('image/png', png)), ctx({ id, acquisitionId }));
+
+    signIn(alice);
+    await acquisition.PUT(req('PUT', { ...fuktmatning, amount: 320 }), ctx({ id, acquisitionId }));
+    expect((await view(alice, id)).acquisitionCosts).toMatchObject([{ amount: 320, hasPhoto: true }]);
+
+    signIn(alice);
+    await acquisition.DELETE(req('DELETE'), ctx({ id, acquisitionId }));
+    expect(await db.query('select 1 from acquisition_photos')).toEqual([]);
+  });
+
+  it('is private: a co-owner can neither see, replace nor remove it', async () => {
+    const id = await sharedWithBob();
+    const acquisitionId = await addFuktmatning(alice, id);
+    const at = ctx({ id, acquisitionId });
+    signIn(alice);
+    await acquisitionPhoto.PUT(req('PUT', dataUrl('image/png', png)), at);
+
+    signIn(bob);
+    const attempts = [
+      await acquisitionPhoto.GET(req('GET'), at),
+      await acquisitionPhoto.PUT(req('PUT', dataUrl('image/jpeg', jpeg)), at),
+    ];
+    signIn(bob);
+    await acquisitionPhoto.DELETE(req('DELETE'), at);
+
+    expect(attempts.map((r) => r.status)).toEqual([404, 404]);
+    signIn(alice);
+    expect(Buffer.from(await (await acquisitionPhoto.GET(req('GET'), at)).arrayBuffer())).toEqual(png);
+  });
+
+  it('cannot be reached by someone who does not own the apartment, nor through the id of another apartment', async () => {
+    const id = await createApartment(alice);
+    const other = await createApartment(alice);
+    const acquisitionId = await addFuktmatning(alice, other);
+
+    signIn(alice);
+    const viaWrongApartment = await acquisitionPhoto.PUT(req('PUT', dataUrl('image/png', png)), ctx({ id, acquisitionId }));
+    const notAnId = await acquisitionPhoto.GET(req('GET'), ctx({ id, acquisitionId: 'nope' }));
+    signIn(bob);
+    const outsider = await acquisitionPhoto.PUT(req('PUT', dataUrl('image/png', png)), ctx({ id: other, acquisitionId }));
+
+    expect([viaWrongApartment.status, notAnId.status, outsider.status]).toEqual([404, 404, 404]);
+    expect(await db.query('select 1 from acquisition_photos')).toEqual([]);
+  });
+
+  it('refuses anything but a JPEG, PNG or WebP image', async () => {
+    const id = await createApartment(alice);
+    const acquisitionId = await addFuktmatning(alice, id);
+    const svg = Buffer.from('<svg onload="alert(1)"/>');
+
+    signIn(alice);
+    const res = await acquisitionPhoto.PUT(req('PUT', dataUrl('image/svg+xml', svg)), ctx({ id, acquisitionId }));
+
+    expect(res.status).toBe(400);
+    expect(await db.query('select 1 from acquisition_photos')).toEqual([]);
+  });
+});
+
+describe('the photo of an owner’s own purchase', () => {
+  it('can be kept before any purchase is typed, and stays when the purchase and the sale are both cleared', async () => {
+    const id = await createApartment(alice);
+    expect((await view(alice, id)).myPurchaseHasPhoto).toBe(false);
+
+    signIn(alice);
+    expect((await purchasePhoto.PUT(req('PUT', dataUrl('image/jpeg', jpeg)), ctx({ id }))).status).toBe(200);
+    const before = await view(alice, id);
+    expect([before.mySale, before.myPurchaseHasPhoto]).toEqual([null, true]);
+
+    await saveBoth(alice, id);
+    signIn(alice);
+    await sale.PATCH(req('PATCH', { purchaseDate: '', purchasePrice: 0 }), ctx({ id }));
+    signIn(alice);
+    await sale.PATCH(req('PATCH', { saleDate: '', salePrice: 0, saleCosts: 0 }), ctx({ id }));
+
+    const after = await view(alice, id);
+    expect([after.mySale, after.myPurchaseHasPhoto]).toEqual([null, true]);
+    signIn(alice);
+    const got = await purchasePhoto.GET(req('GET'), ctx({ id }));
+    expect(got.headers.get('content-type')).toBe('image/jpeg');
+    expect(got.headers.get('x-content-type-options')).toBe('nosniff');
+    expect(Buffer.from(await got.arrayBuffer())).toEqual(jpeg);
+  });
+
+  it('is replaced by the next one, and removed', async () => {
+    const id = await createApartment(alice);
+    signIn(alice);
+    await purchasePhoto.PUT(req('PUT', dataUrl('image/jpeg', jpeg)), ctx({ id }));
+    signIn(alice);
+    await purchasePhoto.PUT(req('PUT', dataUrl('image/png', png)), ctx({ id }));
+    signIn(alice);
+    expect(Buffer.from(await (await purchasePhoto.GET(req('GET'), ctx({ id }))).arrayBuffer())).toEqual(png);
+
+    signIn(alice);
+    expect((await purchasePhoto.DELETE(req('DELETE'), ctx({ id }))).status).toBe(200);
+    expect((await view(alice, id)).myPurchaseHasPhoto).toBe(false);
+    signIn(alice);
+    expect((await purchasePhoto.GET(req('GET'), ctx({ id }))).status).toBe(404);
+  });
+
+  it('is each owner’s own: a co-owner sees only theirs, and removing theirs leaves the other’s', async () => {
+    const id = await sharedWithBob();
+    signIn(alice);
+    await purchasePhoto.PUT(req('PUT', dataUrl('image/png', png)), ctx({ id }));
+
+    expect((await view(bob, id)).myPurchaseHasPhoto).toBe(false);
+    signIn(bob);
+    expect((await purchasePhoto.GET(req('GET'), ctx({ id }))).status).toBe(404);
+    signIn(bob);
+    await purchasePhoto.PUT(req('PUT', dataUrl('image/jpeg', jpeg)), ctx({ id }));
+    signIn(bob);
+    await purchasePhoto.DELETE(req('DELETE'), ctx({ id }));
+
+    signIn(alice);
+    expect(Buffer.from(await (await purchasePhoto.GET(req('GET'), ctx({ id }))).arrayBuffer())).toEqual(png);
+    expect((await view(bob, id)).myPurchaseHasPhoto).toBe(false);
+  });
+
+  it('is not reachable by someone who does not own the apartment, and refuses an SVG', async () => {
+    const id = await createApartment(alice);
+
+    signIn(bob);
+    const outsider = await purchasePhoto.PUT(req('PUT', dataUrl('image/png', png)), ctx({ id }));
+    signIn(alice);
+    const svg = await purchasePhoto.PUT(req('PUT', dataUrl('image/svg+xml', Buffer.from('<svg/>'))), ctx({ id }));
+
+    expect([outsider.status, svg.status]).toEqual([404, 400]);
+    expect(await db.query('select 1 from purchase_photos')).toEqual([]);
+  });
+
+  it('goes with the ownership or the account of the person who kept it, and with the apartment', async () => {
+    const id = await sharedWithBob();
+    signIn(bob);
+    await purchasePhoto.PUT(req('PUT', dataUrl('image/png', png)), ctx({ id }));
+    await addFuktmatning(bob, id).then((acquisitionId) => {
+      signIn(bob);
+      return acquisitionPhoto.PUT(req('PUT', dataUrl('image/png', png)), ctx({ id, acquisitionId }));
+    });
+    signIn(alice);
+    await purchasePhoto.PUT(req('PUT', dataUrl('image/jpeg', jpeg)), ctx({ id }));
+
+    // Bob gives his share away and leaves.
+    signIn(alice);
+    await shares.PUT(
+      req('PUT', { owners: [{ userId: alice.userId, sharePct: 100 }, { userId: bob.userId, sharePct: 0 }], invites: [] }),
+      ctx({ id }),
+    );
+    signIn(alice);
+    await owners.DELETE(req('DELETE'), ctx({ id, userId: bob.userId }));
+    expect(await db.query('select user_id from purchase_photos')).toEqual([{ user_id: alice.userId }]);
+    expect(await db.query('select 1 from acquisition_photos')).toEqual([]);
+
+    signIn(alice);
+    await me.DELETE(req('DELETE'));
+    expect(await db.query('select 1 from purchase_photos')).toEqual([]);
+
+    const kept = await createApartment(alice);
+    signIn(alice);
+    await purchasePhoto.PUT(req('PUT', dataUrl('image/png', png)), ctx({ id: kept }));
+    signIn(alice);
+    await apartment.DELETE(req('DELETE'), ctx({ id: kept }));
+    expect(await db.query('select 1 from purchase_photos')).toEqual([]);
+  });
+
+  it('is erased with the account of a co-owner who leaves the others’ apartment behind', async () => {
+    const id = await sharedWithBob();
+    signIn(bob);
+    await purchasePhoto.PUT(req('PUT', dataUrl('image/png', png)), ctx({ id }));
+    signIn(alice);
+    await purchasePhoto.PUT(req('PUT', dataUrl('image/jpeg', jpeg)), ctx({ id }));
+
+    signIn(bob);
+    await me.DELETE(req('DELETE'));
+
+    expect(await db.query('select user_id from purchase_photos')).toEqual([{ user_id: alice.userId }]);
   });
 });

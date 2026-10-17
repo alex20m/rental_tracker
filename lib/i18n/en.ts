@@ -244,6 +244,8 @@ export const en = {
   'sale.purchaseAbout': 'your purchase',
   'sale.purchasePrice': 'Your purchase price (€)',
   'sale.purchaseDate': 'Purchase date',
+  'sale.purchasePhoto': 'Photo of the deed of sale',
+  'sale.purchasePhotoPreview': 'Preview of the deed of sale',
   'sale.detailsInfo':
     'Only your own part, and only you see it: each owner enters their own, so no one else sees your figures. The sale day is the day the deed or another binding contract was signed: the gain is taxed as capital income in that year, whenever the money arrives.',
   'sale.date': 'Sale date',
@@ -266,6 +268,9 @@ export const en = {
   'sale.acqDescription': 'Description',
   'sale.acqDescriptionPlaceholder': 'e.g. moisture survey',
   'sale.acqDate': 'Date',
+  'sale.acqPhoto': 'Receipt or invoice',
+  'sale.acqPhotoPreview': 'Preview of the receipt or invoice',
+  'sale.acqNoPhoto': 'No photo of the receipt',
   'sale.kind.transfer_tax': 'Transfer tax',
   'sale.kind.purchase_fees': 'Agent and other fees of the purchase',
   'sale.kind.inspection': 'Inspection or survey',

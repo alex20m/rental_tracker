@@ -40,6 +40,7 @@ const flat: ApartmentView = {
   checklist: [],
   acquisitionCosts: [],
   mySale: null,
+  myPurchaseHasPhoto: false,
   mySharePct: 100,
 };
 

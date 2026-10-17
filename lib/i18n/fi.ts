@@ -240,6 +240,8 @@ export const fi: Record<MessageKey, string> = {
   'sale.purchaseAbout': 'sinun ostosi',
   'sale.purchasePrice': 'Sinun ostohintasi (€)',
   'sale.purchaseDate': 'Ostopäivä',
+  'sale.purchasePhoto': 'Kuva kauppakirjasta',
+  'sale.purchasePhotoPreview': 'Kauppakirjan esikatselu',
   'sale.detailsInfo':
     'Vain oma osuutesi, ja vain sinä näet sen: jokainen omistaja syöttää omansa, joten kukaan muu ei näe lukujasi. Myyntipäivä on päivä, jona kauppakirja tai muu sitova sopimus allekirjoitettiin: voitto verotetaan pääomatulona sinä vuonna, vaikka rahat tulisivat myöhemmin.',
   'sale.date': 'Myyntipäivä',
@@ -262,6 +264,9 @@ export const fi: Record<MessageKey, string> = {
   'sale.acqDescription': 'Kuvaus',
   'sale.acqDescriptionPlaceholder': 'esim. kosteusmittaus',
   'sale.acqDate': 'Päivämäärä',
+  'sale.acqPhoto': 'Kuitti tai lasku',
+  'sale.acqPhotoPreview': 'Kuitin tai laskun esikatselu',
+  'sale.acqNoPhoto': 'Ei kuvaa kuitista',
   'sale.kind.transfer_tax': 'Varainsiirtovero',
   'sale.kind.purchase_fees': 'Välityspalkkio ja muut oston kulut',
   'sale.kind.inspection': 'Kuntotarkastus tai selvitys',

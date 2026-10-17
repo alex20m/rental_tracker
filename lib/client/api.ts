@@ -87,6 +87,13 @@ export const api = {
   updateAcquisition: (id: string, costId: string, cost: AcquisitionInput) =>
     call('PUT', `${apt(id)}/acquisition/${costId}`, cost),
   deleteAcquisition: (id: string, costId: string) => call('DELETE', `${apt(id)}/acquisition/${costId}`),
+  acquisitionPhotoUrl: (id: string, costId: string) => `${apt(id)}/acquisition/${costId}/photo`,
+  putAcquisitionPhoto: (id: string, costId: string, dataUrl: string) => call('PUT', `${apt(id)}/acquisition/${costId}/photo`, { dataUrl }),
+  deleteAcquisitionPhoto: (id: string, costId: string) => call('DELETE', `${apt(id)}/acquisition/${costId}/photo`),
+  /** The viewer's own photo of their purchase, the deed of sale. */
+  purchasePhotoUrl: (id: string) => `${apt(id)}/sale/purchase-photo`,
+  putPurchasePhoto: (id: string, dataUrl: string) => call('PUT', `${apt(id)}/sale/purchase-photo`, { dataUrl }),
+  deletePurchasePhoto: (id: string) => call('DELETE', `${apt(id)}/sale/purchase-photo`),
 
   createRecurring: (id: string, entry: RecurringInput) => call<{ id: string }>('POST', `${apt(id)}/recurring`, entry),
   updateRecurring: (id: string, entryId: string, patch: RecurringPatch) => call('PUT', `${apt(id)}/recurring/${entryId}`, patch),
