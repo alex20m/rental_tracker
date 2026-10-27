@@ -10,6 +10,12 @@ export const sv: Record<MessageKey, string> = {
   'common.delete': 'Ta bort',
   'common.cancel': 'Avbryt',
   'common.remove': 'Ta bort',
+  'common.open': 'Öppna',
+  'common.download': 'Ladda ner',
+  /** File names a saved photo is downloaded under, before the date and extension. */
+  'photo.receiptFile': 'kvitto',
+  'photo.deedFile': 'köpebrev',
+  'photo.downloadFailed': 'Det gick inte att ladda ner bilden.',
   'common.loading': 'Laddar',
   'common.aboutInfo': 'Om {about}',
   'common.rent': 'Hyra',

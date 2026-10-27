@@ -112,11 +112,11 @@ export const api = {
 };
 
 /** A receipt photo as bytes, for the declaration zip. Undefined if there is none. */
-export async function fetchReceipt(
-  id: string,
-  costId: string,
-): Promise<{ data: ArrayBuffer; extension: string } | undefined> {
-  const res = await fetch(api.receiptUrl(id, costId), { credentials: 'same-origin', cache: 'no-store' });
+export const fetchReceipt = (id: string, costId: string) => fetchPhoto(api.receiptUrl(id, costId));
+
+/** A stored photo as bytes, with the file extension of its type. Undefined if there is none. */
+export async function fetchPhoto(url: string): Promise<{ data: ArrayBuffer; extension: string } | undefined> {
+  const res = await fetch(url, { credentials: 'same-origin', cache: 'no-store' });
   if (!res.ok) return undefined;
   const type = res.headers.get('content-type')!;
   const extension = type.includes('png') ? 'png' : type.includes('webp') ? 'webp' : 'jpg';

@@ -270,6 +270,35 @@ test.describe('costs and receipts', () => {
     await expect(page.getByRole('button', { name: /Insurance/ })).toHaveCount(0);
   });
 
+  test('opens a saved receipt in a new tab and downloads it named after the cost’s date, but not a photo still unsaved', async ({ page, api }) => {
+    const apt = api.addApartment({ name: 'Flat' }, ledger());
+    apt.costs[0]!.hasReceipt = true;
+    api.receipts.set('c-repair', { contentType: 'image/jpeg', data: readFileSync(photo) });
+    await page.goto('/');
+    await section(page, 'Costs');
+    await page.getByRole('button', { name: /Kitchen tap/ }).click();
+    const sheet = page.getByRole('dialog', { name: 'Edit cost' });
+
+    const [tab] = await Promise.all([page.waitForEvent('popup'), sheet.getByRole('link', { name: 'Open' }).click()]);
+    expect(new URL(tab.url()).pathname).toBe(`/api/apartments/${apt.id}/costs/c-repair/receipt`);
+    await tab.close();
+
+    // The photo gone from the server in the meantime: said, not silently nothing.
+    api.failNext('GET', /\/receipt$/, { status: 404, body: { error: 'Not found' } });
+    await sheet.getByRole('button', { name: 'Download' }).click();
+    await expect(alert(page)).toHaveText('Could not download the photo.');
+
+    const [file] = await Promise.all([page.waitForEvent('download'), sheet.getByRole('button', { name: 'Download' }).click()]);
+    expect(file.suggestedFilename()).toBe(`receipt-${m(2)}-10.jpg`);
+    expect(readFileSync((await file.path())!)).toEqual(readFileSync(photo));
+
+    // A photo just picked is not stored yet: there is nothing to open or download.
+    await sheet.locator('input[type=file]').setInputFiles(photo);
+    await expect(sheet.getByAltText('Receipt preview')).toHaveAttribute('src', /^data:/);
+    await expect(sheet.getByRole('link')).toHaveCount(0);
+    await expect(sheet.getByRole('button', { name: 'Download' })).toHaveCount(0);
+  });
+
   test('adds a photo to an existing cost, and drops an unsaved one without calling the server', async ({ page, api }) => {
     const apt = api.addApartment({ name: 'Flat' }, ledger());
     await page.goto('/');

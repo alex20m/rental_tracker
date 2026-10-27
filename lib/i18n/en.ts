@@ -15,6 +15,12 @@ export const en = {
   'common.delete': 'Delete',
   'common.cancel': 'Cancel',
   'common.remove': 'Remove',
+  'common.open': 'Open',
+  'common.download': 'Download',
+  /** File names a saved photo is downloaded under, before the date and extension. */
+  'photo.receiptFile': 'receipt',
+  'photo.deedFile': 'deed-of-sale',
+  'photo.downloadFailed': 'Could not download the photo.',
   'common.loading': 'Loading',
   'common.aboutInfo': 'About {about}',
   'common.rent': 'Rent',

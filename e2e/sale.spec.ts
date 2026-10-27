@@ -563,4 +563,52 @@ test.describe('photos on the Sale page', () => {
     expect(changes(api, apt.id)).toEqual(['POST /api/apartments/:id/acquisition']);
     expect(apt.acquisitionCosts[0]!.hasPhoto).toBe(false);
   });
+
+  test('opens and downloads the saved deed of sale, and offers neither for a photo not saved yet', async ({ page, api }) => {
+    const apt = api.addApartment(FLAT, { myPurchaseHasPhoto: true });
+    api.purchasePhotos.set(apt.id, { contentType: 'image/png', data: pngOfSize(4, 4) });
+    await page.goto('/');
+    await section(page, 'Sale');
+    const card = purchaseCard(page);
+
+    const [tab] = await Promise.all([page.waitForEvent('popup'), card.getByRole('link', { name: 'Open' }).click()]);
+    expect(new URL(tab.url()).pathname).toBe(`/api/apartments/${apt.id}/sale/purchase-photo`);
+    await tab.close();
+    const [file] = await Promise.all([page.waitForEvent('download'), card.getByRole('button', { name: 'Download' }).click()]);
+    expect(file.suggestedFilename()).toBe('deed-of-sale.png');
+    expect(readFileSync((await file.path())!)).toEqual(pngOfSize(4, 4));
+
+    await card.locator('input[type=file]').setInputFiles(photo);
+    await expect(deedPreview(page)).toHaveAttribute('src', /^data:/);
+    await expect(card.getByRole('link')).toHaveCount(0);
+    await expect(card.getByRole('button', { name: 'Download' })).toHaveCount(0);
+
+    // Once saved, the new one is the stored photo, and that is what is downloaded.
+    await save(card).click();
+    await expect(saved(card)).toBeVisible();
+    const [again] = await Promise.all([page.waitForEvent('download'), card.getByRole('button', { name: 'Download' }).click()]);
+    expect(again.suggestedFilename()).toBe('deed-of-sale.jpg');
+  });
+
+  test('downloads an acquisition cost’s saved receipt named after its date, in the language in use', async ({ page, api }) => {
+    const apt = api.addApartment(FLAT, {
+      acquisitionCosts: [{ id: 'a1', date: '2018-03-02', kind: 'transfer_tax', description: '', amount: 900, hasPhoto: true }],
+    });
+    api.acquisitionPhotos.set('a1', { contentType: 'image/jpeg', data: readFileSync(photo) });
+    await page.goto('/');
+    await section(page, 'Sale');
+    await page.getByRole('button', { name: /Transfer tax/ }).click();
+    const sheet = page.getByRole('dialog');
+
+    const [tab] = await Promise.all([page.waitForEvent('popup'), sheet.getByRole('link', { name: 'Open' }).click()]);
+    expect(new URL(tab.url()).pathname).toBe(`/api/apartments/${apt.id}/acquisition/a1/photo`);
+    await tab.close();
+    const [file] = await Promise.all([page.waitForEvent('download'), sheet.getByRole('button', { name: 'Download' }).click()]);
+    expect(file.suggestedFilename()).toBe('receipt-2018-03-02.jpg');
+    expect(readFileSync((await file.path())!)).toEqual(readFileSync(photo));
+
+    await sheet.locator('input[type=file]').setInputFiles(photo);
+    await expect(sheet.getByRole('link')).toHaveCount(0);
+    await expect(sheet.getByRole('button', { name: 'Download' })).toHaveCount(0);
+  });
 });
