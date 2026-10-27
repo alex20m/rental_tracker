@@ -74,15 +74,7 @@ export default function Costs({ apt, year, onChanged }: Props) {
                       <div className="t">{c.description || t(`cat.${c.category}.label`)}</div>
                       <div className="s">
                         {shortDate(c.date, lang)}
-                        {c.description && ` · ${t(`cat.${c.category}.label`)}`}{' '}
-                        {how === 'none' && <span className="chip warn">{t('common.notDeductible')}</span>}
-                        {how === 'improvement' && (
-                          <span className="chip">{t('costs.overYears', { n: improvementYears(c) })}</span>
-                        )}
-                        {how === 'addition' && <span className="chip">{t('costs.addedToBuilding')}</span>}
-                        {how === 'furniture' && (
-                          <span className="chip">{t('costs.furnitureRate', ruleParams(Number(c.date.slice(0, 4)), lang))}</span>
-                        )}
+                        {c.description && ` · ${t(`cat.${c.category}.label`)}`} <HowDeducted apt={apt} cost={c} />
                       </div>
                     </div>
                     <div className={'strong num ' + (how === 'none' ? 'dim' : '')}>{eur(c.amount)}</div>
@@ -97,15 +89,101 @@ export default function Costs({ apt, year, onChanged }: Props) {
       <button className="btn primary fab" aria-label={t('costs.add')} onClick={() => setEditing('new')}>
         {Icon.plus}
       </button>
-      {editing && (
-        <CostForm
-          apt={apt}
-          cost={editing === 'new' ? undefined : editing}
-          onClose={() => setEditing(null)}
-          onChanged={onChanged}
-        />
+      {editing === 'new' && <CostForm apt={apt} onClose={() => setEditing(null)} onChanged={onChanged} />}
+      {editing && editing !== 'new' && (
+        <SavedCost apt={apt} cost={editing} onClose={() => setEditing(null)} onChanged={onChanged} />
       )}
     </>
+  );
+}
+
+/** The chip saying how a cost is deducted, when it is anything but in full the year it is paid. */
+function HowDeducted({ apt, cost }: { apt: ApartmentView; cost: CostEntry }) {
+  const { t, lang } = useI18n();
+  const how = deductionOf(cost, apt.settings);
+  if (how === 'none') return <span className="chip warn">{t('common.notDeductible')}</span>;
+  if (how === 'improvement') return <span className="chip">{t('costs.overYears', { n: improvementYears(cost) })}</span>;
+  if (how === 'addition') return <span className="chip">{t('costs.addedToBuilding')}</span>;
+  if (how === 'furniture')
+    return <span className="chip">{t('costs.furnitureRate', ruleParams(Number(cost.date.slice(0, 4)), lang))}</span>;
+  return null;
+}
+
+/** A saved cost opens to be read; only Edit turns it into the form, and Cancel turns it back. */
+function SavedCost({
+  apt,
+  cost,
+  onClose,
+  onChanged,
+}: {
+  apt: ApartmentView;
+  cost: CostEntry;
+  onClose: () => void;
+  onChanged: () => Promise<void>;
+}) {
+  const [editing, setEditing] = useState(false);
+  return editing ? (
+    <CostForm apt={apt} cost={cost} onClose={onClose} onCancel={() => setEditing(false)} onChanged={onChanged} />
+  ) : (
+    <CostView apt={apt} cost={cost} onClose={onClose} onEdit={() => setEditing(true)} />
+  );
+}
+
+function CostView({
+  apt,
+  cost,
+  onClose,
+  onEdit,
+}: {
+  apt: ApartmentView;
+  cost: CostEntry;
+  onClose: () => void;
+  onEdit: () => void;
+}) {
+  const { t, lang } = useI18n();
+  const [error, setError] = useState('');
+  const receipt = cost.hasReceipt ? api.receiptUrl(apt.id, cost.id) : undefined;
+
+  return (
+    <Sheet title={t('costs.view')} onClose={onClose}>
+      <div className="big" style={{ marginTop: 6 }}>
+        <Money value={cost.amount} />
+      </div>
+      <div style={{ marginTop: 6 }}>
+        <HowDeducted apt={apt} cost={cost} />
+      </div>
+      <div className="kv">
+        <span>{t('costs.category')}</span>
+        <span>{t(`cat.${cost.category}.label`)}</span>
+      </div>
+      {cost.description && (
+        <div className="kv">
+          <span>{t('costs.description')}</span>
+          <span>{cost.description}</span>
+        </div>
+      )}
+      <div className="kv">
+        <span>{t('costs.date')}</span>
+        <span>{`${shortDate(cost.date, lang)} ${cost.date.slice(0, 4)}`}</span>
+      </div>
+      {receipt ? (
+        <div className="receipt-box" style={{ marginTop: 12 }}>
+          {/* eslint-disable-next-line @next/next/no-img-element -- a private, per-user image; not for the image optimizer */}
+          <img className="receipt-img" src={receipt} alt={t('costs.receipt')} />
+          <div className="receipt-tools">
+            <PhotoLinks url={receipt} name={`${t('photo.receiptFile')}-${cost.date}`} onError={setError} />
+          </div>
+        </div>
+      ) : (
+        <p className="msg">{t('costs.noReceiptYet')}</p>
+      )}
+      <ErrorNote message={error} />
+      <div className="sheet-foot">
+        <button className="btn primary" onClick={onEdit}>
+          {t('common.edit')}
+        </button>
+      </div>
+    </Sheet>
   );
 }
 
@@ -113,11 +191,14 @@ function CostForm({
   apt,
   cost,
   onClose,
+  onCancel,
   onChanged,
 }: {
   apt: ApartmentView;
   cost?: CostEntry;
   onClose: () => void;
+  /** Back to reading the saved cost, dropping what was changed. */
+  onCancel?: () => void;
   onChanged: () => Promise<void>;
 }) {
   const { t, lang } = useI18n();
@@ -366,6 +447,11 @@ function CostForm({
         {cost && (
           <button className="btn danger" onClick={remove} disabled={busy}>
             {t('common.delete')}
+          </button>
+        )}
+        {onCancel && (
+          <button className="btn" onClick={onCancel} disabled={busy}>
+            {t('common.cancel')}
           </button>
         )}
         <button className="btn primary" onClick={save} disabled={!(Number(amount) > 0 && date && validYears) || busy}>

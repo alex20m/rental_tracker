@@ -249,6 +249,57 @@ test.describe('costs and receipts', () => {
     await expect(page.getByRole('note')).toContainText('Log costs for the whole apartment');
   });
 
+  test('opens a saved cost to read, with nothing editable until Edit is pressed, and Cancel goes back unchanged', async ({ page, api }) => {
+    const apt = api.addApartment({ name: 'Flat' }, ledger());
+    apt.costs[0]!.hasReceipt = true;
+    api.receipts.set('c-repair', { contentType: 'image/jpeg', data: readFileSync(photo) });
+    await page.goto('/');
+    await section(page, 'Costs');
+
+    await page.getByRole('button', { name: /Kitchen tap/ }).click();
+    const view = page.getByRole('dialog', { name: 'Cost' });
+    await expect(view.locator('.big')).toHaveText('120,00 €');
+    await expect(view.locator('.kv')).toHaveText(['CategoryRepairs & upkeep', 'DescriptionKitchen tap', `Date10 Feb ${YEAR}`]);
+    await expect(view.getByAltText('Receipt')).toHaveAttribute('src', `/api/apartments/${apt.id}/costs/c-repair/receipt`);
+    await expect(view.getByRole('link', { name: 'Open' })).toBeVisible();
+    await expect(view.locator('input')).toHaveCount(0);
+    await expect(view.getByRole('button', { name: 'Save' })).toHaveCount(0);
+    await expect(view.getByRole('button', { name: 'Delete' })).toHaveCount(0);
+
+    await view.getByRole('button', { name: 'Edit' }).click();
+    const edit = page.getByRole('dialog', { name: 'Edit cost' });
+    await expect(edit.getByLabel('Amount (€)')).toHaveValue('120');
+    await edit.getByLabel('Amount (€)').fill('999');
+    await edit.getByRole('button', { name: 'Cancel' }).click();
+
+    await expect(view.locator('.big')).toHaveText('120,00 €');
+    expect(api.callsTo('PUT')).toEqual([]);
+    await view.getByRole('button', { name: 'Edit' }).click();
+    await expect(edit.getByLabel('Amount (€)')).toHaveValue('120');
+  });
+
+  test('shows how a saved cost is deducted, and leaves out a description it does not have', async ({ page, api }) => {
+    api.addApartment({ name: 'Flat' }, {
+      costs: [
+        { id: 'c1', date: `${m(3)}-01`, category: 'insurance', description: '', amount: 96, hasReceipt: false },
+        { id: 'c2', date: `${m(3)}-02`, category: 'improvement', description: 'Bathroom', amount: 5000, spreadYears: 10, hasReceipt: false },
+      ],
+    });
+    await page.goto('/');
+    await section(page, 'Costs');
+
+    await page.getByRole('button', { name: /Insurance/ }).click();
+    const view = page.getByRole('dialog', { name: 'Cost' });
+    await expect(view.locator('.kv')).toHaveText(['CategoryInsurance', `Date1 Mar ${YEAR}`]);
+    await expect(view.getByText('No receipt photo yet')).toBeVisible();
+    await expect(view.getByRole('img')).toHaveCount(0);
+    await expect(view.locator('.chip')).toHaveCount(0);
+    await view.getByRole('button', { name: 'Close' }).click();
+
+    await page.getByRole('button', { name: /Bathroom/ }).click();
+    await expect(view.locator('.chip')).toHaveText('over 10 years');
+  });
+
   test('edits a cost, removes its photo, and deletes another', async ({ page, api }) => {
     const apt = api.addApartment({ name: 'Flat' }, ledger());
     apt.costs[0]!.hasReceipt = true;
@@ -257,6 +308,7 @@ test.describe('costs and receipts', () => {
     await section(page, 'Costs');
 
     await page.getByRole('button', { name: /Kitchen tap/ }).click();
+    await page.getByRole('dialog', { name: 'Cost' }).getByRole('button', { name: 'Edit' }).click();
     const sheet = page.getByRole('dialog', { name: 'Edit cost' });
     await expect(sheet.getByRole('button', { name: 'Receipt' })).toHaveText('Replace photo');
     await sheet.getByRole('button', { name: 'Remove' }).click();
@@ -268,6 +320,7 @@ test.describe('costs and receipts', () => {
     // A cost without a description is listed by its category. (A row's name
     // starts with its thumbnail's — "No receipt photo" — so it is not anchored.)
     await page.getByRole('button', { name: /Insurance/ }).click();
+    await page.getByRole('dialog', { name: 'Cost' }).getByRole('button', { name: 'Edit' }).click();
     await page.getByRole('dialog').getByRole('button', { name: 'Delete' }).click();
     await expect(page.getByRole('button', { name: /Insurance/ })).toHaveCount(0);
   });
@@ -279,6 +332,7 @@ test.describe('costs and receipts', () => {
     await page.goto('/');
     await section(page, 'Costs');
     await page.getByRole('button', { name: /Kitchen tap/ }).click();
+    await page.getByRole('dialog', { name: 'Cost' }).getByRole('button', { name: 'Edit' }).click();
     const sheet = page.getByRole('dialog', { name: 'Edit cost' });
 
     const [tab] = await Promise.all([page.waitForEvent('popup'), sheet.getByRole('link', { name: 'Open' }).click()]);
@@ -307,6 +361,7 @@ test.describe('costs and receipts', () => {
     await section(page, 'Costs');
 
     await page.getByRole('button', { name: /Kitchen tap/ }).click();
+    await page.getByRole('dialog', { name: 'Cost' }).getByRole('button', { name: 'Edit' }).click();
     const sheet = page.getByRole('dialog');
     await sheet.locator('input[type=file]').setInputFiles(photo);
     await sheet.getByRole('button', { name: 'Remove' }).click();
@@ -315,6 +370,7 @@ test.describe('costs and receipts', () => {
     expect(api.callsTo('DELETE')).toEqual([]);
 
     await page.getByRole('button', { name: /Kitchen tap/ }).click();
+    await page.getByRole('dialog', { name: 'Cost' }).getByRole('button', { name: 'Edit' }).click();
     await sheet.locator('input[type=file]').setInputFiles(photo);
     await sheet.getByRole('button', { name: 'Save' }).click();
     await expect(page.locator('.list img.thumb')).toHaveCount(1);
@@ -404,6 +460,7 @@ test.describe('costs and receipts', () => {
     expect(apt.costs[0]).toMatchObject({ category: 'furniture', amount: 2000, spreadYears: 10 });
 
     await page.locator('.list li').click();
+    await page.getByRole('dialog', { name: 'Cost' }).getByRole('button', { name: 'Edit' }).click();
     const edit = page.getByRole('dialog', { name: 'Edit cost' });
     await edit.getByRole('switch', { name: 'Lasts under 3 years — deduct at once' }).click();
     await edit.getByRole('button', { name: 'Save' }).click();
@@ -412,6 +469,7 @@ test.describe('costs and receipts', () => {
     expect(apt.costs[0]).toMatchObject({ spreadYears: 1 });
 
     await page.locator('.list li').click();
+    await page.getByRole('dialog', { name: 'Cost' }).getByRole('button', { name: 'Edit' }).click();
     await page.getByRole('dialog', { name: 'Edit cost' }).getByRole('switch', { name: 'Lasts under 3 years — deduct at once' }).click();
     await page.getByRole('dialog', { name: 'Edit cost' }).getByRole('button', { name: 'Save' }).click();
     await expect(page.locator('.hero .big')).toHaveText('500,00 €');
