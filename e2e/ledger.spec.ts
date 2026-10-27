@@ -206,20 +206,22 @@ test.describe('costs and receipts', () => {
     expect({ width, height }).toEqual({ width: 800, height: 600 });
   });
 
-  test('will not save a cost dated in a month that has not started', async ({ page, api }) => {
-    api.addApartment({ name: 'Flat' });
+  test('saves a cost dated in a coming month, so a planned expense can be logged ahead of time', async ({ page, api }) => {
+    const apt = api.addApartment({ name: 'Flat' });
     await page.clock.setFixedTime(new Date(`${YEAR}-06-15T12:00:00`));
     await page.goto('/');
     await section(page, 'Costs');
     await page.getByRole('button', { name: 'Add cost' }).click();
     const sheet = page.getByRole('dialog', { name: 'Add cost' });
-    await sheet.getByLabel('Amount (€)').fill('50');
     const save = sheet.getByRole('button', { name: 'Save' });
-
-    await sheet.getByLabel('Date').fill(`${m(7)}-01`);
-    await expect(save).toBeDisabled();
-    await sheet.getByLabel('Date').fill(`${m(6)}-30`);
+    await sheet.getByLabel('Date').fill(`${m(12)}-01`);
+    await expect(save).toBeDisabled(); // still needs an amount
+    await sheet.getByLabel('Amount (€)').fill('50');
     await expect(save).toBeEnabled();
+    await save.click();
+
+    await expect(page.locator('li').filter({ hasText: '50,00 €' })).toBeVisible();
+    expect(apt.costs.map((c) => [c.date, c.amount])).toEqual([[`${m(12)}-01`, 50]]);
   });
 
   test('lists costs, leaves the financing charge out of the total, and says how many there are', async ({ page, api }) => {

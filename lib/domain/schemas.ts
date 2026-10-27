@@ -98,7 +98,8 @@ export const rentSchema = z
 
 export const costSchema = z
   .object({
-    date: isoDate.refine((d) => d.slice(0, 7) <= latestMonth(), NOT_FUTURE),
+    /** Any real day: an expense that is still to come can be logged ahead, unlike rent, which is only logged once the month has begun. */
+    date: isoDate,
     category: z.enum(COST_CATEGORIES),
     description: text(500),
     amount: money.refine((n) => n > 0, 'Amount must be more than zero'),
