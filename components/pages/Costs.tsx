@@ -10,7 +10,7 @@ import { RECURRING_CATEGORIES, nextMonth, repeatDay } from '@/lib/domain/recurri
 import { monthTitle, shortDate } from '@/lib/ui/format';
 import { ruleParams } from '@/lib/ui/ruleParams';
 import { useI18n } from '@/components/I18nProvider';
-import { ErrorNote, Icon, Info, Label, Money, Sheet, Switch } from '@/components/ui';
+import { ErrorNote, Icon, Info, Label, Money, PhotoLinks, Sheet, Switch } from '@/components/ui';
 
 const todayIso = () => {
   const d = new Date();
@@ -345,6 +345,7 @@ function CostForm({
           {/* eslint-disable-next-line @next/next/no-img-element -- a data URL or a private, per-user image */}
           <img className="receipt-img" src={preview} alt={t('costs.receiptPreview')} />
           <div className="receipt-tools">
+            {!newImage && existing && <PhotoLinks url={existing} name={`${t('photo.receiptFile')}-${cost!.date}`} onError={setError} />}
             <button
               className="btn danger"
               onClick={() => {

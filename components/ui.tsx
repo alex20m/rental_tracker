@@ -4,8 +4,42 @@ import { useEffect, useId, useLayoutEffect, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import { useI18n } from '@/components/I18nProvider';
+import { download, fetchPhoto } from '@/lib/client/api';
 import { moneyParts } from '@/lib/ui/format';
 import { placePopover, type Placement } from '@/lib/ui/popover';
+
+/* ───────────────────────── Saved photo ───────────────────────── */
+
+/**
+ * For a photo that is stored: open it full size in a new tab, or save it as a
+ * file named `name` plus the extension of what is stored. The download is
+ * fetched and saved from the page, as the declaration package is, so it gets
+ * its name on every browser and a failure can be said.
+ */
+export function PhotoLinks({ url, name, onError }: { url: string; name: string; onError: (message: string) => void }) {
+  const { t } = useI18n();
+
+  const save = async () => {
+    try {
+      const photo = await fetchPhoto(url);
+      if (!photo) throw new Error('No photo');
+      download(new Blob([photo.data]), `${name}.${photo.extension}`);
+    } catch {
+      onError(t('photo.downloadFailed'));
+    }
+  };
+
+  return (
+    <>
+      <a className="btn" href={url} target="_blank" rel="noopener noreferrer">
+        {t('common.open')}
+      </a>
+      <button type="button" className="btn" onClick={save}>
+        {t('common.download')}
+      </button>
+    </>
+  );
+}
 
 /* ───────────────────────── Sheet ───────────────────────── */
 

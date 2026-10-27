@@ -107,8 +107,12 @@ export class FakeApi {
     return this.calls.filter((c) => c.call.startsWith(prefix));
   }
 
+  /**
+   * On the page's whole browser context, not the page alone: a tab the app
+   * opens is a page of its own, and would otherwise reach the real server.
+   */
   async install(page: Page) {
-    await page.route('**/api/**', (route) => this.handle(route));
+    await page.context().route('**/api/**', (route) => this.handle(route));
   }
 
   private async handle(route: Route) {

@@ -9,7 +9,7 @@ import { eur } from '@/lib/domain/tax';
 import { shortDate } from '@/lib/ui/format';
 import { ruleParams } from '@/lib/ui/ruleParams';
 import { useI18n } from '@/components/I18nProvider';
-import { ErrorNote, Heading, Icon, Info, Label, Money, Sheet, Switch } from '@/components/ui';
+import { ErrorNote, Heading, Icon, Info, Label, Money, PhotoLinks, Sheet, Switch } from '@/components/ui';
 
 const todayIso = () => {
   const d = new Date();
@@ -164,6 +164,11 @@ export default function Sale({ apt, onChanged }: Props) {
             label={t('sale.purchasePhoto')}
             previewAlt={t('sale.purchasePhotoPreview')}
             preview={purchasePhoto}
+            saved={
+              photoChange === 'none' && apt.myPurchaseHasPhoto
+                ? { url: api.purchasePhotoUrl(apt.id), name: t('photo.deedFile') }
+                : undefined
+            }
             busy={busy}
             onBusy={setBusy}
             onPick={(dataUrl) => {
@@ -174,7 +179,7 @@ export default function Sale({ apt, onChanged }: Props) {
               setPicked(undefined);
               setPhotoChange('removed');
             }}
-            onUnreadable={() => setPurchaseError(t('common.imageUnreadable'))}
+            onError={setPurchaseError}
           />
           <ErrorNote message={purchaseError} />
           <div className="form-foot">
@@ -486,6 +491,7 @@ function AcquisitionForm({
         label={t('sale.acqPhoto')}
         previewAlt={t('sale.acqPhotoPreview')}
         preview={removeImage ? undefined : (newImage ?? existing)}
+        saved={!newImage && existing ? { url: existing, name: `${t('photo.receiptFile')}-${cost!.date}` } : undefined}
         busy={busy}
         onBusy={setBusy}
         onPick={(dataUrl) => {
@@ -496,7 +502,7 @@ function AcquisitionForm({
           setNewImage(undefined);
           setRemoveImage(true);
         }}
-        onUnreadable={() => setError(t('common.imageUnreadable'))}
+        onError={setError}
       />
 
       <ErrorNote message={error} />
@@ -517,29 +523,33 @@ function AcquisitionForm({
 /**
  * A photo kept with an entry: a button that picks one from the camera, the
  * photo library or files — shrunk as a cost's receipt is — and, once there is
- * one, its preview with a button to remove it. Nothing is uploaded here; the
- * form it is in saves it.
+ * one, its preview with a button to remove it and, when the preview is the
+ * stored photo (`saved`), buttons to open and download it. Nothing is uploaded
+ * here; the form it is in saves it.
  */
 function PhotoPicker({
   id,
   label,
   previewAlt,
   preview,
+  saved,
   busy,
   onBusy,
   onPick,
   onRemove,
-  onUnreadable,
+  onError,
 }: {
   id: string;
   label: string;
   previewAlt: string;
   preview: string | undefined;
+  saved: { url: string; name: string } | undefined;
   busy: boolean;
   onBusy: (busy: boolean) => void;
   onPick: (dataUrl: string) => void;
   onRemove: () => void;
-  onUnreadable: () => void;
+  /** Says what went wrong: a photo that could not be read, or downloaded. */
+  onError: (message: string) => void;
 }) {
   const { t } = useI18n();
   const fileRef = useRef<HTMLInputElement>(null);
@@ -550,7 +560,7 @@ function PhotoPicker({
     try {
       onPick(await compressImage(f));
     } catch {
-      onUnreadable();
+      onError(t('common.imageUnreadable'));
     }
     onBusy(false);
   };
@@ -575,6 +585,7 @@ function PhotoPicker({
           {/* eslint-disable-next-line @next/next/no-img-element -- a data URL or a private, per-user image */}
           <img className="receipt-img" src={preview} alt={previewAlt} />
           <div className="receipt-tools">
+            {saved && <PhotoLinks {...saved} onError={onError} />}
             <button type="button" className="btn danger" onClick={onRemove}>
               {t('common.remove')}
             </button>

@@ -10,6 +10,12 @@ export const fi: Record<MessageKey, string> = {
   'common.delete': 'Poista',
   'common.cancel': 'Peruuta',
   'common.remove': 'Poista',
+  'common.open': 'Avaa',
+  'common.download': 'Lataa',
+  /** File names a saved photo is downloaded under, before the date and extension. */
+  'photo.receiptFile': 'kuitti',
+  'photo.deedFile': 'kauppakirja',
+  'photo.downloadFailed': 'Kuvan lataaminen ei onnistunut.',
   'common.loading': 'Ladataan',
   'common.aboutInfo': 'Tietoa: {about}',
   'common.rent': 'Vuokra',
