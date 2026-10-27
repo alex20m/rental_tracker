@@ -240,6 +240,7 @@ test.describe('repeating from the ordinary forms', () => {
     await page.goto('/');
     await section(page, 'Costs');
     await page.getByRole('button', { name: /Insurance/ }).click();
+    await page.getByRole('dialog', { name: 'Cost' }).getByRole('button', { name: 'Edit' }).click();
 
     await expect(page.getByRole('dialog', { name: 'Edit cost' }).getByRole('switch')).toHaveCount(0);
   });
