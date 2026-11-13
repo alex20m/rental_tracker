@@ -118,6 +118,17 @@ test.describe('home', () => {
     await expect(page.getByText('2.4 %', { exact: true })).toBeVisible();
   });
 
+  test('calls the yield gross and does not claim a net figure, since loan interest is never logged', async ({ page, api }) => {
+    api.addApartment({ name: 'Solo', purchasePrice: 100000 }, ledger());
+    await page.goto('/');
+
+    await expect(page.locator('.insights .l').nth(1)).toHaveText('Gross yield');
+    await page.getByRole('button', { name: 'About gross yield' }).click();
+    await expect(page.getByRole('note')).toHaveText(
+      'Gross yield is the rent received divided by the purchase price, before any costs.',
+    );
+  });
+
   test('shows dashes for occupancy and yield while only a cost is logged and no price is known', async ({ page, api }) => {
     api.addApartment({ name: 'Flat', purchasePrice: 0 }, { costs: [ledger().costs[0]!] });
     await page.goto('/');

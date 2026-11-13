@@ -101,10 +101,9 @@ export const fi: Record<MessageKey, string> = {
   'home.occupancyInfo':
     'Niiden kirjattujen kuukausien osuus, joina sait vuokraa: {paid} maksettua, {vacant} tyhjillään{unpaid}.',
   'home.occupancyUnpaid': ', {n} maksamatta',
-  'home.yield': 'Tuotto',
-  'home.yieldAbout': 'tuotto',
-  'home.yieldInfo': 'Bruttotuotto on saadut vuokrat jaettuna ostohinnalla{net}.{addPrice}',
-  'home.yieldNet': '; vähennyskelpoisten kulujen jälkeen se on {n} %',
+  'home.yield': 'Bruttotuotto',
+  'home.yieldAbout': 'bruttotuotto',
+  'home.yieldInfo': 'Bruttotuotto on saadut vuokrat jaettuna ostohinnalla ennen kuluja.{addPrice}',
   'home.yieldAddPrice': ' Lisää ostohinta asunnon asetusten kohdassa Lisäasetukset, niin näet sen.',
   'home.recent': 'Viimeisimmät',
   'home.recentRent': 'Vuokra {month}',
