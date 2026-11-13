@@ -167,3 +167,26 @@ describe("the declaration's PDF", () => {
     }
   });
 });
+
+describe("the declaration's ledger, by the year the rent was received", () => {
+  const rent = (month: string, receivedDate: string) => ({ month, status: 'paid' as const, amount: 800, receivedDate, note: '' });
+  const withRents: ApartmentView = {
+    ...apt,
+    costs: [],
+    rents: [
+      // January's rent, paid early in December: income of the year before.
+      rent('2025-01', '2024-12-30'),
+      rent('2025-02', '2025-02-03'),
+      // Next January's rent, paid early: income of this year.
+      rent('2026-01', '2025-12-29'),
+      { month: '2025-03', status: 'vacant', amount: 0, receivedDate: '', note: '' },
+    ],
+  };
+  const dates = (y: number) => buildCsv(withRents, y, 100, new Map()).split('\n').slice(1).map((row) => row.split(',')[0]);
+
+  it('lists a paid rent only in the year it was received, so the rows add up to the rent declared', () => {
+    expect(dates(2025)).toEqual(['"2025-02-03"', '"2025-12-29"', '"2025-03"']);
+    expect(dates(2024)).toEqual(['"2024-12-30"']);
+    expect(dates(2026)).toEqual([]);
+  });
+});

@@ -30,7 +30,10 @@ export default function Home({ apt, year, account, scope, onScope, go }: Props) 
   const tax = computeTax(apt, year);
   const mine = ownerShare(tax, apt.mySharePct);
   const shared = apt.mySharePct !== 100;
-  const f = shared && scope === 'whole' ? tax : mine;
+  const whole = shared && scope === 'whole';
+  const f = whole ? tax : mine;
+  // The chart follows the figures above it: the viewer's part, or the whole apartment.
+  const part = (whole ? 100 : apt.mySharePct) / 100;
   const y = String(year);
 
   const todo = buildChecklist({ apt, tax }, i18n).filter((i) => !i.ok);
@@ -40,11 +43,11 @@ export default function Home({ apt, year, account, scope, onScope, go }: Props) 
   const costByMonth = Array(12).fill(0) as number[];
   apt.rents.forEach((r) => {
     if (r.status === 'paid' && r.receivedDate.startsWith(y))
-      rentByMonth[Number(r.receivedDate.slice(5, 7)) - 1]! += r.amount;
+      rentByMonth[Number(r.receivedDate.slice(5, 7)) - 1]! += r.amount * part;
   });
   apt.costs.forEach((c) => {
     if (c.date.startsWith(y) && deductionOf(c, apt.settings) !== 'none')
-      costByMonth[Number(c.date.slice(5, 7)) - 1]! += c.amount;
+      costByMonth[Number(c.date.slice(5, 7)) - 1]! += c.amount * part;
   });
   const max = Math.max(1, ...rentByMonth, ...costByMonth);
   const now = new Date();

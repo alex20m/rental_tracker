@@ -60,6 +60,13 @@ export function declarationFigures(form: '7H' | '7K', share: OwnerShare, ledger?
   const otherParts = [...otherCategories, ...depreciationParts];
   const interest = of('loan_interest');
   const scale = (n: number) => round2((n * share.sharePct) / 100);
+  // Rows 4.2, 4.3 and 4.5 are the owner's share to the cent; 4.4 and 4.6 are worked out from
+  // those, so the rows add up on the form as the owner files it.
+  const rows = (d: { start: number; added: number; part: number }) => {
+    const [start, added, part] = [scale(d.start), scale(d.added), scale(d.part)];
+    const base = round2(start + added);
+    return { start, added, base, part, end: round2(base - part) };
+  };
   const detail = ledger ? depreciationDetail(ledger, share.year) : null;
   const movable = ledger ? movableDetail(ledger, share.year) : null;
   return {
@@ -74,22 +81,8 @@ export function declarationFigures(form: '7H' | '7K', share: OwnerShare, ledger?
     interest,
     limitReduction: share.limitAdjustment,
     netBeforeInterest: round2(share.netIncome + interest),
-    buildingRows: detail && {
-      cost: scale(detail.cost),
-      start: scale(detail.start),
-      added: scale(detail.added),
-      base: scale(detail.base),
-      part: scale(detail.part),
-      end: scale(detail.end),
-      rate: detail.rate,
-    },
-    movableRows: {
-      start: scale(movable?.start ?? 0),
-      added: scale(movable?.added ?? 0),
-      base: scale((movable?.start ?? 0) + (movable?.added ?? 0)),
-      part: scale(movable?.part ?? 0),
-      end: scale(movable?.end ?? 0),
-    },
+    buildingRows: detail && { cost: scale(detail.cost), ...rows(detail), rate: detail.rate },
+    movableRows: rows(movable ?? { start: 0, added: 0, part: 0 }),
   };
 }
 

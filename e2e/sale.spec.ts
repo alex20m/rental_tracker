@@ -361,6 +361,38 @@ test.describe('selling your part of the apartment', () => {
     expect(apt.mySale).toEqual({ purchaseDate: '2019-01-01', purchasePrice: 120000, saleDate: '', salePrice: 0, saleCosts: 0 });
   });
 
+  test('keeps the sale on screen when it could not be removed', async ({ page, api }) => {
+    const apt = api.addApartment(FLAT, {
+      mySale: { purchaseDate: '2019-01-01', purchasePrice: 120000, saleDate: '2025-06-15', salePrice: 160000, saleCosts: 4000 },
+    });
+    await page.goto('/');
+    await section(page, 'Sale');
+    api.failNext('PATCH', /\/sale$/, { status: 503, body: { error: 'Try again shortly' } });
+
+    await page.getByRole('button', { name: 'Remove the sale' }).click();
+
+    await expect(alert(page)).toHaveText('Try again shortly');
+    // Still saved, so still shown: an emptied form would say the sale is gone.
+    await expect(page.getByLabel('Sale date')).toHaveValue('2025-06-15');
+    await expect(page.getByLabel('Your selling price (€)')).toHaveValue('160000');
+    await expect(page.getByLabel('Your costs of selling (€)')).toHaveValue('4000');
+    expect(apt.mySale!.salePrice).toBe(160000);
+  });
+
+  test('writes a cost of nothing as 0,00 €, never as −0,00 €', async ({ page, api }) => {
+    // No purchase price and no costs of selling: both are taken off the price as zero.
+    api.addApartment(FLAT, {
+      mySale: { purchaseDate: '', purchasePrice: 0, saleDate: '2025-06-15', salePrice: 160000, saleCosts: 0 },
+    });
+    await page.goto('/');
+    await section(page, 'Sale');
+
+    const actual = card(page, 'Actual costs');
+    await expect(actual).toContainText('160 000,00 €');
+    await expect(actual.getByText('0,00 €', { exact: true })).toHaveCount(2);
+    await expect(actual.getByText('−0,00 €')).toHaveCount(0);
+  });
+
   test('says why the sale could not be saved and keeps what was typed', async ({ page, api }) => {
     api.addApartment(FLAT);
     await page.goto('/');
