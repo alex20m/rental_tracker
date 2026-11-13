@@ -415,6 +415,9 @@ test.describe('photos on the Sale page', () => {
     await expect(saved(purchaseCard(page))).toHaveCount(0);
     await save(purchaseCard(page)).click();
 
+    // Save is disabled from the click on, so wait for the photo button to come back: it is busy until the save has finished.
+    await expect(deed(page)).toBeEnabled();
+    await expect(deed(page)).toHaveText('Add photo');
     await expect(save(purchaseCard(page))).toBeDisabled();
     expect(changes(api, apt.id).at(-1)).toBe('DELETE /api/apartments/:id/sale/purchase-photo');
     expect(apt.myPurchaseHasPhoto).toBe(false);
