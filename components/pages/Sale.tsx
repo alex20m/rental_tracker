@@ -71,17 +71,20 @@ export default function Sale({ apt, onChanged }: Props) {
     : null;
   const params = ruleParams(result?.year ?? new Date().getFullYear(), lang);
 
-  /** Runs `action` and reloads; a failure is said in the card it came from. */
+  /** Runs `action` and reloads; a failure is said in the card it came from. Resolves to whether it went through. */
   const run = async (fail: (message: string) => void, action: () => Promise<unknown>) => {
     setBusy(true);
     fail('');
+    let done = true;
     try {
       await action();
       await onChanged();
     } catch (e) {
       fail((e as Error).message);
+      done = false;
     }
     setBusy(false);
+    return done;
   };
 
   /** Saves what changed of the purchase: its date and price, its photo, or both. */
@@ -98,7 +101,8 @@ export default function Sale({ apt, onChanged }: Props) {
 
   /** Takes the sale back and leaves the purchase as it is. */
   const clearSale = async () => {
-    await run(setError, () => api.saveSale(apt.id, { saleDate: '', salePrice: 0, saleCosts: 0 }));
+    // A sale that could not be taken back is still saved, so the form keeps showing it.
+    if (!(await run(setError, () => api.saveSale(apt.id, { saleDate: '', salePrice: 0, saleCosts: 0 })))) return;
     setSaleDate('');
     setSalePrice('');
     setSaleCosts('');

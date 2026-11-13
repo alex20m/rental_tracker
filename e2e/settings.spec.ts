@@ -7,6 +7,17 @@ import { alert, openApartment, openInfo, openSettings, openTopic, section } from
 const owner = (page: Page, email: string) => page.locator('li.owner').filter({ hasText: email });
 
 test.describe('owners and shares', () => {
+  test('goes back to the list of settings when Settings is picked in the menu from inside a topic', async ({ page, api }) => {
+    api.addApartment({ name: 'Flat' });
+    await page.goto('/');
+    await openTopic(page, 'Owners');
+
+    await section(page, 'Settings');
+
+    await expect(page.getByRole('heading', { name: 'Apartment settings', exact: true })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Owners', exact: true })).toHaveCount(0);
+  });
+
   test('shares the apartment by email, taking the share from the viewer', async ({ page, api }) => {
     const apt = api.addApartment({ name: 'Flat' });
     await page.goto('/');

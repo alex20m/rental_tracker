@@ -100,8 +100,11 @@ test.describe('home', () => {
     // 60 % of (2 400 rent − 216 costs − 2 500 depreciation) = −189,60.
     await expect(page.getByText(`Rental loss · ${YEAR}`)).toBeVisible();
     await expect(netIncome(page)).toHaveText('−189,60 €');
+    // The chart shows the same part as the figures above it: 60 % of 2 400 and of 216.
+    await expect(page.getByRole('img', { name: `Rent received 1 440,00 € and costs 129,60 € in ${YEAR}, by month` })).toBeVisible();
     await page.getByRole('radio', { name: 'Whole apartment' }).click();
     await expect(netIncome(page)).toHaveText('−316,00 €');
+    await expect(page.getByRole('img', { name: `Rent received 2 400,00 € and costs 216,00 € in ${YEAR}, by month` })).toBeVisible();
     await page.getByRole('radio', { name: 'Your share · 60 %' }).click();
     await expect(netIncome(page)).toHaveText('−189,60 €');
   });
@@ -219,6 +222,21 @@ test.describe('home', () => {
     await expect(year.locator('option')).toHaveText([String(YEAR)]);
   });
 
+  test('lists a year whose only income is rent paid early for a month of the next year', async ({ page, api }) => {
+    // January's rent came in on 30 December: it is last year's income, though no month of last year is logged.
+    api.addApartment({ name: 'Flat' }, {
+      rents: [{ month: m(1), status: 'paid', amount: 800, receivedDate: `${YEAR - 1}-12-30`, note: '' }],
+      costs: [],
+    });
+    await page.goto('/');
+
+    const year = page.getByLabel('Tax year');
+    await expect(year.locator('option')).toHaveText([String(YEAR), String(YEAR - 1)]);
+    await expect(netIncome(page)).toHaveText('0,00 €');
+    await year.selectOption(String(YEAR - 1));
+    await expect(netIncome(page)).toHaveText('800,00 €');
+  });
+
   test('changes the year from a quiet list of the years that have data, and nothing else', async ({ page, api }) => {
     api.addApartment({ name: 'Flat', useDepreciation: false }, {
       rents: [...ledger().rents, { month: `${YEAR - 1}-06`, status: 'paid', amount: 500, receivedDate: `${YEAR - 1}-06-02`, note: '' }],
@@ -238,6 +256,8 @@ test.describe('home', () => {
 
   test('explains a figure in a popover that closes on Escape, outside, on scroll and on a second tap', async ({ page, api }) => {
     api.addApartment({ name: 'Flat' }, ledger());
+    // A window short enough that Home scrolls on every layout: on a wide screen the page otherwise fits, and nothing can be scrolled.
+    await page.setViewportSize({ width: page.viewportSize()!.width, height: 480 });
     await page.goto('/');
 
     const info = page.getByRole('button', { name: 'About net income' });

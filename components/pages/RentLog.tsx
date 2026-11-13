@@ -5,6 +5,7 @@ import type { ApartmentView, RentEntry, RentStatus } from '@/lib/domain/types';
 import { api } from '@/lib/client/api';
 import { computeTax, eur } from '@/lib/domain/tax';
 import { nextMonth, repeatDay } from '@/lib/domain/recurring';
+import { suggestedReceivedDate } from '@/lib/domain/rentDate';
 import { monthsShort, monthTitle } from '@/lib/ui/format';
 import { useI18n } from '@/components/I18nProvider';
 import { ErrorNote, Heading, Info, Money, Segmented, Sheet, Switch } from '@/components/ui';
@@ -91,7 +92,7 @@ function RentForm({
   const { t, lang } = useI18n();
   const [status, setStatus] = useState<RentStatus>(entry?.status ?? 'paid');
   const [amount, setAmount] = useState(String(entry?.amount || apt.settings.monthlyRent || ''));
-  const [date, setDate] = useState(entry?.receivedDate || todayIso());
+  const [date, setDate] = useState(entry?.receivedDate || suggestedReceivedDate(month, apt.rents, todayIso()));
   const [note, setNote] = useState(entry?.note ?? '');
   const [showNote, setShowNote] = useState(!!entry?.note);
   const [repeat, setRepeat] = useState(false);

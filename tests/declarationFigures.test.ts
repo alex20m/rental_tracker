@@ -205,3 +205,26 @@ describe('the period the flat was let', () => {
     expect(tenancyPeriod([other('2025-03', 'vacant')], 2025)).toBe('');
   });
 });
+
+describe('the depreciation rows of form 7K, for one owner’s share', () => {
+  // Odd cents at a 50 % share: each row is rounded for the owner, and the rows must still add up on the form.
+  const property = ledger(
+    { propertyType: 'property', useDepreciation: true, purchasePrice: 100000.01, depreciationRate: 4, depreciationFromYear: 2024 },
+    [
+      cost({ category: 'improvement', date: '2025-04-01', amount: 5000.01 }),
+      cost({ category: 'furniture', date: '2024-03-01', amount: 2000.01 }),
+      cost({ category: 'furniture', date: '2025-03-01', amount: 3000.01 }),
+    ],
+    [paid('2024-01'), paid('2025-01')],
+  );
+  const f = figures(property, '7K', 50);
+
+  it('adds the building’s rows up: 4.2 + 4.3 = 4.4 and 4.4 − 4.5 = 4.6', () => {
+    const b = f.buildingRows!;
+    expect(b).toMatchObject({ start: 48000.01, added: 2500.01, base: 50500.02, part: 2020, end: 48480.02 });
+  });
+
+  it('adds the loose property’s rows up the same way', () => {
+    expect(f.movableRows).toEqual({ start: 750.01, added: 1500.01, base: 2250.02, part: 562.5, end: 1687.52 });
+  });
+});

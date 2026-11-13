@@ -243,6 +243,14 @@ Where the sources leave a choice, or the app deliberately stops short:
   binding agreement rather than the deed, the tax-free exemption's spouse and family
   conditions (one switch, answered by the person), and a basic improvement that was also
   deducted from the rent — the person lists only what was not.
+- **The day a rent was received** decides its tax year (cash basis). When a month is
+  logged the app suggests today only for the month that is running; for a month already
+  over it suggests a day in that month (the day the rent came in the last time before,
+  else the 1st), so that last December's rent is not counted in this year by default.
+- **Rounding on form 7K for a co-owner**: rows 4.2, 4.3 and 4.5 are the owner's share to
+  the cent, and 4.4 and 4.6 are worked out from those, so the rows add up on the form
+  (4.6 can differ by a cent from the share of the apartment's own remainder).
+- **The ledger CSV** lists a paid rent in the year it was received, like the declaration.
 - **Kilometre rate** by year in `taxRules.ts`; 2026 is the 2025 figure until
   Verohallinto publishes its decision (§6).
 - **Part of the home let**: a percentage that scales the costs of the whole home

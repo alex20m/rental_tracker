@@ -432,8 +432,10 @@ function figuresFrom(
   };
 }
 
-export const eur = (n: number) =>
-  new Intl.NumberFormat('fi-FI', { style: 'currency', currency: 'EUR', maximumFractionDigits: 2 }).format(n);
+const euros = new Intl.NumberFormat('fi-FI', { style: 'currency', currency: 'EUR', maximumFractionDigits: 2 });
+
+/** An amount to the cent. Rounded first, so a zero — or what rounds to one — is never written "−0,00 €". */
+export const eur = (n: number) => euros.format(round2(n));
 
 export const pct = (n: number) => `${new Intl.NumberFormat('fi-FI', { maximumFractionDigits: 2 }).format(n)} %`;
 

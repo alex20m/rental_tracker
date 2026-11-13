@@ -40,6 +40,33 @@ test.describe('the rent log', () => {
     expect(apt.rents).toEqual([{ month: m(1), status: 'paid', amount: 750, receivedDate: `${m(2)}-02`, note: 'late' }]);
   });
 
+  test('suggests the day the rent came in last time for a month already over, and today only for the running month', async ({ page, api }) => {
+    const apt = api.addApartment({ name: 'Flat', monthlyRent: 800 }, ledger());
+    await page.clock.setFixedTime(new Date(`${YEAR}-06-15T12:00:00`));
+    await page.goto('/');
+    await section(page, 'Rent');
+
+    // May is over: rent came in on the 3rd in March, the last paid month before it.
+    await page.locator('.month').nth(4).click();
+    await expect(page.getByLabel('Received on')).toHaveValue(`${m(5)}-03`);
+    await page.getByRole('button', { name: 'Save' }).click();
+    await expect(page.locator('.month.paid')).toHaveCount(4);
+    expect(apt.rents.find((r) => r.month === m(5))).toMatchObject({ receivedDate: `${m(5)}-03` });
+
+    await page.locator('.month').nth(5).click();
+    await expect(page.getByLabel('Received on')).toHaveValue(`${m(6)}-15`);
+  });
+
+  test('dates a past month on its first day when no rent was received before it', async ({ page, api }) => {
+    api.addApartment({ name: 'Flat', monthlyRent: 800 });
+    await page.clock.setFixedTime(new Date(`${YEAR}-06-15T12:00:00`));
+    await page.goto('/');
+    await section(page, 'Rent');
+
+    await page.locator('.month').first().click();
+    await expect(page.getByLabel('Received on')).toHaveValue(`${m(1)}-01`);
+  });
+
   test('marks a month vacant or unpaid, edits it, and deletes it', async ({ page, api }) => {
     const apt = api.addApartment({ name: 'Flat' });
     await page.goto('/');

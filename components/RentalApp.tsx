@@ -85,6 +85,8 @@ export default function RentalApp() {
   const [year, setYear] = useState(thisYear);
   const [scope, setScope] = useState<Scope>('mine');
   const [navOpen, setNavOpen] = useState(false);
+  // Counts the places picked in the menu, so picking Settings from inside one of its topics starts it again at its list.
+  const [visit, setVisit] = useState(0);
   const toggle = useRef<HTMLButtonElement>(null);
   const usingKeyboard = useRef(false);
   const [error, setError] = useState('');
@@ -151,7 +153,8 @@ export default function RentalApp() {
   const years = useMemo(() => {
     const set = new Set<number>([thisYear]);
     for (const a of Object.values(details)) {
-      a.rents.forEach((r) => set.add(Number(r.month.slice(0, 4))));
+      // Rent counts in the year it was received, which is not always the year of its month.
+      a.rents.forEach((r) => set.add(Number(r.month.slice(0, 4))).add(Number(r.receivedDate.slice(0, 4))));
       a.costs.forEach((c) => set.add(Number(c.date.slice(0, 4))));
     }
     return [...set].filter(Boolean).sort((a, b) => b - a);
@@ -174,6 +177,7 @@ export default function RentalApp() {
   /** A place picked in the drawer. */
   const goFromNav: Go = (to) => {
     go(to);
+    setVisit((v) => v + 1);
     closeNav();
   };
 
@@ -289,6 +293,7 @@ export default function RentalApp() {
           {apt && tab === 'checklist' && <Checklist apt={apt} onChanged={reloadSelected} />}
           {apt && tab === 'settings' && (
             <SettingsPage
+              key={visit}
               apt={apt}
               year={year}
               account={account}

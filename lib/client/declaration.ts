@@ -154,7 +154,8 @@ export function buildCsv(apt: ApartmentView, year: number, sharePct: number, rec
   const rows: (string | number)[][] = [
     ['date', 'type', 'category', 'description', 'amount_eur', `your_share_eur_${sharePct}pct`, 'receipt_file'],
   ];
-  for (const r of apt.rents.filter((r) => r.month.startsWith(y) || r.receivedDate.startsWith(y))) {
+  // A paid rent belongs to the year it was received in, as in the declaration; a month without rent to its own year.
+  for (const r of apt.rents.filter((r) => (r.receivedDate || r.month).startsWith(y))) {
     rows.push([
       r.receivedDate || r.month,
       'rent',

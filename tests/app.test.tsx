@@ -259,21 +259,38 @@ describe('a co-owned apartment', () => {
 });
 
 describe('the rent log', () => {
-  it('logs a month in two taps using the usual rent and today’s date', async () => {
+  it('logs the running month in two taps using the usual rent and today’s date', async () => {
+    serve([view('a1', 'Alpha', { rents: [] })]);
+    m.putRent.mockResolvedValue({});
+    render(<RentalApp />);
+    await openLedger('Rent');
+
+    await user().click(screen.getByRole('button', { name: /^Jun/ }));
+    const sheet = screen.getByRole('dialog', { name: 'June 2026' });
+    expect((within(sheet).getByLabelText('Amount received (€)') as HTMLInputElement).value).toBe('700');
+    await user().click(within(sheet).getByRole('button', { name: 'Save' }));
+
+    expect(m.putRent).toHaveBeenCalledWith('a1', '2026-06', {
+      status: 'paid',
+      amount: 700,
+      receivedDate: '2026-06-15',
+      note: '',
+    });
+  });
+
+  it('dates a month that is already over within that month, not today', async () => {
     serve([view('a1', 'Alpha', { rents: [] })]);
     m.putRent.mockResolvedValue({});
     render(<RentalApp />);
     await openLedger('Rent');
 
     await user().click(screen.getByRole('button', { name: /^Mar/ }));
-    const sheet = screen.getByRole('dialog', { name: 'March 2026' });
-    expect((within(sheet).getByLabelText('Amount received (€)') as HTMLInputElement).value).toBe('700');
-    await user().click(within(sheet).getByRole('button', { name: 'Save' }));
+    await user().click(within(screen.getByRole('dialog', { name: 'March 2026' })).getByRole('button', { name: 'Save' }));
 
     expect(m.putRent).toHaveBeenCalledWith('a1', '2026-03', {
       status: 'paid',
       amount: 700,
-      receivedDate: '2026-06-15',
+      receivedDate: '2026-03-01',
       note: '',
     });
   });

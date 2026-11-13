@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  eur,
   computeDepreciation,
   computeTax,
   deficitCreditOf,
@@ -368,5 +369,13 @@ describe('a portfolio of apartments', () => {
       estimatedTax: 0,
       deficitCredit: 0,
     });
+  });
+});
+
+describe('an amount shown in euros', () => {
+  it('never shows a zero as negative: what is taken off when nothing was paid reads 0,00 €, not −0,00 €', () => {
+    expect(eur(-0)).toBe(eur(0));
+    expect(eur(-0.004)).toBe(eur(0));
+    expect(eur(-0.005)).toMatch(/^−0,01/);
   });
 });
