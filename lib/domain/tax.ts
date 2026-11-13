@@ -56,7 +56,6 @@ export interface TaxResult extends TaxFigures {
   vacantMonths: number;
   unpaidMonths: number;
   unloggedMonths: number;
-  costsWithoutReceipt: number;
 }
 
 /** One owner's part of a TaxResult. */
@@ -359,7 +358,6 @@ export function computeTax(ledger: Ledger, year: number, today: Date = new Date(
     vacantMonths,
     unpaidMonths,
     unloggedMonths,
-    costsWithoutReceipt: costsInYear.filter((c) => !c.hasReceipt).length,
     ...figures,
   };
 }

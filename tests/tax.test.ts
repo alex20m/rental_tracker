@@ -116,10 +116,9 @@ describe('one apartment for one year', () => {
     expect(t.estimatedTax).toBe(0);
   });
 
-  it('counts months and receipts', () => {
+  it('counts paid and vacant months', () => {
     expect(t.paidMonths).toBe(2);
     expect(t.vacantMonths).toBe(1);
-    expect(t.costsWithoutReceipt).toBe(2);
   });
 
   it('counts unlogged months of a past year across all twelve', () => {

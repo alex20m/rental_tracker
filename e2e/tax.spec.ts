@@ -50,7 +50,7 @@ test.describe('the tax page', () => {
     await section(page, 'Tax');
 
     const list = page.locator('.todo');
-    await expect(list.locator('.done')).toHaveText(['Every month logged', 'Every cost has a receipt']);
+    await expect(list.locator('.done')).toHaveText(['Every month logged']);
     await list.getByRole('button', { name: '1 month unpaid — not counted as income' }).click();
     await expect(page.getByRole('heading', { name: 'Months' })).toBeVisible();
 
