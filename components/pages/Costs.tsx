@@ -86,8 +86,9 @@ export default function Costs({ apt, year, onChanged }: Props) {
         )}
       </section>
 
-      <button className="btn primary fab" aria-label={t('costs.add')} onClick={() => setEditing('new')}>
+      <button className="btn primary fab" onClick={() => setEditing('new')}>
         {Icon.plus}
+        {t('costs.add')}
       </button>
       {editing === 'new' && <CostForm apt={apt} onClose={() => setEditing(null)} onChanged={onChanged} />}
       {editing && editing !== 'new' && (

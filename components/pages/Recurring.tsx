@@ -49,8 +49,9 @@ export default function Recurring({ apt, onChanged }: Props) {
       )}
       <p className="msg">{tn('settings.recurringCount', apt.recurring.length)}</p>
 
-      <button className="btn primary fab" aria-label={t('recurring.add')} onClick={() => setEditing('new')}>
+      <button className="btn primary fab" onClick={() => setEditing('new')}>
         {Icon.plus}
+        {t('recurring.add')}
       </button>
       {editing && (
         <RecurringForm
