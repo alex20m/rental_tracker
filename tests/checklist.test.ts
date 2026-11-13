@@ -87,18 +87,15 @@ describe('the declaration checklist', () => {
     expect(unpaid.text).toBe('1 month unpaid — not counted as income');
   });
 
-  it('flags costs without a receipt photo and sends them to the costs list', () => {
+  it('does not ask for receipt photos, since some costs (a bank charge, a maintenance fee) have no receipt', () => {
     const apt = apartment({
       costs: [
         { id: 'c1', date: '2026-02-01', category: 'repairs', description: '', amount: 90, hasReceipt: false },
-        { id: 'c2', date: '2026-02-02', category: 'repairs', description: '', amount: 40, hasReceipt: false },
-        { id: 'c3', date: '2026-02-03', category: 'repairs', description: '', amount: 10, hasReceipt: true },
+        { id: 'c2', date: '2026-02-02', category: 'financing_charge', description: '', amount: 40, hasReceipt: false },
       ],
     });
-    const receipts = byId(check(apt))['receipts']!;
-    expect(receipts.ok).toBe(false);
-    expect(receipts.text).toBe('2 costs have no receipt photo');
-    expect(receipts.to).toBe('costs');
+    expect(check(apt).map((i) => i.id)).toEqual(['logged', 'unpaid']);
+    expect(check(apt).filter((i) => !i.ok)).toEqual([]);
   });
 
   it('asks the owner to confirm the shares while an invited owner has not joined', () => {

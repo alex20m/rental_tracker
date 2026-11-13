@@ -441,9 +441,6 @@ export const fi: Record<MessageKey, string> = {
   'check.unpaid.ok': 'Ei maksamattomia kuukausia',
   'check.unpaid.todo.one': '{n} kuukausi maksamatta – ei lasketa tuloksi',
   'check.unpaid.todo.other': '{n} kuukautta maksamatta – ei lasketa tuloksi',
-  'check.receipts.ok': 'Jokaisella kululla on kuitti',
-  'check.receipts.todo.one': '{n} kulusta puuttuu kuittikuva',
-  'check.receipts.todo.other': '{n} kulusta puuttuu kuittikuva',
   'check.invites.todo.one': '{n} kutsuttu omistaja ei ole vielä liittynyt – tarkista, että osuudet ovat lopulliset',
   'check.invites.todo.other': '{n} kutsuttua omistajaa ei ole vielä liittynyt – tarkista, että osuudet ovat lopulliset',
 

@@ -445,9 +445,6 @@ export const en = {
   'check.unpaid.ok': 'No unpaid months',
   'check.unpaid.todo.one': '{n} month unpaid — not counted as income',
   'check.unpaid.todo.other': '{n} months unpaid — not counted as income',
-  'check.receipts.ok': 'Every cost has a receipt',
-  'check.receipts.todo.one': '{n} cost has no receipt photo',
-  'check.receipts.todo.other': '{n} costs have no receipt photo',
   'check.invites.todo.one': '{n} invited owner hasn’t joined yet — check the shares are final',
   'check.invites.todo.other': '{n} invited owners haven’t joined yet — check the shares are final',
 

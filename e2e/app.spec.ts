@@ -145,7 +145,6 @@ test.describe('home', () => {
     const todo = page.locator('.todo');
     for (const [item, arrival] of [
       ['8 months not logged yet', page.getByRole('heading', { name: 'Months' })],
-      ['3 costs have no receipt photo', page.getByRole('button', { name: 'Add cost' })],
       ['1 invited owner hasn’t joined yet — check the shares are final', page.getByRole('heading', { name: 'Apartment settings', exact: true })],
     ] as const) {
       await todo.getByRole('button', { name: item }).click();
@@ -155,7 +154,8 @@ test.describe('home', () => {
   });
 
   test('lists three to-do items and counts the rest, leading to the Tax checklist', async ({ page, api }) => {
-    coOwned(api); // months, receipts and an invitation to check: three. A depreciated property with no price makes four.
+    // Months, an unpaid one and an invitation to check: three. A depreciated property with no price makes four.
+    coOwned(api).rents.push({ month: m(5), status: 'unpaid', amount: 0, receivedDate: '', note: '' });
     api.apartments.forEach((a) => Object.assign(a.settings, { propertyType: 'property', useDepreciation: true, purchasePrice: 0 }));
     await page.goto('/');
 

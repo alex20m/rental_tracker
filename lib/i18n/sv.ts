@@ -442,9 +442,6 @@ export const sv: Record<MessageKey, string> = {
   'check.unpaid.ok': 'Inga obetalda månader',
   'check.unpaid.todo.one': '{n} månad obetald – räknas inte som inkomst',
   'check.unpaid.todo.other': '{n} månader obetalda – räknas inte som inkomst',
-  'check.receipts.ok': 'Varje kostnad har ett kvitto',
-  'check.receipts.todo.one': '{n} kostnad saknar kvittobild',
-  'check.receipts.todo.other': '{n} kostnader saknar kvittobild',
   'check.invites.todo.one': '{n} inbjuden ägare har inte anslutit ännu – kontrollera att andelarna är slutgiltiga',
   'check.invites.todo.other': '{n} inbjudna ägare har inte anslutit ännu – kontrollera att andelarna är slutgiltiga',
 

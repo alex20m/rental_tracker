@@ -3,10 +3,10 @@ import type { ApartmentView } from './types';
 import { translator, type Translator } from '@/lib/i18n';
 
 /** Where fixing a checklist item happens. */
-export type FixTarget = 'rent' | 'costs' | 'settings';
+export type FixTarget = 'rent' | 'settings';
 
 export interface ChecklistItem {
-  id: 'price' | 'logged' | 'unpaid' | 'receipts' | 'invites';
+  id: 'price' | 'logged' | 'unpaid' | 'invites';
   ok: boolean;
   /** What is wrong, or — when `ok` — what is fine. */
   text: string;
@@ -34,13 +34,6 @@ export function buildChecklist(
       ok: tax.unpaidMonths === 0,
       text: tax.unpaidMonths === 0 ? t('check.unpaid.ok') : tn('check.unpaid.todo', tax.unpaidMonths),
       to: 'rent',
-    },
-    {
-      id: 'receipts',
-      ok: tax.costsWithoutReceipt === 0,
-      text:
-        tax.costsWithoutReceipt === 0 ? t('check.receipts.ok') : tn('check.receipts.todo', tax.costsWithoutReceipt),
-      to: 'costs',
     },
   ];
   // The price is only needed for the depreciation of a property's building; a flat is never depreciated.

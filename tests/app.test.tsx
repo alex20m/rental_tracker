@@ -420,26 +420,17 @@ describe('the home screen', () => {
   });
 
   it('shows at most three to-do items and counts the rest, leading to the Tax checklist', async () => {
-    const cost = (id: string): CostEntry => ({
-      id,
-      date: '2026-03-12',
-      category: 'repairs',
-      description: '',
-      amount: 50,
-      hasReceipt: false,
-    });
     serve([
       view('a1', 'Alpha', {
         settings: { ...defaultSettings, name: 'Alpha', purchasePrice: 0, propertyType: 'property', useDepreciation: true },
-        rents: [paid('2026-01')],
-        costs: [cost('c1')],
+        rents: [paid('2026-01'), { month: '2026-02', status: 'unpaid', amount: 0, receivedDate: '', note: '' }],
         invites: [{ id: 'i1', email: 'x@example.test', sharePct: 10 }],
       }),
     ]);
     render(<RentalApp />);
 
-    // Four things are wrong (price, months, receipts, invite): three are listed.
-    await screen.findByRole('button', { name: /5 months not logged yet/ });
+    // Four things are wrong (price, months, unpaid, invite): three are listed.
+    await screen.findByRole('button', { name: /4 months not logged yet/ });
     expect(document.querySelectorAll('.todo .dot')).toHaveLength(3);
     await user().click(screen.getByRole('button', { name: '1 more to check' }));
     expect(screen.getByRole('button', { name: 'Tax' }).getAttribute('aria-current')).toBe('page');
