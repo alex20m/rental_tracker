@@ -101,10 +101,9 @@ export const sv: Record<MessageKey, string> = {
   'home.occupancyInfo':
     'Andelen loggade månader då du fick hyra: {paid} betalda, {vacant} vakanta{unpaid}.',
   'home.occupancyUnpaid': ', {n} obetalda',
-  'home.yield': 'Avkastning',
-  'home.yieldAbout': 'avkastning',
-  'home.yieldInfo': 'Bruttoavkastningen är mottagen hyra delad med inköpspriset{net}.{addPrice}',
-  'home.yieldNet': '; efter avdragsgilla kostnader är den {n} %',
+  'home.yield': 'Bruttoavkastning',
+  'home.yieldAbout': 'bruttoavkastning',
+  'home.yieldInfo': 'Bruttoavkastningen är mottagen hyra delad med inköpspriset, före kostnader.{addPrice}',
   'home.yieldAddPrice': ' Ange inköpspriset under Avancerat i lägenhetens inställningar för att se den.',
   'home.recent': 'Senaste',
   'home.recentRent': 'Hyra {month}',

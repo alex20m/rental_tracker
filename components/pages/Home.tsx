@@ -54,7 +54,6 @@ export default function Home({ apt, year, account, scope, onScope, go }: Props) 
   const occupancy = loggedMonths ? Math.round((tax.paidMonths / loggedMonths) * 100) : null;
   const price = apt.settings.purchasePrice;
   const grossYield = price > 0 ? (tax.rentIncome / price) * 100 : null;
-  const netYield = price > 0 ? ((tax.rentIncome - tax.deductibleCosts) / price) * 100 : null;
 
   const recent = [
     ...apt.rents.map((r) => ({
@@ -221,7 +220,6 @@ export default function Home({ apt, year, account, scope, onScope, go }: Props) 
                 {t('home.yield')}
                 <Info about={t('home.yieldAbout')}>
                   {t('home.yieldInfo', {
-                    net: netYield !== null ? t('home.yieldNet', { n: netYield.toFixed(1) }) : '',
                     addPrice: price <= 0 ? t('home.yieldAddPrice') : '',
                   })}
                 </Info>
