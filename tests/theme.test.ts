@@ -155,6 +155,7 @@ describe('the Kuusi theme', () => {
       ['good', 'card'],
       ['good', 'good-soft'],
       ['brand-ink', 'brand'],
+      ['brand-ink', 'brand-deep'], // a primary button under the pointer
       ['warn', 'warn-soft'],
       ['bad', 'bad-soft'],
       ['bad', 'card'],
