@@ -94,7 +94,7 @@ export default function Home({ apt, year, account, scope, onScope, go }: Props) 
       <section className="hero">
         {shared && <ScopeToggle sharePct={apt.mySharePct} scope={scope} onScope={onScope} />}
         <div className="label" style={{ marginTop: shared ? 10 : 0 }}>
-          {f.netIncome < 0 ? t('home.rentalLoss') : t('home.netIncome')} · {year}
+          {f.netIncome < 0 ? t('home.rentalLoss') : t('home.netIncome')} {year}
           <Info about={t('home.netAbout')}>{t('home.netInfo')}</Info>
         </div>
         <div className={'big ' + (f.netIncome < 0 ? 'neg' : '')} data-testid="net-income">
@@ -253,9 +253,7 @@ export default function Home({ apt, year, account, scope, onScope, go }: Props) 
                     <div className="t">{r.title}</div>
                     <div className="s">{shortDate(r.date, lang)}</div>
                   </div>
-                  {r.sign === 0 ? (
-                    <div className="dim">—</div>
-                  ) : (
+                  {r.sign !== 0 && (
                     <div className={'strong num ' + (r.sign > 0 ? 'pos' : '')}>
                       {r.sign > 0 ? '+' : '−'}
                       {eur(r.amt)}

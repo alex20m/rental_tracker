@@ -59,7 +59,7 @@ export const en = {
 
   // — first run —
   'welcome.title': 'Add your first apartment',
-  'welcome.lead': 'Just a name to start — you can fill in the rest later.',
+  'welcome.lead': 'Just a name to start. You can fill in the rest later.',
   'add.name': 'Apartment name',
   'add.placeholder': 'e.g. Kauppakatu 12 B 7',
   'add.submit': 'Add apartment',
@@ -80,19 +80,19 @@ export const en = {
 
   // — co-owner scope toggle —
   'scope.label': 'Figures for',
-  'scope.mine': 'Your share · {pct}',
+  'scope.mine': 'Your share ({pct})',
   'scope.whole': 'Whole apartment',
 
   // — home & portfolio —
   'home.rentalLoss': 'Rental loss',
   'home.netIncome': 'Net rental income',
   'home.netAbout': 'net income',
-  'home.netInfo': 'Rent received, minus deductible costs and depreciation — the amount you are taxed on.',
+  'home.netInfo': 'Rent received, minus deductible costs and depreciation: the amount you are taxed on.',
   'home.deductions': 'Deductions',
   'home.estTax': 'Est. tax',
   'home.estTaxAbout': 'the tax estimate',
   'home.estTaxInfo':
-    '{capLow} % up to €{capLimit} of capital income, {capHigh} % above{onYourShare}. A rough estimate — other capital income isn’t included.',
+    '{capLow} % up to €{capLimit} of capital income, {capHigh} % above{onYourShare}. A rough estimate. Other capital income isn’t included.',
   'home.onYourShare': ', on your share',
   'home.todo': 'To do',
   'home.moreTodo': '{n} more to check',
@@ -117,21 +117,21 @@ export const en = {
   'home.logFirstRent': 'Log the first rent',
   'home.prepare': 'Prepare the {year} declaration',
 
-  'portfolio.net': 'Your net income, all apartments · {year}',
+  'portfolio.net': 'Your net income from all apartments in {year}',
   'portfolio.netInfo':
     'Your share of the rent received, minus your share of deductible costs and depreciation, added across all your apartments.',
   'portfolio.estTaxInfo':
-    '{capLow} % up to €{capLimit} of capital income, {capHigh} % above — estimated on all your apartments together, because the rate depends on the total. Other capital income isn’t included.',
+    '{capLow} % up to €{capLimit} of capital income, {capHigh} % above. Estimated on all your apartments together, because the rate depends on the total. Other capital income isn’t included.',
   'portfolio.apartments': 'Apartments',
   'portfolio.youOwn': 'You own {pct}',
-  'portfolio.owners': ' · {n} owners',
+  'portfolio.owners': ', {n} owners',
   'portfolio.netTitle': 'Your net income {year}',
 
   // — rent log —
-  'rent.received': 'Rent received · {year}',
+  'rent.received': 'Rent received in {year}',
   'rent.timingAbout': 'rent timing',
   'rent.timingInfo': 'Rent is taxed in the year you receive it, so the received date decides which year it counts in.',
-  'rent.coOwned': ' Log the rent for the whole apartment — each owner’s share is worked out for you.',
+  'rent.coOwned': ' Log the rent for the whole apartment. Each owner’s share is worked out for you.',
   'rent.months': 'Months',
   'rent.add': 'Add',
   'rent.paid': 'Paid',
@@ -146,12 +146,12 @@ export const en = {
   'rent.addNote': '+ Add a note',
 
   // — costs —
-  'costs.deductible': 'Deductible costs · {year}',
+  'costs.deductible': 'Deductible costs in {year}',
   'costs.about': 'costs',
   'costs.entries.one': '{n} entry this year.',
   'costs.entries.other': '{n} entries this year.',
   'costs.financingInfo': ' Improvements and dearer furniture count with this year’s part only; a financing charge counts only if the housing company books it as income.',
-  'costs.coOwned': ' Log costs for the whole apartment — each owner’s share is worked out for you.',
+  'costs.coOwned': ' Log costs for the whole apartment. Each owner’s share is worked out for you.',
   'costs.none': 'No costs logged for {year}. Tap + to add the first one.',
   'costs.add': 'Add cost',
   'costs.edit': 'Edit cost',
@@ -170,10 +170,10 @@ export const en = {
   'costs.yearsAbout': 'spreading',
   'costs.yearsInfo':
     'A basic improvement of a flat is deducted in equal parts from the year it is paid, over as many years as it lasts: from {improvementMin} to {improvementMax} years.',
-  'costs.shortLived': 'Lasts under {minLife} years — deduct at once',
+  'costs.shortLived': 'Lasts under {minLife} years: deduct at once',
   'costs.overYears': 'over {n} years',
   'costs.furnitureRate': '{movableRate} % a year',
-  'costs.descriptionPlaceholder': 'Optional — e.g. Kitchen tap replacement',
+  'costs.descriptionPlaceholder': 'Optional, e.g. Kitchen tap replacement',
   'costs.date': 'Date',
   'costs.processing': 'Processing…',
   'costs.replacePhoto': 'Replace photo',
@@ -187,7 +187,7 @@ export const en = {
   'costs.kilometres': 'Kilometres driven (optional)',
   'costs.kilometresAbout': 'the kilometre rate',
   'costs.kilometresInfo':
-    'Your own car: €{mileage} per kilometre for {year} — the Tax Administration’s rate for trips connected to letting, not the higher tax-free reimbursement an employer may pay.',
+    'Your own car: €{mileage} per kilometre for {year}, the Tax Administration’s rate for trips connected to letting, not the higher tax-free reimbursement an employer may pay.',
   'costs.kilometresFilled': '{km} km × €{mileage} = {amount}',
 
   'cat.maintenance_charge.label': 'Maintenance charge',
@@ -196,7 +196,7 @@ export const en = {
   'cat.water_charge.hint': 'Water charges paid to the housing company, deducted in the year paid.',
   'cat.financing_charge.label': 'Financing charge',
   'cat.financing_charge.hint':
-    'Deductible only if the housing company books it as income — say so in the apartment settings. A funded charge is not deductible: it adds to the acquisition cost.',
+    'Deductible only if the housing company books it as income. Say so in the apartment settings. A funded charge is not deductible: it adds to the acquisition cost.',
   'cat.repairs.label': 'Repairs & upkeep',
   'cat.repairs.hint':
     'Annual repairs that keep the flat as it was are deducted in the year paid. A repair that raises the standard is a basic improvement.',
@@ -215,7 +215,7 @@ export const en = {
   'cat.brokerage.hint': 'Letting agent fees and adverts when looking for a tenant.',
   'cat.travel.label': 'Travel',
   'cat.travel.hint':
-    'Trips to show the flat, meet a tenant, do maintenance or attend the housing company’s AGM. In your own car the Tax Administration’s rate for {year} is €{mileage} per kilometre — enter the kilometres and the amount is filled in. Other actual costs (tickets, lodging) are deductible too.',
+    'Trips to show the flat, meet a tenant, do maintenance or attend the housing company’s AGM. In your own car the Tax Administration’s rate for {year} is €{mileage} per kilometre. Enter the kilometres and the amount is filled in. Other actual costs (tickets, lodging) are deductible too.',
   'cat.utilities.label': 'Utilities paid by owner',
   'cat.utilities.hint': 'Electricity, heating or internet you pay for the rented flat.',
   'cat.property_tax.label': 'Property tax',
@@ -228,7 +228,7 @@ export const en = {
   'checklist.shared': 'Shared with every owner of this apartment.',
   'checklist.progress': '{done} of {total} done',
   'checklist.items': 'Checklist items',
-  'checklist.empty': 'Nothing here yet. Add what is worth remembering about this apartment — the same list is seen by every owner.',
+  'checklist.empty': 'Nothing here yet. Add what is worth remembering about this apartment. The same list is seen by every owner.',
   'checklist.newItem': 'New item',
   'checklist.remove': 'Remove {item}',
   'checklist.add': 'Add',
@@ -322,7 +322,7 @@ export const en = {
     'Each owner declares their own share. “Your share” is what goes in your declaration; “Whole apartment” is for reference.',
   'tax.estimated': 'Estimated tax',
   'tax.estimateInfo':
-    'Capital income tax: {capLow} % up to €{capLimit}, {capHigh} % above. An estimate only — other capital income and deductions aren’t included. The all-apartments view estimates it on everything you own together. The same rates apply to an owner who lives abroad (the {sourceTax} % source tax is on wages, not on rent), but the country you live in may tax the rent too.',
+    'Capital income tax: {capLow} % up to €{capLimit}, {capHigh} % above. An estimate only. Other capital income and deductions aren’t included. The all-apartments view estimates it on everything you own together. The same rates apply to an owner who lives abroad (the {sourceTax} % source tax is on wages, not on rent), but the country you live in may tax the rent too.',
   'tax.beforeFiling': 'Before you file',
   'tax.income': 'Income',
   'tax.rentReceived': 'Rent received',
@@ -333,7 +333,7 @@ export const en = {
   'tax.noCosts': 'No costs logged for {year}.',
   'tax.depr.building': 'Building depreciation',
   'tax.depr.buildingInfo':
-    'Poisto — this year’s part of the building’s remaining cost, which includes its improvements. Set in the apartment settings.',
+    'Poisto: this year’s part of the building’s remaining cost, which includes its improvements. Set in the apartment settings.',
   'tax.depr.improvements': 'Basic improvements, this year’s part',
   'tax.depr.improvementsInfo': 'Each improvement is deducted in equal parts over the years it is spread over, starting the year it was paid.',
   'tax.depr.furniture': 'Furniture & appliances, this year’s part',
@@ -350,11 +350,11 @@ export const en = {
   'tax.credit': 'Deficit credit, up to',
   'tax.creditAbout': 'the deficit credit',
   'tax.creditInfo':
-    'A rental loss lowers your capital income. If you have no other capital income to set it against, {creditRate} % of the deficit comes off the tax on your earned income as a credit (alijäämähyvitys), at most €{creditMax} — €{creditMaxOneChild} with one minor child and €{creditMaxChildren} with two or more. The figure shown is the most it can be: it also depends on your other capital income and on how much tax on earned income there is to take it from. What it cannot take stays a loss you can set against capital income for {carryYears} years.',
+    'A rental loss lowers your capital income. If you have no other capital income to set it against, {creditRate} % of the deficit comes off the tax on your earned income as a credit (alijäämähyvitys), at most €{creditMax}, €{creditMaxOneChild} with one minor child and €{creditMaxChildren} with two or more. The figure shown is the most it can be: it also depends on your other capital income and on how much tax on earned income there is to take it from. What it cannot take stays a loss you can set against capital income for {carryYears} years.',
   'tax.declaration': 'Declaration',
   'tax.packageAbout': 'the declaration package',
   'tax.packageInfo':
-    'The zip holds a PDF that follows the screens of MyTax (OmaVero) step by step, with your share of every amount to type into each field (a property of your own follows form 7K instead), a CSV ledger and all receipt photos. You file it yourself in OmaVero — this app has no connection to Vero.',
+    'The zip holds a PDF that follows the screens of MyTax (OmaVero) step by step, with your share of every amount to type into each field (a property of your own follows form 7K instead), a CSV ledger and all receipt photos. You file it yourself in OmaVero. This app has no connection to Vero.',
   'tax.building': 'Building…',
   'tax.download': 'Download {year} declaration (.zip)',
   'tax.pdfOnly': 'PDF summary only',
@@ -443,10 +443,10 @@ export const en = {
   'check.logged.todo.one': '{n} month not logged yet',
   'check.logged.todo.other': '{n} months not logged yet',
   'check.unpaid.ok': 'No unpaid months',
-  'check.unpaid.todo.one': '{n} month unpaid — not counted as income',
-  'check.unpaid.todo.other': '{n} months unpaid — not counted as income',
-  'check.invites.todo.one': '{n} invited owner hasn’t joined yet — check the shares are final',
-  'check.invites.todo.other': '{n} invited owners haven’t joined yet — check the shares are final',
+  'check.unpaid.todo.one': '{n} month unpaid: not counted as income',
+  'check.unpaid.todo.other': '{n} months unpaid: not counted as income',
+  'check.invites.todo.one': '{n} invited owner hasn’t joined yet: check the shares are final',
+  'check.invites.todo.other': '{n} invited owners haven’t joined yet: check the shares are final',
 
 
   // — settings —
@@ -455,7 +455,7 @@ export const en = {
   'settings.owners': 'Owners',
   'settings.ownersAbout': 'owners and shares',
   'settings.ownersInfo':
-    'Sharing gives another owner access to this apartment only — your other apartments stay private. Shares must add up to exactly 100 %. An owner with 0 % can be removed or can leave.',
+    'Sharing gives another owner access to this apartment only. Your other apartments stay private. Shares must add up to exactly 100 %. An owner with 0 % can be removed or can leave.',
   'settings.editShares': 'Edit shares',
   'settings.you': 'you',
   'settings.invited': 'invited',
@@ -464,7 +464,7 @@ export const en = {
   'settings.shareFor': 'Share for {who}',
   'settings.withdraw': 'Withdraw',
   'settings.total': 'Total {pct}',
-  'settings.mustBe100': ' — must be exactly 100 %',
+  'settings.mustBe100': ', must be exactly 100 %',
   'settings.saveShares': 'Save shares',
   'settings.invite': 'Invite a co-owner',
   'settings.leaveConfirm': 'Leave {name}? You will lose access to it.',
@@ -482,15 +482,15 @@ export const en = {
   'settings.details': 'Property details',
   'settings.back': 'Back to settings',
   'settings.ownersSolo': 'Only you',
-  'settings.ownersShared': '{n} owners · you own {pct}',
+  'settings.ownersShared': '{n} owners, you own {pct}',
   'settings.depreciationNA': 'Not used for a housing-company flat',
-  'settings.depreciationOn': 'On · {rate} % a year',
+  'settings.depreciationOn': 'On, {rate} % a year',
   'settings.depreciationOff': 'Off',
   'settings.name': 'Name',
   'settings.address': 'Address',
   'settings.company': 'Housing company',
   'settings.companyAbout': 'the housing company',
-  'settings.companyInfo': 'Asunto-osakeyhtiö — the company that owns the building.',
+  'settings.companyInfo': 'Asunto-osakeyhtiö: the company that owns the building.',
   'settings.propertyType': 'Kind of property',
   'settings.propertyTypeAbout': 'the kind of property',
   'settings.propertyTypeInfo':
@@ -511,14 +511,14 @@ export const en = {
   'settings.depreciation': 'Building depreciation',
   'settings.depreciationAbout': 'depreciation',
   'settings.depreciationInfo':
-    'Poisto — a yearly deduction for the building’s wear, calculated on its remaining cost: at most {buildingResidential} % a year for a residential building and {buildingCommercial} % for shops, warehouses, factories and workshops. Improvements add to the building’s cost. The land is never depreciated, and nothing is deducted in the year you sell.',
+    'Poisto: a yearly deduction for the building’s wear, calculated on its remaining cost: at most {buildingResidential} % a year for a residential building and {buildingCommercial} % for shops, warehouses, factories and workshops. Improvements add to the building’s cost. The land is never depreciated, and nothing is deducted in the year you sell.',
   'settings.noBuildingDepreciation':
-    'The price of a housing-company flat is not depreciated — it is deducted when you sell. Basic improvements and dearer furniture are spread over the years from the costs you log.',
+    'The price of a housing-company flat is not depreciated. It is deducted when you sell. Basic improvements and dearer furniture are spread over the years from the costs you log.',
   'settings.useDepreciation': 'Deduct building depreciation in the declaration',
   'settings.buildingShare': 'Building share (%)',
   'settings.buildingShareAbout': 'the depreciable share',
   'settings.buildingShareInfo':
-    'The part of the purchase price that is the building, not the land — only the building depreciates.',
+    'The part of the purchase price that is the building, not the land: only the building depreciates.',
   'settings.rate': 'Rate (% / year)',
   'settings.prior': 'Depreciated before that year (€)',
   'settings.priorAbout': 'earlier depreciation',
@@ -558,7 +558,7 @@ export const en = {
   'recurring.kind.rent': 'Rent',
   'recurring.rentTitle': 'Monthly rent',
   'recurring.perMonth': '{amount} a month',
-  'recurring.next': 'day {day} · books next in {month}',
+  'recurring.next': 'day {day}, books next in {month}',
   'recurring.amount': 'Amount every month (€)',
   'recurring.firstMonth': 'First month',
   'recurring.firstMonthAbout': 'the first month',
@@ -584,7 +584,7 @@ export const en = {
   'settings.letShare': 'Share of the home that is let (%)',
   'settings.letShareAbout': 'the let share',
   'settings.letShareInfo':
-    'The costs of the whole home — maintenance and water charges, financing charge, insurance, utilities, property tax, loan interest and building depreciation — count only by this share, worked out by area or by the number of people. Repairs, furniture, travel, agent fees and other costs count in full, so log only what belongs to the let part.',
+    'The costs of the whole home (maintenance and water charges, financing charge, insurance, utilities, property tax, loan interest and building depreciation) count only by this share, worked out by area or by the number of people. Repairs, furniture, travel, agent fees and other costs count in full, so log only what belongs to the let part.',
   'settings.belowMarket': 'The rent is below the usual rent for the flat',
   'settings.belowMarketAbout': 'below-market rent',
   'settings.belowMarketInfo':
@@ -592,7 +592,7 @@ export const en = {
   'settings.furnishing': 'Furniture',
   'settings.furnishingAbout': 'the furniture deduction',
   'settings.furnishingInfo':
-    'For a furnished flat you choose between the flat rate — €{flatStudio} a month for a studio or one room, €{flatLarger} for a larger flat, whatever the number of tenants, covering all furniture and loose appliances — and the actual cost of the furniture you log. The flat rate is counted for each month logged as paid or unpaid, not for vacant months. Fixed appliances (fridge, stove, dishwasher) are deducted on top of it: log them as Repairs & upkeep. Keep the same choice from year to year unless things change.',
+    'For a furnished flat you choose between the flat rate (€{flatStudio} a month for a studio or one room, €{flatLarger} for a larger flat, whatever the number of tenants, covering all furniture and loose appliances) and the actual cost of the furniture you log. The flat rate is counted for each month logged as paid or unpaid, not for vacant months. Fixed appliances (fridge, stove, dishwasher) are deducted on top of it: log them as Repairs & upkeep. Keep the same choice from year to year unless things change.',
   'settings.furnishing.actual': 'Actual costs',
   'settings.furnishing.flat': 'Flat rate',
   'settings.roomClass': 'Size of the flat',
@@ -639,7 +639,7 @@ export const en = {
   'auth.passwordChanged': 'Password changed. Sign in with your new password.',
   // — install —
   'install.title': 'Install Rental Tracker',
-  'install.lead': 'Add it to your home screen — it opens like an app, full screen, one tap away.',
+  'install.lead': 'Add it to your home screen. It opens like an app, full screen, one tap away.',
   'install.button': 'Install app',
   'install.notNow': 'Not now',
   'install.never': 'Don’t show again',

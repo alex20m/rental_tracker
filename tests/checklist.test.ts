@@ -84,7 +84,7 @@ describe('the declaration checklist', () => {
     });
     const unpaid = byId(check(apt))['unpaid']!;
     expect(unpaid.ok).toBe(false);
-    expect(unpaid.text).toBe('1 month unpaid — not counted as income');
+    expect(unpaid.text).toBe('1 month unpaid: not counted as income');
   });
 
   it('does not ask for receipt photos, since some costs (a bank charge, a maintenance fee) have no receipt', () => {

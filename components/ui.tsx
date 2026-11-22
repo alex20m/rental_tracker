@@ -87,7 +87,8 @@ export function Sheet({ title, children, onClose }: { title: string; children: R
             {Icon.close}
           </button>
         </div>
-        {children}
+        {/* The form scrolls under a title that stays put: the dialog itself never scrolls. */}
+        <div className="sheet-body">{children}</div>
       </div>
     </div>
   );

@@ -161,7 +161,7 @@ test.describe('costs and receipts', () => {
     await sheet.getByRole('button', { name: 'Save' }).click();
 
     await expect(page.locator('.list li')).toContainText('Kitchen tap');
-    await expect(page.locator('.list li')).toContainText('14 Feb · Repairs & upkeep');
+    await expect(page.locator('.list li')).toContainText('14 Feb, Repairs & upkeep');
     await expect(page.locator('.list img.thumb')).toBeVisible();
     expect(apt.costs[0]).toMatchObject({ date: `${m(2)}-14`, category: 'repairs', description: 'Kitchen tap', amount: 142.5, hasReceipt: true });
   });
@@ -173,7 +173,11 @@ test.describe('costs and receipts', () => {
     await section(page, 'Costs');
     await page.getByRole('button', { name: 'Add cost' }).click();
     const sheet = page.getByRole('dialog', { name: 'Add cost' });
-    await sheet.evaluate((el) => el.scrollTo(0, el.scrollHeight));
+    const scrolled = await sheet.locator('.sheet-body').evaluate((el) => {
+      el.scrollTo(0, el.scrollHeight);
+      return el.scrollTop;
+    });
+    expect(scrolled, 'the form is taller than the dialog, so it scrolled').toBeGreaterThan(0);
 
     const gap = await sheet.evaluate((el) => {
       const head = el.querySelector('.sheet-head')!.getBoundingClientRect();
@@ -473,7 +477,7 @@ test.describe('costs and receipts', () => {
     await page.getByRole('button', { name: 'Add cost' }).click();
     const sheet = page.getByRole('dialog', { name: 'Add cost' });
     await sheet.getByRole('radio', { name: 'Furniture & appliances' }).click();
-    const shortLived = sheet.getByRole('switch', { name: 'Lasts under 3 years — deduct at once' });
+    const shortLived = sheet.getByRole('switch', { name: 'Lasts under 3 years: deduct at once' });
     // Up to 1 200 € it is deducted at once anyway.
     await sheet.getByLabel('Amount (€)').fill('1200');
     await expect(shortLived).toHaveCount(0);
@@ -489,7 +493,7 @@ test.describe('costs and receipts', () => {
     await page.locator('.list li').click();
     await page.getByRole('dialog', { name: 'Cost' }).getByRole('button', { name: 'Edit' }).click();
     const edit = page.getByRole('dialog', { name: 'Edit cost' });
-    await edit.getByRole('switch', { name: 'Lasts under 3 years — deduct at once' }).click();
+    await edit.getByRole('switch', { name: 'Lasts under 3 years: deduct at once' }).click();
     await edit.getByRole('button', { name: 'Save' }).click();
     await expect(page.locator('.list li')).not.toContainText('25 % a year');
     await expect(page.locator('.hero .big')).toHaveText('2 000,00 €');
@@ -497,7 +501,7 @@ test.describe('costs and receipts', () => {
 
     await page.locator('.list li').click();
     await page.getByRole('dialog', { name: 'Cost' }).getByRole('button', { name: 'Edit' }).click();
-    await page.getByRole('dialog', { name: 'Edit cost' }).getByRole('switch', { name: 'Lasts under 3 years — deduct at once' }).click();
+    await page.getByRole('dialog', { name: 'Edit cost' }).getByRole('switch', { name: 'Lasts under 3 years: deduct at once' }).click();
     await page.getByRole('dialog', { name: 'Edit cost' }).getByRole('button', { name: 'Save' }).click();
     await expect(page.locator('.hero .big')).toHaveText('500,00 €');
   });

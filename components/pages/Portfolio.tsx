@@ -76,8 +76,8 @@ export default function Portfolio({ items, details, year, account, onOpen, onCre
                     <div className="s">
                       {i.mySharePct === 100 ? t('common.yours') : t('portfolio.youOwn', { pct: pct(i.mySharePct) })}
                       {i.ownerCount > 1 ? t('portfolio.owners', { n: i.ownerCount }) : ''}
-                      {i.address ? ` · ${i.address}` : ''}
                     </div>
+                    {i.address && <div className="s">{i.address}</div>}
                   </div>
                   {s && (
                     <div

@@ -3,7 +3,8 @@ import type { Icons } from 'next/dist/lib/metadata/types/metadata-types';
 import { describe, expect, it, vi } from 'vitest';
 
 // next/font only works inside the Next compiler; the layout's metadata is all this test needs.
-vi.mock('next/font/google', () => ({ Geist: () => ({ variable: '' }) }));
+const font = () => ({ variable: '' });
+vi.mock('next/font/google', () => ({ Schibsted_Grotesk: font, Instrument_Sans: font, DM_Mono: font }));
 const { metadata } = await import('@/app/layout');
 const icons = metadata.icons as Icons;
 

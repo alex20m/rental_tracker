@@ -172,7 +172,7 @@ export default function SignIn() {
           }}
         >
           {info && (
-            <div className="notice" style={{ marginBottom: 6 }}>
+            <div className="notice">
               {info}
             </div>
           )}
@@ -242,15 +242,14 @@ export default function SignIn() {
           <ErrorNote message={error} />
           {mode !== 'verify' && (
             <button
-              className="btn primary block"
-              style={{ marginTop: 18 }}
+              className="btn primary block submit"
               disabled={busy || (mode === 'reset' && code.length < 6)}
             >
               {busy ? t('auth.wait') : submitLabel[mode]}
             </button>
           )}
 
-          <div style={{ display: 'flex', gap: 18, marginTop: 16 }}>
+          <div className="auth-links">
             {mode === 'sign-in' && (
               <>
                 <button type="button" className="link" onClick={() => goTo('sign-up')}>

@@ -1,12 +1,15 @@
 import type { Metadata, Viewport } from 'next';
 import type { ReactNode } from 'react';
-import { Geist } from 'next/font/google';
+import { DM_Mono, Instrument_Sans, Schibsted_Grotesk } from 'next/font/google';
 import { I18nProvider } from '@/components/I18nProvider';
 import { INSTALL_PROMPT_SCRIPT } from '@/lib/pwa';
 import { THEME_INIT_SCRIPT } from '@/lib/ui/theme';
 import './globals.css';
 
-const geist = Geist({ subsets: ['latin'], variable: '--font-geist', display: 'swap' });
+// Dose's three faces: Schibsted Grotesk for heads and figures, Instrument Sans for everything read, DM Mono for dates.
+const display = Schibsted_Grotesk({ subsets: ['latin'], weight: ['700'], variable: '--font-schibsted', display: 'swap' });
+const body = Instrument_Sans({ subsets: ['latin'], weight: ['400', '500', '600'], variable: '--font-instrument', display: 'swap' });
+const mono = DM_Mono({ subsets: ['latin'], weight: ['400', '500'], variable: '--font-dm-mono', display: 'swap' });
 
 export const metadata: Metadata = {
   title: 'Rental Tracker',
@@ -29,15 +32,17 @@ export const viewport: Viewport = {
   initialScale: 1,
   viewportFit: 'cover',
   themeColor: [
-    { media: '(prefers-color-scheme: light)', color: '#ffffff' },
-    { media: '(prefers-color-scheme: dark)', color: '#000000' },
+    { media: '(prefers-color-scheme: light)', color: '#faf7ef' },
+    { media: '(prefers-color-scheme: dark)', color: '#0a110f' },
   ],
 };
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
-    <html lang="en" className={geist.variable} suppressHydrationWarning>
+    <html lang="en" className={`${display.variable} ${body.variable} ${mono.variable}`} suppressHydrationWarning>
       <head>
+        {/* Marks a page whose scripts run: only then is the phone drawer hidden until it is opened. */}
+        <script dangerouslySetInnerHTML={{ __html: "document.documentElement.classList.add('js')" }} />
         <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
         {/* Catches Chromium's install prompt, which can fire long before React mounts. */}
         <script dangerouslySetInnerHTML={{ __html: INSTALL_PROMPT_SCRIPT }} />

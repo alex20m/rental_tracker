@@ -98,14 +98,14 @@ test.describe('home', () => {
     await page.goto('/');
 
     // 60 % of (2 400 rent − 216 costs − 2 500 depreciation) = −189,60.
-    await expect(page.getByText(`Rental loss · ${YEAR}`)).toBeVisible();
+    await expect(page.getByText(`Rental loss ${YEAR}`)).toBeVisible();
     await expect(netIncome(page)).toHaveText('−189,60 €');
     // The chart shows the same part as the figures above it: 60 % of 2 400 and of 216.
     await expect(page.getByRole('img', { name: `Rent received 1 440,00 € and costs 129,60 € in ${YEAR}, by month` })).toBeVisible();
     await page.getByRole('radio', { name: 'Whole apartment' }).click();
     await expect(netIncome(page)).toHaveText('−316,00 €');
     await expect(page.getByRole('img', { name: `Rent received 2 400,00 € and costs 216,00 € in ${YEAR}, by month` })).toBeVisible();
-    await page.getByRole('radio', { name: 'Your share · 60 %' }).click();
+    await page.getByRole('radio', { name: 'Your share (60 %)' }).click();
     await expect(netIncome(page)).toHaveText('−189,60 €');
   });
 
@@ -113,7 +113,7 @@ test.describe('home', () => {
     api.addApartment({ name: 'Solo', purchasePrice: 100000 }, { rents: ledger().rents });
     await page.goto('/');
 
-    await expect(page.getByText(`Net rental income · ${YEAR}`)).toBeVisible();
+    await expect(page.getByText(`Net rental income ${YEAR}`)).toBeVisible();
     await expect(netIncome(page)).toHaveText('2 400,00 €');
     await expect(page.getByRole('radiogroup', { name: 'Figures for' })).toHaveCount(0);
     // 3 paid of 4 logged; 2 400 / 100 000.
@@ -148,7 +148,7 @@ test.describe('home', () => {
     const todo = page.locator('.todo');
     for (const [item, arrival] of [
       ['8 months not logged yet', page.getByRole('heading', { name: 'Months' })],
-      ['1 invited owner hasn’t joined yet — check the shares are final', page.getByRole('heading', { name: 'Apartment settings', exact: true })],
+      ['1 invited owner hasn’t joined yet: check the shares are final', page.getByRole('heading', { name: 'Apartment settings', exact: true })],
     ] as const) {
       await todo.getByRole('button', { name: item }).click();
       await expect(arrival).toBeVisible();
@@ -211,9 +211,9 @@ test.describe('home', () => {
 
     const rows = page.locator('section').filter({ hasText: 'Recent' }).locator('li');
     await expect(rows).toHaveCount(3);
-    // April's vacancy is newest; a month with no rent shows a dash, not "+0,00 €".
+    // April's vacancy is newest; a month with no rent shows no amount at all, not "+0,00 €".
     await expect(rows.nth(0)).toContainText(`Vacant April ${YEAR}`);
-    await expect(rows.nth(0)).toContainText('—');
+    await expect(rows.nth(0)).not.toContainText('€');
     await expect(rows.nth(1)).toContainText('Rahoitusvastike');
     await expect(rows.nth(1)).toContainText('−80,00 €');
     await expect(rows.nth(2)).toContainText('+800,00 €');
@@ -334,7 +334,8 @@ test.describe('the portfolio', () => {
     await section(page, 'Rent');
 
     await openPortfolio(page);
-    await expect(page.getByRole('button', { name: /^First/ })).toContainText('You own 60 % · 2 owners · Kauppakatu 12 B 7, Vaasa');
+    await expect(page.getByRole('button', { name: /^First/ })).toContainText('You own 60 %, 2 owners');
+    await expect(page.getByRole('button', { name: /^First/ })).toContainText('Kauppakatu 12 B 7, Vaasa');
     await expect(page.getByRole('button', { name: /^Second/ })).toContainText('Toinen katu 2');
     await page.getByRole('button', { name: /^Second/ }).click();
 
@@ -355,7 +356,7 @@ test.describe('the portfolio', () => {
     await expect(netIncome(page)).toHaveText('1 994,40 €');
     await expect(page.locator('.hero')).toContainText('598 €');
     const rows = page.locator('section').filter({ hasText: 'Apartments' }).locator('li');
-    await expect(rows.nth(0)).toContainText('You own 60 % · 2 owners');
+    await expect(rows.nth(0)).toContainText('You own 60 %, 2 owners');
     await expect(rows.nth(0)).toContainText('−189,60 €');
     await expect(rows.nth(1)).toContainText('Yours');
     await expect(rows.nth(1)).toContainText('2 184,00 €');

@@ -15,3 +15,6 @@ next-env.d.ts
 test-results/
 playwright-report/
 coverage-e2e/
+
+# Hallmark design-skill working files (lint records, screenshots)
+.hallmark/

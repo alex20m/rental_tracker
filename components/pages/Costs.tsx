@@ -74,7 +74,7 @@ export default function Costs({ apt, year, onChanged }: Props) {
                       <div className="t">{c.description || t(`cat.${c.category}.label`)}</div>
                       <div className="s">
                         {shortDate(c.date, lang)}
-                        {c.description && ` · ${t(`cat.${c.category}.label`)}`} <HowDeducted apt={apt} cost={c} />
+                        {c.description && `, ${t(`cat.${c.category}.label`)}`} <HowDeducted apt={apt} cost={c} />
                       </div>
                     </div>
                     <div className={'strong num ' + (how === 'none' ? 'dim' : '')}>{eur(c.amount)}</div>

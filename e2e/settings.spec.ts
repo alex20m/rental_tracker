@@ -104,7 +104,7 @@ test.describe('owners and shares', () => {
 
     await expect(page.getByText('Total 100 %', { exact: true })).toBeVisible();
     await page.getByLabel('Share for bob@example.test').fill('20');
-    await expect(page.getByText('Total 95 % — must be exactly 100 %')).toBeVisible();
+    await expect(page.getByText('Total 95 %, must be exactly 100 %')).toBeVisible();
     await expect(page.getByRole('button', { name: 'Save shares' })).toBeDisabled();
     await page.getByLabel('Share for me@example.test').fill('64.99');
     await page.getByLabel('Share for bob@example.test').fill('20.01');
@@ -218,7 +218,7 @@ test.describe('apartment details', () => {
     await expect(page.getByRole('button', { name: 'Save changes' })).toHaveCount(0);
     // The list summarises what was saved.
     await page.getByRole('button', { name: 'Back to settings' }).click();
-    await expect(page.getByRole('button', { name: /^Advanced.*Property of my own · Building depreciation 2.5 %/ })).toBeVisible();
+    await expect(page.getByRole('button', { name: /^Advanced.*Property of my own, Building depreciation 2.5 %/ })).toBeVisible();
     await expect(page.getByRole('button', { name: /^Property details.*Rantatie 5/ })).toBeVisible();
     expect(apt.settings).toMatchObject({
       address: 'Rantatie 5',
@@ -372,7 +372,7 @@ test.describe('apartment details', () => {
 
     await openApartment(page, 'Part');
     await openSettings(page);
-    await expect(page.getByRole('button', { name: /^Advanced.*60 % of the home let · Rent below the usual · Furniture flat rate$/ })).toBeVisible();
+    await expect(page.getByRole('button', { name: /^Advanced.*60 % of the home let, Rent below the usual, Furniture flat rate$/ })).toBeVisible();
 
     await openApartment(page, 'Flat');
     await openSettings(page);

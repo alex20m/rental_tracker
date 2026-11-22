@@ -1,11 +1,19 @@
 import { expect, test } from './fixtures';
 import { closeInstallPopup, openAccount } from './nav';
 
+/** The page's background as the screen shows it, in sRGB: the browser may report an oklch token in another space. */
 const background = (page: import('@playwright/test').Page) =>
-  page.evaluate(() => getComputedStyle(document.body).backgroundColor);
+  page.evaluate(() => {
+    const ctx = document.createElement('canvas').getContext('2d')!;
+    ctx.fillStyle = getComputedStyle(document.body).backgroundColor;
+    ctx.fillRect(0, 0, 1, 1);
+    const [r, g, b] = ctx.getImageData(0, 0, 1, 1).data;
+    return `rgb(${r}, ${g}, ${b})`;
+  });
 
-const LIGHT = 'rgb(255, 255, 255)';
-const DARK = 'rgb(0, 0, 0)';
+/** Dose's day paper and night ground: the same colours the layout gives the browser's own chrome. */
+const LIGHT = 'rgb(250, 247, 239)';
+const DARK = 'rgb(10, 17, 15)';
 
 test.describe('theme', () => {
   test.describe('with a dark device', () => {
