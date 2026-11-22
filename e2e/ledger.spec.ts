@@ -146,9 +146,9 @@ test.describe('costs and receipts', () => {
     await page.getByRole('button', { name: 'Add cost' }).click();
     const sheet = page.getByRole('dialog', { name: 'Add cost' });
     await sheet.getByLabel('Amount (€)').fill('142.50');
-    await sheet.getByRole('radio', { name: 'Financing charge' }).click();
+    await sheet.getByRole('combobox', { name: 'Category' }).selectOption({ label: 'Financing charge' });
     await expect(sheet.getByText('Not deductible', { exact: true })).toBeVisible();
-    await sheet.getByRole('radio', { name: 'Repairs & upkeep' }).click();
+    await sheet.getByRole('combobox', { name: 'Category' }).selectOption({ label: 'Repairs & upkeep' });
     await expect(sheet.getByText('Not deductible', { exact: true })).toHaveCount(0);
     await sheet.getByLabel('Description').fill('Kitchen tap ');
     await sheet.getByLabel('Date').fill(`${m(2)}-14`);
@@ -449,7 +449,7 @@ test.describe('costs and receipts', () => {
     const sheet = page.getByRole('dialog', { name: 'Add cost' });
     await sheet.getByLabel('Amount (€)').fill('3000');
     await expect(sheet.getByLabel('Spread over (years)')).toHaveCount(0);
-    await sheet.getByRole('radio', { name: 'Basic improvement' }).click();
+    await sheet.getByRole('combobox', { name: 'Category' }).selectOption({ label: 'Basic improvement' });
     await expect(sheet.getByLabel('Spread over (years)')).toHaveValue('10');
     await sheet.getByRole('button', { name: 'About spreading' }).click();
     await expect(page.getByRole('note')).toContainText('over as many years as it lasts: from 3 to 10 years');
@@ -476,7 +476,7 @@ test.describe('costs and receipts', () => {
     await section(page, 'Costs');
     await page.getByRole('button', { name: 'Add cost' }).click();
     const sheet = page.getByRole('dialog', { name: 'Add cost' });
-    await sheet.getByRole('radio', { name: 'Furniture & appliances' }).click();
+    await sheet.getByRole('combobox', { name: 'Category' }).selectOption({ label: 'Furniture & appliances' });
     const shortLived = sheet.getByRole('switch', { name: 'Lasts under 3 years: deduct at once' });
     // Up to 1 200 € it is deducted at once anyway.
     await sheet.getByLabel('Amount (€)').fill('1200');
@@ -524,7 +524,7 @@ test.describe('costs and receipts', () => {
     await page.getByRole('button', { name: 'Add cost' }).click();
     const sheet = page.getByRole('dialog', { name: 'Add cost' });
     await sheet.getByLabel('Amount (€)').fill('20000');
-    await sheet.getByRole('radio', { name: 'Basic improvement' }).click();
+    await sheet.getByRole('combobox', { name: 'Category' }).selectOption({ label: 'Basic improvement' });
 
     await expect(sheet.getByLabel('Spread over (years)')).toHaveCount(0);
     await expect(sheet.getByText('added to building cost')).toBeVisible();
@@ -548,7 +548,7 @@ test.describe('costs and receipts', () => {
     await page.getByRole('button', { name: 'Add cost' }).click();
     const sheet = page.getByRole('dialog', { name: 'Add cost' });
     await sheet.getByLabel('Amount (€)').fill('2000');
-    await sheet.getByRole('radio', { name: 'Furniture & appliances' }).click();
+    await sheet.getByRole('combobox', { name: 'Category' }).selectOption({ label: 'Furniture & appliances' });
 
     await expect(sheet.getByText('Not deductible', { exact: true })).toBeVisible();
     // Nothing to decide about how long it lasts: it is not deducted either way.
@@ -570,7 +570,7 @@ test.describe('costs and receipts', () => {
     await page.getByRole('button', { name: 'Add cost' }).click();
     const sheet = page.getByRole('dialog', { name: 'Add cost' });
     await sheet.getByLabel('Amount (€)').fill('300');
-    await sheet.getByRole('radio', { name: 'Loan interest' }).click();
+    await sheet.getByRole('combobox', { name: 'Category' }).selectOption({ label: 'Loan interest' });
 
     await expect(sheet.getByText('Not deductible', { exact: true })).toBeVisible();
     await openInfo(page, 'About not deductible');
@@ -585,7 +585,7 @@ test.describe('costs and receipts', () => {
     await page.getByRole('button', { name: 'Add cost' }).click();
     const sheet = page.getByRole('dialog', { name: 'Add cost' });
     await expect(sheet.getByLabel('Kilometres driven (optional)')).toHaveCount(0);
-    await sheet.getByRole('radio', { name: 'Travel' }).click();
+    await sheet.getByRole('combobox', { name: 'Category' }).selectOption({ label: 'Travel' });
 
     await sheet.getByLabel('Kilometres driven (optional)').fill('120');
     await expect(sheet.getByLabel('Amount (€)')).toHaveValue('32.4');

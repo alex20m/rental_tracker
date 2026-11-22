@@ -144,21 +144,14 @@ function RecurringForm({
 
       {kind === 'cost' && (
         <>
-          <Label id="recurring-category">{t('costs.category')}</Label>
-          <div className="chips" role="radiogroup" aria-labelledby="recurring-category">
+          <Label htmlFor="recurring-category">{t('costs.category')}</Label>
+          <select id="recurring-category" value={category} onChange={(e) => setCategory(e.target.value as CostCategory)}>
             {RECURRING_CATEGORIES.map((k) => (
-              <button
-                key={k}
-                type="button"
-                role="radio"
-                aria-checked={category === k}
-                className="choice"
-                onClick={() => setCategory(k)}
-              >
+              <option key={k} value={k}>
                 {t(`cat.${k}.label`)}
-              </button>
+              </option>
             ))}
-          </div>
+          </select>
         </>
       )}
 

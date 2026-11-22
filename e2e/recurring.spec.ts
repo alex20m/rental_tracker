@@ -32,7 +32,7 @@ test.describe('recurring expenses in the apartment settings', () => {
     const sheet = page.getByRole('dialog', { name: 'Add recurring item' });
     await expect(sheet.getByRole('button', { name: 'Save' })).toBeDisabled(); // an amount is needed
     await expect(sheet.getByRole('radio', { name: 'Rent' })).toBeChecked();
-    await expect(sheet.getByRole('radiogroup', { name: 'Category' })).toHaveCount(0); // rent has none
+    await expect(sheet.getByRole('combobox', { name: 'Category' })).toHaveCount(0); // rent has none
     await sheet.getByLabel('Amount every month (€)').fill('800');
     await sheet.getByRole('button', { name: 'Save' }).click();
 
@@ -58,10 +58,10 @@ test.describe('recurring expenses in the apartment settings', () => {
 
     const sheet = page.getByRole('dialog', { name: 'Add recurring item' });
     await sheet.getByRole('radio', { name: 'Expense' }).click();
-    await expect(sheet.getByRole('radio', { name: 'Maintenance charge' })).toBeChecked();
-    await expect(sheet.getByRole('radio', { name: 'Basic improvement' })).toHaveCount(0); // not paid monthly
-    await expect(sheet.getByRole('radio', { name: 'Furniture & appliances' })).toHaveCount(0);
-    await sheet.getByRole('radio', { name: 'Insurance' }).click();
+    await expect(sheet.getByRole('combobox', { name: 'Category' })).toHaveValue('maintenance_charge');
+    await expect(sheet.getByRole('option', { name: 'Basic improvement' })).toHaveCount(0); // not paid monthly
+    await expect(sheet.getByRole('option', { name: 'Furniture & appliances' })).toHaveCount(0);
+    await sheet.getByRole('combobox', { name: 'Category' }).selectOption({ label: 'Insurance' });
     await sheet.getByLabel('Amount every month (€)').fill('25.5');
     await sheet.getByLabel('Description').fill('Home insurance');
     await sheet.getByLabel('First month', { exact: true }).fill(`${now.getUTCFullYear() - 1}-11`);
@@ -99,7 +99,7 @@ test.describe('recurring expenses in the apartment settings', () => {
     await page.getByRole('button', { name: 'Add recurring item' }).click();
     const sheet = page.getByRole('dialog', { name: 'Add recurring item' });
     await expect(sheet.getByRole('radiogroup', { name: 'What repeats' })).toHaveCount(0);
-    await expect(sheet.getByRole('radiogroup', { name: 'Category' })).toBeVisible();
+    await expect(sheet.getByRole('combobox', { name: 'Category' })).toBeVisible();
   });
 
   test('changes an entry for the months to come, and says what stays', async ({ page, api }) => {
@@ -118,7 +118,7 @@ test.describe('recurring expenses in the apartment settings', () => {
     await expect(sheet.getByLabel('Day of the month', { exact: true })).toHaveValue('1');
     await sheet.getByLabel('Day of the month', { exact: true }).fill('20');
     await sheet.getByLabel('Amount every month (€)').fill('160');
-    await sheet.getByRole('radio', { name: 'Utilities paid by owner' }).click();
+    await sheet.getByRole('combobox', { name: 'Category' }).selectOption({ label: 'Utilities paid by owner' });
     await sheet.getByRole('button', { name: 'Save' }).click();
 
     await expect(sheet).toHaveCount(0);
@@ -133,7 +133,7 @@ test.describe('recurring expenses in the apartment settings', () => {
     await page.getByRole('button', { name: /Monthly rent/ }).click();
 
     const sheet = page.getByRole('dialog', { name: 'Edit recurring item' });
-    await expect(sheet.getByRole('radiogroup', { name: 'Category' })).toHaveCount(0);
+    await expect(sheet.getByRole('combobox', { name: 'Category' })).toHaveCount(0);
     await sheet.getByLabel('Amount every month (€)').fill('850');
     await sheet.getByRole('button', { name: 'Save' }).click();
 
@@ -205,7 +205,7 @@ test.describe('repeating from the ordinary forms', () => {
 
     const sheet = page.getByRole('dialog', { name: 'Add cost' });
     await sheet.getByLabel('Amount (€)').fill('30');
-    await sheet.getByRole('radio', { name: 'Insurance' }).click();
+    await sheet.getByRole('combobox', { name: 'Category' }).selectOption({ label: 'Insurance' });
     await expect(sheet.getByText('Books the same again')).toHaveCount(0);
     await sheet.getByRole('switch', { name: 'Repeat every month' }).click();
     await expect(sheet.getByText(`on day ${Math.min(now.getDate(), 28)}, from ${nextAfterNow}`)).toBeVisible();
@@ -224,9 +224,9 @@ test.describe('repeating from the ordinary forms', () => {
     await page.getByRole('button', { name: 'Add cost' }).click();
     const sheet = page.getByRole('dialog', { name: 'Add cost' });
     await sheet.getByLabel('Amount (€)').fill('30');
-    await sheet.getByRole('radio', { name: 'Insurance' }).click();
+    await sheet.getByRole('combobox', { name: 'Category' }).selectOption({ label: 'Insurance' });
     await sheet.getByRole('switch', { name: 'Repeat every month' }).click();
-    await sheet.getByRole('radio', { name: 'Basic improvement' }).click();
+    await sheet.getByRole('combobox', { name: 'Category' }).selectOption({ label: 'Basic improvement' });
     await expect(sheet.getByRole('switch', { name: 'Repeat every month' })).toHaveCount(0);
     await sheet.getByRole('button', { name: 'Save' }).click();
     await expect(sheet).toHaveCount(0); // saved: the request has been sent, not just clicked

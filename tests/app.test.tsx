@@ -307,7 +307,7 @@ describe('the rent log', () => {
 });
 
 describe('costs', () => {
-  it('adds a cost by typing an amount and tapping a category', async () => {
+  it('adds a cost by typing an amount and picking a category', async () => {
     serve([view('a1', 'Alpha')]);
     m.createCost.mockResolvedValue({ id: 'c1' });
     render(<RentalApp />);
@@ -316,7 +316,10 @@ describe('costs', () => {
 
     const sheet = screen.getByRole('dialog', { name: 'Add cost' });
     await user().type(within(sheet).getByLabelText('Amount (€)'), '45.5');
-    await user().click(within(sheet).getByRole('radio', { name: 'Repairs & upkeep' }));
+    await user().selectOptions(
+      within(sheet).getByRole('combobox', { name: 'Category' }),
+      within(sheet).getByRole('option', { name: 'Repairs & upkeep' }),
+    );
     await user().click(within(sheet).getByRole('button', { name: 'Save' }));
 
     expect(m.createCost).toHaveBeenCalledWith('a1', {
@@ -345,7 +348,7 @@ describe('costs', () => {
     const sheet = screen.getByRole('dialog', { name: 'Add cost' });
 
     expect(within(sheet).queryByRole('button', { name: 'About not deductible' })).toBeNull();
-    await user().click(within(sheet).getByRole('radio', { name: 'Financing charge' }));
+    await user().selectOptions(within(sheet).getByRole('combobox', { name: 'Category' }), 'Financing charge');
     await user().click(within(sheet).getByRole('button', { name: 'About not deductible' }));
     expect(screen.getByRole('note').textContent).toMatch(/acquisition cost/);
   });
