@@ -52,6 +52,8 @@ export default function Home({ apt, year, account, scope, onScope, go }: Props) 
   const max = Math.max(1, ...rentByMonth, ...costByMonth);
   const now = new Date();
   const currentMonth = now.getFullYear() === year ? now.getMonth() : -1;
+  // A year is declared the spring after it ends: until then there is nothing to prepare.
+  const yearOver = now.getFullYear() > year;
 
   const loggedMonths = tax.paidMonths + tax.vacantMonths + tax.unpaidMonths;
   const occupancy = loggedMonths ? Math.round((tax.paidMonths / loggedMonths) * 100) : null;
@@ -142,7 +144,8 @@ export default function Home({ apt, year, account, scope, onScope, go }: Props) 
           </div>
         </section>
       ) : (
-        hasData && (
+        hasData &&
+        yearOver && (
           <section className="card ready">
             <div className="allset">
               {Icon.check} {t('home.allSet', { year })}

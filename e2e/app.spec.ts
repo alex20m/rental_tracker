@@ -176,13 +176,33 @@ test.describe('home', () => {
       note: '',
     }));
     api.addApartment({ name: 'Done', purchasePrice: 1000 }, { rents });
-    await page.clock.setFixedTime(new Date(`${YEAR}-12-15T12:00:00`));
+    // Only once the year is over: a year is declared the spring after it ends.
+    await page.clock.setFixedTime(new Date(`${YEAR + 1}-01-02T12:00:00`));
     await page.goto('/');
+    await page.getByLabel('Tax year').selectOption(String(YEAR));
 
     await expect(page.getByText(`Ready for the ${YEAR} declaration`)).toBeVisible();
     await expect(page.getByRole('heading', { name: 'To do' })).toHaveCount(0);
     await page.getByRole('button', { name: `Prepare the ${YEAR} declaration` }).click();
     await expect(page.getByRole('heading', { name: 'Before you file' })).toBeVisible();
+  });
+
+  test('holds back the declaration while its year is still running, even with nothing left to fix', async ({ page, api }) => {
+    const rents = Array.from({ length: 12 }, (_, i) => ({
+      month: m(i + 1),
+      status: 'paid' as const,
+      amount: 800,
+      receivedDate: `${m(i + 1)}-03`,
+      note: '',
+    }));
+    api.addApartment({ name: 'Done', purchasePrice: 1000 }, { rents });
+    await page.clock.setFixedTime(new Date(`${YEAR}-12-31T23:30:00`));
+    await page.goto('/');
+
+    await expect(page.getByRole('img', { name: `Rent received 9 600,00 € and costs 0,00 € in ${YEAR}, by month` })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'To do' })).toHaveCount(0);
+    await expect(page.getByText(`Ready for the ${YEAR} declaration`)).toHaveCount(0);
+    await expect(page.getByRole('button', { name: `Prepare the ${YEAR} declaration` })).toHaveCount(0);
   });
 
   test('lists the most recent activity first, each row leading to its log', async ({ page, api }) => {
