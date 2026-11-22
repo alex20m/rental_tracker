@@ -669,4 +669,21 @@ test.describe('the cost form', () => {
     }
     expect(photo.y, 'the photo button starts level with the date field beside it').toBeCloseTo(date.y, 0);
   });
+
+  test('keeps the category arrow inside the field, as far from the right edge as the text is from the left', async ({ page, api }) => {
+    api.addApartment({ name: 'Flat' });
+    await page.goto('/');
+    await section(page, 'Costs');
+    await page.getByRole('button', { name: 'Add cost' }).click();
+    const select = page.getByRole('dialog', { name: 'Add cost' }).getByRole('combobox', { name: 'Category' });
+
+    const { appearance, arrowInset, textInset } = await select.evaluate((el) => {
+      const s = getComputedStyle(el);
+      // The arrow is drawn by the page (the browser's own sits flush against the edge), at calc(100% - Npx).
+      const insets = [...s.backgroundPositionX.matchAll(/calc\(100% - ([\d.]+)px\)/g)].map((m) => Number(m[1]));
+      return { appearance: s.appearance, arrowInset: insets.length ? Math.min(...insets) : 0, textInset: parseFloat(s.paddingLeft) };
+    });
+    expect(appearance).toBe('none');
+    expect(arrowInset).toBeGreaterThanOrEqual(textInset);
+  });
 });
