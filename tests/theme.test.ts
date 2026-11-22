@@ -181,8 +181,9 @@ describe('the Pankki theme', () => {
 
   it('keeps every button and field at least 48px tall', () => {
     for (const selector of ['.btn', 'input, select, textarea']) {
-      const rule = new RegExp(`(?:^|\\n)${selector.replace(/[.,]/g, '\\$&')} \\{[^}]*min-height:\\s*(\\d+)px`).exec(css);
-      expect(Number(rule?.[1]), selector).toBeGreaterThanOrEqual(48);
+      const rule = new RegExp(`(?:^|\\n)${selector.replace(/[.,]/g, '\\$&')} \\{[^}]*min-height:\\s*([^;]+);`).exec(css);
+      const value = (rule?.[1] ?? '').trim();
+      expect(px(value.startsWith('var(') ? token(value.slice(6, -1), 'light') : value), selector).toBeGreaterThanOrEqual(48);
     }
   });
 

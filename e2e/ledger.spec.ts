@@ -646,3 +646,27 @@ test.describe('popups on a narrow phone', () => {
     });
   }
 });
+
+test.describe('the cost form', () => {
+  test('gives every field and the photo button one height, and lines up the two that share a row', async ({ page, api }) => {
+    api.addApartment({ name: 'Flat' });
+    await page.goto('/');
+    await section(page, 'Costs');
+    await page.getByRole('button', { name: 'Add cost' }).click();
+    const sheet = page.getByRole('dialog', { name: 'Add cost' });
+    // Measure the form at rest: while the dialog slides in, each box is read at a different point of the slide.
+    await sheet.evaluate((el) => Promise.all(el.getAnimations({ subtree: true }).map((a) => a.finished)));
+
+    const box = async (control: import('@playwright/test').Locator) => (await control.boundingBox())!;
+    const amount = await box(sheet.getByLabel('Amount (€)'));
+    const category = await box(sheet.getByRole('combobox', { name: 'Category' }));
+    const description = await box(sheet.getByLabel('Description'));
+    const date = await box(sheet.getByLabel('Date'));
+    const photo = await box(sheet.getByRole('button', { name: 'Receipt' }));
+
+    for (const [name, b] of Object.entries({ amount, category, description, photo })) {
+      expect(b.height, `${name} is as tall as the date field`).toBeCloseTo(date.height, 0);
+    }
+    expect(photo.y, 'the photo button starts level with the date field beside it').toBeCloseTo(date.y, 0);
+  });
+});
