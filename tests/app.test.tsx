@@ -454,13 +454,27 @@ describe('the home screen', () => {
     expect(screen.getByRole('heading', { name: 'Before you file' })).toBeTruthy();
   });
 
-  it('only offers the declaration from Home once nothing is left to fix', async () => {
+  it('offers the declaration from Home once the year is over and nothing is left to fix', async () => {
+    vi.setSystemTime(new Date('2027-01-10T12:00:00'));
     const months = Array.from({ length: 12 }, (_, i) => paid(`2026-${String(i + 1).padStart(2, '0')}`));
     serve([view('a1', 'Alpha', { rents: months })]);
     render(<RentalApp />);
 
-    await user().click(await screen.findByRole('button', { name: 'Prepare the 2026 declaration' }));
+    await user().selectOptions(await screen.findByLabelText('Tax year'), '2026');
+    expect(screen.getByText('Ready for the 2026 declaration')).toBeTruthy();
+    await user().click(screen.getByRole('button', { name: 'Prepare the 2026 declaration' }));
     expect(screen.getByRole('heading', { name: 'Before you file' })).toBeTruthy();
+  });
+
+  it('holds back the declaration from Home while its year is still running, even with nothing left to fix', async () => {
+    const months = Array.from({ length: 12 }, (_, i) => paid(`2026-${String(i + 1).padStart(2, '0')}`));
+    serve([view('a1', 'Alpha', { rents: months })]);
+    render(<RentalApp />);
+
+    await screen.findByRole('img', { name: /in 2026, by month/ });
+    expect(screen.queryByRole('heading', { name: 'To do' })).toBeNull();
+    expect(screen.queryByText('Ready for the 2026 declaration')).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Prepare the 2026 declaration' })).toBeNull();
   });
 
   it('keeps Home to a hero and a way to start while nothing is logged this year', async () => {
