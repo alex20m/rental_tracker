@@ -1,15 +1,14 @@
 import type { Metadata, Viewport } from 'next';
 import type { ReactNode } from 'react';
-import { DM_Mono, Instrument_Sans, Schibsted_Grotesk } from 'next/font/google';
+import { Libre_Franklin, Source_Serif_4 } from 'next/font/google';
 import { I18nProvider } from '@/components/I18nProvider';
 import { INSTALL_PROMPT_SCRIPT } from '@/lib/pwa';
 import { THEME_INIT_SCRIPT } from '@/lib/ui/theme';
 import './globals.css';
 
-// Dose's three faces: Schibsted Grotesk for heads and figures, Instrument Sans for everything read, DM Mono for dates.
-const display = Schibsted_Grotesk({ subsets: ['latin'], weight: ['700'], variable: '--font-schibsted', display: 'swap' });
-const body = Instrument_Sans({ subsets: ['latin'], weight: ['400', '500', '600'], variable: '--font-instrument', display: 'swap' });
-const mono = DM_Mono({ subsets: ['latin'], weight: ['400', '500'], variable: '--font-dm-mono', display: 'swap' });
+// Pankki's two faces: Source Serif 4 for heads and figures, Libre Franklin for everything read.
+const serif = Source_Serif_4({ subsets: ['latin'], weight: ['600', '700'], variable: '--font-serif', display: 'swap' });
+const franklin = Libre_Franklin({ subsets: ['latin'], weight: ['400', '500', '600', '700'], variable: '--font-franklin', display: 'swap' });
 
 export const metadata: Metadata = {
   title: 'Rental Tracker',
@@ -32,14 +31,14 @@ export const viewport: Viewport = {
   initialScale: 1,
   viewportFit: 'cover',
   themeColor: [
-    { media: '(prefers-color-scheme: light)', color: '#faf7ef' },
-    { media: '(prefers-color-scheme: dark)', color: '#0a110f' },
+    { media: '(prefers-color-scheme: light)', color: '#f9f8f3' },
+    { media: '(prefers-color-scheme: dark)', color: '#0d1310' },
   ],
 };
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
-    <html lang="en" className={`${display.variable} ${body.variable} ${mono.variable}`} suppressHydrationWarning>
+    <html lang="en" className={`${serif.variable} ${franklin.variable}`} suppressHydrationWarning>
       <head>
         {/* Marks a page whose scripts run: only then is the phone drawer hidden until it is opened. */}
         <script dangerouslySetInnerHTML={{ __html: "document.documentElement.classList.add('js')" }} />

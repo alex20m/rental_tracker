@@ -1,82 +1,81 @@
-/* Hallmark · shape: app screen · genre: modern-minimal · theme: Dose (deal 2/3, seed ledger-app-where-finnish-b987·67773d93·2026-11-22·r0) · redesign: full
- * nav: kept (a drawer on phones, a sidebar from 960px; nine destinations) · signature: the year as a tray of twelve month compartments, mint where the rent is in · states: loading, empty, error, full · dose: white ground by day, night ground in dark mode
- * axes: light/grotesk-sans/chromatic-green · posture: committed · contrast: pass · v2.0.0 */
-/* Hallmark · pre-emit critique: P4 H4 E4 S4 R4 V3 · weakest: V, an app shell has few structural axes to vary; the variety is in the surfaces: the figure sits bare on paper, lists are white sheets, to-dos and months sit in sunken trays */
-/* Hallmark · dismissed 40 · the 1.03:1 pairs mix light and night values of one token; tests/theme.test.ts resolves each scheme and holds every drawn text pair at 4.5:1 */
+/* Hallmark · shape: app screen · genre: modern-minimal · theme: custom "Pankki" (by request) · redesign: full
+ * nav: kept (a drawer on phones, a sidebar from 960px; nine destinations) · signature: the year as a tray of twelve month compartments, bank green where the rent is in · states: loading, empty, error, full · ground: ivory by day, green-black night in dark mode
+ * axes: light/serif-display/chromatic-green · posture: restrained · contrast: pass · v2.0.0 */
+/* Hallmark · pre-emit critique: P4 H4 E4 S4 R5 V3 · weakest: V, an app shell has few structural axes to vary; the variety is in the surfaces: the figure sits bare on paper, lists are white sheets, to-dos and months sit in sunken trays */
+/* Hallmark · dismissed 40 · the low pairs mix light and night values of one token; tests/theme.test.ts resolves each scheme and holds every drawn text pair at 4.5:1 */
 /* Hallmark · dismissed 41 · the same mixed-scheme reading: buttons, the current tab and the nav item set --text on --card, 4.5:1 or more in both schemes */
 /* Hallmark · dismissed 28a · the first image is a receipt thumbnail inside a list row, never the page's largest paint */
+/* Hallmark · dropped onClick={() => setCategory(k)} · the owner asked for the thirteen category chips to become one Category dropdown; its onChange sets the same category */
 /* Hallmark · dismissed 70 · "code sent" shows only after the sign-in service accepted the request; the fake e2e API proves the call */
 @import url("./tokens.css");
 @import url("./base.css");
 
-/* ── Tokens ── the project's own names, each mapped onto Dose. Night is the same system with the light turned off. */
+/* ── Tokens ── the project's own names, each mapped onto Pankki. Night is the same bank with the lights low. */
 :root {
   color-scheme: light dark;
-  --font-display: var(--font-schibsted), ui-sans-serif, system-ui, sans-serif;
-  --font-body: var(--font-instrument), ui-sans-serif, system-ui, sans-serif;
-  --font-outlier: var(--font-dm-mono), ui-monospace, monospace;
+  --font-display: var(--font-serif), ui-serif, Georgia, serif;
+  --font-body: var(--font-franklin), ui-sans-serif, system-ui, sans-serif;
+  --font-outlier: var(--font-body);
   --font: var(--font-body);
 
-  --surface: oklch(99.4% 0.004 88);
+  --surface: oklch(99.6% 0.002 90);
   --bg: var(--color-paper);
   --card: var(--surface);
   --text: var(--color-ink);
   --text-2: var(--color-ink-2);
   --muted: var(--color-muted);
   --line: var(--color-rule);
-  /* Two quiet greys for chrome and trays, so the mint can keep meaning "done". */
-  --tint: oklch(95.6% 0.008 120);
-  --tray: oklch(93.4% 0.011 130);
+  /* Two quiet ivory greys for chrome and trays, so the green can keep meaning "done". */
+  --tint: var(--color-paper-2);
+  --tray: var(--color-paper-3);
   --raised: var(--card);
   --brand: var(--color-accent);
   --brand-deep: var(--color-accent-deep);
   --brand-ink: var(--color-accent-ink);
   --brand-soft: var(--color-accent-soft);
-  /* Dose's one green does every signal; what is missing or late is grey, never amber. Red is kept for errors and for deleting. */
+  /* One bank green does every signal; what is missing or late is a quiet neutral. Red is kept for errors and for deleting. */
   --good: var(--color-accent-deep);
   --good-soft: var(--color-accent-soft);
   --warn: var(--color-ink-2);
   --warn-soft: var(--color-paper-3);
   --bad: var(--color-error);
   --bad-soft: oklch(95% 0.03 27);
-  --scrim: oklch(21% 0.025 170 / 0.42);
+  --scrim: oklch(21% 0.02 165 / 0.42);
   --knob: oklch(100% 0 0);
-  --knob-shadow: 0 1px 2px oklch(21% 0.025 170 / 0.3);
-  --seg-shadow: 0 1px 2px oklch(30% 0.03 165 / 0.14), inset 0 1px 0 var(--glint);
+  --knob-shadow: 0 1px 2px oklch(21% 0.02 165 / 0.3);
+  --seg-shadow: 0 1px 2px oklch(21% 0.02 165 / 0.12);
   --shadow: var(--shadow-lift);
-  --shadow-sheet: 0 24px 64px -20px oklch(21% 0.025 170 / 0.45);
-  --shadow-edge: 0 1px 2px oklch(30% 0.03 165 / 0.1);
-  --shadow-inset: inset 0 1px 2px oklch(21% 0.025 170 / 0.08);
-  --shadow-inset-deep: inset 0 1px 3px oklch(21% 0.025 170 / 0.14);
+  --shadow-sheet: 0 24px 64px -20px oklch(21% 0.02 165 / 0.4);
+  --shadow-edge: none;
+  --shadow-inset: inset 0 1px 2px oklch(21% 0.02 165 / 0.06);
+  --shadow-inset-deep: inset 0 1px 2px oklch(21% 0.02 165 / 0.1);
   --radius: var(--radius-card);
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme='light']) {
-    --color-paper: oklch(17% 0.012 170); --color-paper-2: oklch(21% 0.014 168); --color-paper-3: oklch(24.5% 0.018 166);
-    --color-ink: oklch(95.5% 0.01 160); --color-ink-2: oklch(85% 0.012 160); --color-muted: oklch(70% 0.016 160);
-    --color-rule: oklch(31% 0.016 165);
-    --color-accent: oklch(76% 0.13 160); --color-accent-deep: oklch(78% 0.12 158); --color-accent-soft: oklch(32% 0.06 160); --color-accent-ink: oklch(18% 0.03 165);
-    --color-focus: oklch(80% 0.12 160); --color-error: oklch(74% 0.14 27); --glint: oklch(100% 0 0 / 0.06);
-    --surface: oklch(20% 0.013 170); --bad-soft: oklch(28% 0.05 27); --knob: oklch(96% 0.01 160); --tint: oklch(21% 0.012 168); --tray: oklch(24% 0.014 166); --raised: oklch(31% 0.016 166);
-    --scrim: oklch(8% 0.01 170 / 0.6);
-    --shadow-card: 0 1px 2px oklch(5% 0.01 170 / 0.5), 0 24px 48px -24px oklch(5% 0.01 170 / 0.6);
-    --shadow-lift: 0 1px 1px oklch(5% 0.01 170 / 0.5), 0 18px 36px -18px oklch(5% 0.01 170 / 0.7);
-    --shadow-sheet: 0 24px 64px -20px oklch(3% 0.01 170 / 0.8);
+    --color-paper: oklch(18% 0.012 165); --color-paper-2: oklch(20.5% 0.013 165); --color-paper-3: oklch(24% 0.014 165);
+    --color-ink: oklch(95% 0.008 90); --color-ink-2: oklch(85% 0.01 90); --color-muted: oklch(71% 0.012 120);
+    --color-rule: oklch(31% 0.014 165);
+    --color-accent: oklch(75% 0.09 160); --color-accent-deep: oklch(80% 0.08 160); --color-accent-soft: oklch(31% 0.045 165); --color-accent-ink: oklch(18% 0.02 165);
+    --color-focus: oklch(80% 0.09 160); --color-error: oklch(74% 0.14 27);
+    --surface: oklch(21% 0.013 165); --bad-soft: oklch(28% 0.05 27); --knob: oklch(95% 0.008 90); --tint: oklch(21.5% 0.012 165); --tray: oklch(24.5% 0.014 165); --raised: oklch(30% 0.015 165);
+    --scrim: oklch(8% 0.01 165 / 0.6);
+    --shadow-lift: 0 1px 1px oklch(5% 0.01 165 / 0.5), 0 18px 36px -18px oklch(5% 0.01 165 / 0.7);
+    --shadow-sheet: 0 24px 64px -20px oklch(3% 0.01 165 / 0.8);
   }
 }
 :root[data-theme='light'] { color-scheme: light; }
 :root[data-theme='dark'] {
   color-scheme: dark;
-  --color-paper: oklch(17% 0.012 170); --color-paper-2: oklch(21% 0.014 168); --color-paper-3: oklch(24.5% 0.018 166);
-  --color-ink: oklch(95.5% 0.01 160); --color-ink-2: oklch(85% 0.012 160); --color-muted: oklch(70% 0.016 160);
-  --color-rule: oklch(31% 0.016 165);
-  --color-accent: oklch(76% 0.13 160); --color-accent-deep: oklch(78% 0.12 158); --color-accent-soft: oklch(32% 0.06 160); --color-accent-ink: oklch(18% 0.03 165);
-  --color-focus: oklch(80% 0.12 160); --color-error: oklch(74% 0.14 27); --glint: oklch(100% 0 0 / 0.06);
-  --surface: oklch(20% 0.013 170); --bad-soft: oklch(28% 0.05 27); --knob: oklch(96% 0.01 160); --tint: oklch(21% 0.012 168); --tray: oklch(24% 0.014 166); --raised: oklch(31% 0.016 166);
-  --scrim: oklch(8% 0.01 170 / 0.6);
-  --shadow-card: 0 1px 2px oklch(5% 0.01 170 / 0.5), 0 24px 48px -24px oklch(5% 0.01 170 / 0.6);
-  --shadow-lift: 0 1px 1px oklch(5% 0.01 170 / 0.5), 0 18px 36px -18px oklch(5% 0.01 170 / 0.7);
-  --shadow-sheet: 0 24px 64px -20px oklch(3% 0.01 170 / 0.8);
+  --color-paper: oklch(18% 0.012 165); --color-paper-2: oklch(20.5% 0.013 165); --color-paper-3: oklch(24% 0.014 165);
+  --color-ink: oklch(95% 0.008 90); --color-ink-2: oklch(85% 0.01 90); --color-muted: oklch(71% 0.012 120);
+  --color-rule: oklch(31% 0.014 165);
+  --color-accent: oklch(75% 0.09 160); --color-accent-deep: oklch(80% 0.08 160); --color-accent-soft: oklch(31% 0.045 165); --color-accent-ink: oklch(18% 0.02 165);
+  --color-focus: oklch(80% 0.09 160); --color-error: oklch(74% 0.14 27);
+  --surface: oklch(21% 0.013 165); --bad-soft: oklch(28% 0.05 27); --knob: oklch(95% 0.008 90); --tint: oklch(21.5% 0.012 165); --tray: oklch(24.5% 0.014 165); --raised: oklch(30% 0.015 165);
+  --scrim: oklch(8% 0.01 165 / 0.6);
+  --shadow-lift: 0 1px 1px oklch(5% 0.01 165 / 0.5), 0 18px 36px -18px oklch(5% 0.01 165 / 0.7);
+  --shadow-sheet: 0 24px 64px -20px oklch(3% 0.01 165 / 0.8);
 }
 
 /* ── Base ── */
@@ -175,16 +174,16 @@ svg.i { width: 20px; height: 20px; flex: none; }
 .nav button[aria-current='page'] { background: var(--raised); color: var(--text); box-shadow: var(--seg-shadow), inset 0 0 0 1px var(--line); }
 .nav button[aria-current='page'] svg.i { color: var(--brand); }
 
-/* ── Buttons & fields ── moulded: a rim below that the button sinks into when pressed ── */
-.btn { display: inline-flex; align-items: center; justify-content: center; gap: var(--space-xs); min-height: 48px; border: 0; background: var(--card); color: var(--text); border-radius: var(--radius-input); padding: var(--space-sm) var(--space-lg); font-weight: 500; white-space: nowrap; box-shadow: inset 0 1px 0 var(--glint), 0 0 0 1px var(--line), 0 2px 0 var(--line); }
-.btn.primary { background: var(--brand); color: var(--brand-ink); box-shadow: inset 0 1px 0 color-mix(in oklab, var(--glint) 40%, transparent), 0 0 0 1px var(--brand-deep), 0 2px 0 var(--brand-deep); }
+/* ── Buttons & fields ── flat and exact: a hairline edge, a darker fill when pressed ── */
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: var(--space-xs); min-height: 48px; border: 0; background: var(--card); color: var(--text); border-radius: var(--radius-input); padding: var(--space-sm) var(--space-lg); font-weight: 500; white-space: nowrap; box-shadow: 0 0 0 1px var(--line); }
+.btn.primary { background: var(--brand); color: var(--brand-ink); box-shadow: none; }
 .btn.quiet { background: var(--tint); color: var(--text); box-shadow: 0 0 0 1px var(--line); }
 .btn.danger { color: var(--bad); }
 .btn.block { width: 100%; white-space: normal; }
 .btn.small { min-height: 40px; padding: var(--space-xs) var(--space-md); font-size: var(--text-sm); }
 .btn:disabled, .btn.primary:disabled { background: var(--tint); color: var(--muted); box-shadow: 0 0 0 1px var(--line); }
 .fab { position: fixed; right: max(var(--space-md), calc(50% - 264px)); bottom: calc(var(--space-lg) + env(safe-area-inset-bottom)); z-index: 9; width: 56px; height: 56px; min-height: 0; padding: 0; border-radius: var(--radius-card); }
-.btn.fab { box-shadow: inset 0 1px 0 color-mix(in oklab, var(--glint) 40%, transparent), 0 0 0 1px var(--brand-deep), 0 2px 0 var(--brand-deep), var(--shadow-lift); }
+.btn.fab { box-shadow: var(--shadow-lift); }
 .fab svg.i { width: 26px; height: 26px; }
 
 input, select, textarea { background: var(--card); border: 1px solid var(--muted); border-radius: var(--radius-input); min-height: 48px; padding: var(--space-sm) var(--space-sm); width: 100%; min-width: 0; color: var(--text); }
@@ -265,7 +264,7 @@ input[type="date"], input[type="month"] { display: block; appearance: none; -web
 @keyframes fade { from { opacity: 0; } }
 @keyframes rise { from { transform: translateY(24px); opacity: 0; } }
 
-/* ── The month tray ── the year as twelve compartments: mint where the rent is in, grey and open where it is not ── */
+/* ── The month tray ── the year as twelve compartments: green where the rent is in, grey and open where it is not ── */
 .months { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--space-xs); padding: var(--space-xs); background: var(--tray); border-radius: var(--radius-card); box-shadow: var(--shadow-inset-deep); }
 .month { display: flex; flex-direction: column; justify-content: space-between; gap: var(--space-xs); min-height: 80px; padding: var(--space-sm); text-align: left; color: var(--text); background: var(--card); border: 1px solid var(--line); border-radius: var(--radius-input); box-shadow: inset 0 1px 0 var(--glint), 0 1px 0 var(--line); }
 .month .m { font-weight: 500; font-size: var(--text-sm); }
@@ -354,9 +353,8 @@ a.btn.primary { color: var(--brand-ink); }
   .link:hover { text-decoration-thickness: 2px; }
   .nav button:not([aria-current]):hover { background: color-mix(in oklab, var(--card) 60%, var(--tint)); }
 }
-.btn:not(:disabled):active, .choice:active, .month:active { transform: translateY(2px); }
-.btn:not(:disabled):active { box-shadow: inset 0 1px 0 var(--glint), 0 0 0 1px var(--line); }
-.btn.primary:not(:disabled):active { box-shadow: 0 0 0 1px var(--brand-deep); }
+.btn:not(:disabled):active, .choice:active, .month:not(.future):active { background: var(--tray); }
+.btn.primary:not(:disabled):active { background: var(--brand-deep); }
 .iconbtn:active, .seg button:active, .nav button:active, .row-btn:active { background: var(--tray); }
 .link:active { color: var(--brand-deep); }
 

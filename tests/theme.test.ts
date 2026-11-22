@@ -98,7 +98,7 @@ function px(value: string): number {
   return Number(m[1]) * (m[2] === 'rem' ? 16 : 1);
 }
 
-describe('the Dose theme', () => {
+describe('the Pankki theme', () => {
   it('draws the same dark palette when the device is dark as when Dark is chosen', () => {
     const tokens = (block: string) => block.match(/--[\w-]+:[^;]+;/g)?.map((t) => t.replace(/\s+/g, ' ')) ?? [];
     const forced = tokens(rule(":root[data-theme='dark']"));
@@ -112,7 +112,7 @@ describe('the Dose theme', () => {
     expect(luminance(token('bg', 'dark'))).toBeLessThan(0.05);
   });
 
-  it('is Dose: warm paper, and one green for every signal', () => {
+  it('is Pankki: ivory paper, and one bank green for every signal', () => {
     const [r, , b] = rgb(token('bg', 'light'));
     expect(r, 'light paper is warm').toBeGreaterThan(b);
     for (const scheme of ['light', 'dark'] as const) {
@@ -123,18 +123,18 @@ describe('the Dose theme', () => {
     }
   });
 
-  it('keeps what is missing or late grey, never amber or red', () => {
+  it('keeps what is missing or late a quiet neutral, never amber or red', () => {
     for (const scheme of ['light', 'dark'] as const) {
       for (const name of ['warn', 'warn-soft']) {
-        // Amber and red are both colours where red leads green; Dose's greys lean the other way, to green.
-        const [r, g] = rgb(token(name, scheme));
-        expect(r, `${name} ${scheme} has no red or amber cast`).toBeLessThanOrEqual(g);
+        // A neutral's three channels sit close together; amber or red pulls them far apart.
+        const [r, g, b] = rgb(token(name, scheme));
+        expect(Math.max(r, g, b) - Math.min(r, g, b), `${name} ${scheme} is a neutral`).toBeLessThan(24);
       }
     }
   });
 
   it('gives rounded surfaces and one soft shadow for what floats', () => {
-    expect(token('radius', 'light')).toBe('14px');
+    expect(token('radius', 'light')).toBe('8px');
     expect(token('shadow', 'light')).not.toBe('none');
   });
 

@@ -11,9 +11,9 @@ const background = (page: import('@playwright/test').Page) =>
     return `rgb(${r}, ${g}, ${b})`;
   });
 
-/** Dose's day paper and night ground: the same colours the layout gives the browser's own chrome. */
-const LIGHT = 'rgb(250, 247, 239)';
-const DARK = 'rgb(10, 17, 15)';
+/** Pankki's ivory paper and night ground: the same colours the layout gives the browser's own chrome. */
+const LIGHT = 'rgb(249, 248, 243)';
+const DARK = 'rgb(13, 19, 16)';
 
 test.describe('theme', () => {
   test.describe('with a dark device', () => {
