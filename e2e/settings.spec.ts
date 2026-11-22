@@ -509,3 +509,15 @@ test.describe('changes that race other people', () => {
     expect(price!.y).toBe(date!.y);
   });
 });
+
+test.describe('the owners list', () => {
+  test('draws no rule under its last owner, so nothing hangs below the card', async ({ page, api }) => {
+    coOwned(api);
+    await page.goto('/');
+    await openTopic(page, 'Owners');
+    const rows = page.locator('li.owner');
+    await expect(rows).toHaveCount(3);
+    expect(await rows.first().evaluate((el) => getComputedStyle(el).borderBottomWidth), 'rows between owners keep their rule').not.toBe('0px');
+    expect(await rows.last().evaluate((el) => getComputedStyle(el).borderBottomWidth)).toBe('0px');
+  });
+});
