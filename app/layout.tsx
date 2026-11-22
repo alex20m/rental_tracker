@@ -1,14 +1,13 @@
 import type { Metadata, Viewport } from 'next';
 import type { ReactNode } from 'react';
-import { Libre_Franklin, Source_Serif_4 } from 'next/font/google';
+import { Plus_Jakarta_Sans } from 'next/font/google';
 import { I18nProvider } from '@/components/I18nProvider';
 import { INSTALL_PROMPT_SCRIPT } from '@/lib/pwa';
 import { THEME_INIT_SCRIPT } from '@/lib/ui/theme';
 import './globals.css';
 
-// Pankki's two faces: Source Serif 4 for heads and figures, Libre Franklin for everything read.
-const serif = Source_Serif_4({ subsets: ['latin'], weight: ['600', '700'], variable: '--font-serif', display: 'swap' });
-const franklin = Libre_Franklin({ subsets: ['latin'], weight: ['400', '500', '600', '700'], variable: '--font-franklin', display: 'swap' });
+// Kuusi's one face: Plus Jakarta Sans, round and modern, for heads, figures and text alike.
+const jakarta = Plus_Jakarta_Sans({ subsets: ['latin'], weight: ['400', '500', '600', '700'], variable: '--font-jakarta', display: 'swap' });
 
 export const metadata: Metadata = {
   title: 'Rental Tracker',
@@ -31,14 +30,14 @@ export const viewport: Viewport = {
   initialScale: 1,
   viewportFit: 'cover',
   themeColor: [
-    { media: '(prefers-color-scheme: light)', color: '#f9f8f3' },
-    { media: '(prefers-color-scheme: dark)', color: '#0d1310' },
+    { media: '(prefers-color-scheme: light)', color: '#f9fbfa' },
+    { media: '(prefers-color-scheme: dark)', color: '#09100d' },
   ],
 };
 
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
-    <html lang="en" className={`${serif.variable} ${franklin.variable}`} suppressHydrationWarning>
+    <html lang="en" className={jakarta.variable} suppressHydrationWarning>
       <head>
         {/* Marks a page whose scripts run: only then is the phone drawer hidden until it is opened. */}
         <script dangerouslySetInnerHTML={{ __html: "document.documentElement.classList.add('js')" }} />

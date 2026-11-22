@@ -11,9 +11,9 @@ const background = (page: import('@playwright/test').Page) =>
     return `rgb(${r}, ${g}, ${b})`;
   });
 
-/** Pankki's ivory paper and night ground: the same colours the layout gives the browser's own chrome. */
-const LIGHT = 'rgb(249, 248, 243)';
-const DARK = 'rgb(13, 19, 16)';
+/** Kuusi's paper and night ground: the same colours the layout gives the browser's own chrome. */
+const LIGHT = 'rgb(249, 251, 250)';
+const DARK = 'rgb(9, 16, 13)';
 
 test.describe('theme', () => {
   test.describe('with a dark device', () => {

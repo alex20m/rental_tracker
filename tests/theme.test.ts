@@ -98,7 +98,7 @@ function px(value: string): number {
   return Number(m[1]) * (m[2] === 'rem' ? 16 : 1);
 }
 
-describe('the Pankki theme', () => {
+describe('the Kuusi theme', () => {
   it('draws the same dark palette when the device is dark as when Dark is chosen', () => {
     const tokens = (block: string) => block.match(/--[\w-]+:[^;]+;/g)?.map((t) => t.replace(/\s+/g, ' ')) ?? [];
     const forced = tokens(rule(":root[data-theme='dark']"));
@@ -112,9 +112,10 @@ describe('the Pankki theme', () => {
     expect(luminance(token('bg', 'dark'))).toBeLessThan(0.05);
   });
 
-  it('is Pankki: ivory paper, and one bank green for every signal', () => {
-    const [r, , b] = rgb(token('bg', 'light'));
-    expect(r, 'light paper is warm').toBeGreaterThan(b);
+  it('is Kuusi: near-white paper, and one dark green for every signal', () => {
+    const [r, g, b] = rgb(token('bg', 'light'));
+    expect(Math.min(r, g, b), 'light paper is near white').toBeGreaterThan(240);
+    expect(g, 'with a breath of green').toBeGreaterThanOrEqual(Math.max(r, b));
     for (const scheme of ['light', 'dark'] as const) {
       for (const name of ['brand', 'good']) {
         const [rr, gg, bb] = rgb(token(name, scheme));
@@ -134,7 +135,7 @@ describe('the Pankki theme', () => {
   });
 
   it('gives rounded surfaces and one soft shadow for what floats', () => {
-    expect(token('radius', 'light')).toBe('8px');
+    expect(token('radius', 'light')).toBe('20px');
     expect(token('shadow', 'light')).not.toBe('none');
   });
 
