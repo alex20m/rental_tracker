@@ -74,7 +74,7 @@ export default function Costs({ apt, year, onChanged }: Props) {
                       <div className="t">{c.description || t(`cat.${c.category}.label`)}</div>
                       <div className="s">
                         {shortDate(c.date, lang)}
-                        {c.description && ` · ${t(`cat.${c.category}.label`)}`} <HowDeducted apt={apt} cost={c} />
+                        {c.description && `, ${t(`cat.${c.category}.label`)}`} <HowDeducted apt={apt} cost={c} />
                       </div>
                     </div>
                     <div className={'strong num ' + (how === 'none' ? 'dim' : '')}>{eur(c.amount)}</div>
@@ -293,7 +293,7 @@ function CostForm({
       />
 
       <Label
-        id="cost-category"
+        htmlFor="cost-category"
         info={
           <Info about={t('costs.categoryAbout')}>
             {t('costs.categoryInfo', { fi: cat.fi })} {t(`cat.${category}.hint`, params)}
@@ -302,20 +302,13 @@ function CostForm({
       >
         {t('costs.category')}
       </Label>
-      <div className="chips" role="radiogroup" aria-labelledby="cost-category">
+      <select id="cost-category" value={category} onChange={(e) => setCategory(e.target.value as CostCategory)}>
         {COST_CATEGORIES.map((k) => (
-          <button
-            key={k}
-            type="button"
-            role="radio"
-            aria-checked={category === k}
-            className="choice"
-            onClick={() => setCategory(k)}
-          >
+          <option key={k} value={k}>
             {t(`cat.${k}.label`)}
-          </button>
+          </option>
         ))}
-      </div>
+      </select>
       {how === 'none' && (
         <div style={{ marginTop: 8 }}>
           <span className="chip warn">{t('common.notDeductibleCap')}</span>

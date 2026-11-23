@@ -24,7 +24,7 @@ test.describe('the tax page', () => {
     await page.goto('/');
     await section(page, 'Tax');
 
-    await expect(page.getByText(`Rental loss · ${YEAR}`)).toBeVisible();
+    await expect(page.getByText(`Rental loss ${YEAR}`)).toBeVisible();
     const kv = (label: string) => page.locator('.kv').filter({ hasText: label });
     await expect(kv('Rent received')).toContainText('1 440,00 €');
     await expect(kv('Repairs & upkeep')).toContainText('72,00 €');
@@ -51,11 +51,11 @@ test.describe('the tax page', () => {
 
     const list = page.locator('.todo');
     await expect(list.locator('.done')).toHaveText(['Every month logged']);
-    await list.getByRole('button', { name: '1 month unpaid — not counted as income' }).click();
+    await list.getByRole('button', { name: '1 month unpaid: not counted as income' }).click();
     await expect(page.getByRole('heading', { name: 'Months' })).toBeVisible();
 
     await section(page, 'Tax');
-    await expect(page.getByText('Taxable rental income · ' + YEAR)).toBeVisible();
+    await expect(page.getByText('Taxable rental income ' + YEAR)).toBeVisible();
     await expect(page.getByText(`No costs logged for ${YEAR}.`)).toBeVisible();
     await openInfo(page, 'About rent months');
     await expect(page.getByRole('note')).toContainText(`3 paid, 1 vacant and 1 unpaid months logged for ${YEAR}`);
@@ -246,11 +246,11 @@ test.describe('the tax page', () => {
     await page.goto('/');
     await section(page, 'Tax');
 
-    await expect(page.getByText(`Rental loss · ${YEAR}`)).toBeVisible();
+    await expect(page.getByText(`Rental loss ${YEAR}`)).toBeVisible();
     // 800 − 3 000 = −2 200 €, and 30 % of that.
     await expect(page.locator('.hero')).toContainText('Deficit credit, up to 660,00 €');
     await openInfo(page, 'About the deficit credit');
-    await expect(page.getByRole('note')).toContainText('at most €1 400 — €1 800 with one minor child and €2 200 with two or more');
+    await expect(page.getByRole('note')).toContainText('at most €1 400, €1 800 with one minor child and €2 200 with two or more');
     await expect(page.getByRole('note')).toContainText('loss you can set against capital income for 10 years');
     await page.keyboard.press('Escape');
 
@@ -264,7 +264,7 @@ test.describe('the tax page', () => {
     await page.goto('/');
     await section(page, 'Tax');
 
-    await expect(page.getByText(`Taxable rental income · ${YEAR}`)).toBeVisible();
+    await expect(page.getByText(`Taxable rental income ${YEAR}`)).toBeVisible();
     await expect(page.locator('.hero')).not.toContainText('Deficit credit');
   });
 
@@ -287,7 +287,7 @@ test.describe('the tax page', () => {
     await page.goto('/');
     await section(page, 'Tax');
 
-    await expect(page.getByText(`Taxable rental income · ${YEAR}`)).toBeVisible();
+    await expect(page.getByText(`Taxable rental income ${YEAR}`)).toBeVisible();
     await expect(page.locator('.hero .big')).toHaveText('0,00 €');
     // 2 400 € of rent against 3 000 € of costs.
     await expect(page.locator('.kv').filter({ hasText: 'Limited to the rent received' })).toContainText('600,00 €');

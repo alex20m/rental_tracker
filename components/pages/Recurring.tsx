@@ -37,7 +37,7 @@ export default function Recurring({ apt, onChanged }: Props) {
                 <div className="main">
                   <div className="t">{r.description || (r.category ? t(`cat.${r.category}.label`) : t('recurring.rentTitle'))}</div>
                   <div className="s">
-                    {r.category && r.description && `${t(`cat.${r.category}.label`)} · `}
+                    {r.category && r.description && `${t(`cat.${r.category}.label`)}, `}
                     {t('recurring.next', { day: r.dayOfMonth, month: monthTitle(r.nextMonth, lang) })}
                   </div>
                 </div>
@@ -144,21 +144,14 @@ function RecurringForm({
 
       {kind === 'cost' && (
         <>
-          <Label id="recurring-category">{t('costs.category')}</Label>
-          <div className="chips" role="radiogroup" aria-labelledby="recurring-category">
+          <Label htmlFor="recurring-category">{t('costs.category')}</Label>
+          <select id="recurring-category" value={category} onChange={(e) => setCategory(e.target.value as CostCategory)}>
             {RECURRING_CATEGORIES.map((k) => (
-              <button
-                key={k}
-                type="button"
-                role="radio"
-                aria-checked={category === k}
-                className="choice"
-                onClick={() => setCategory(k)}
-              >
+              <option key={k} value={k}>
                 {t(`cat.${k}.label`)}
-              </button>
+              </option>
             ))}
-          </div>
+          </select>
         </>
       )}
 

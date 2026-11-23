@@ -307,7 +307,7 @@ describe('the rent log', () => {
 });
 
 describe('costs', () => {
-  it('adds a cost by typing an amount and tapping a category', async () => {
+  it('adds a cost by typing an amount and picking a category', async () => {
     serve([view('a1', 'Alpha')]);
     m.createCost.mockResolvedValue({ id: 'c1' });
     render(<RentalApp />);
@@ -316,7 +316,10 @@ describe('costs', () => {
 
     const sheet = screen.getByRole('dialog', { name: 'Add cost' });
     await user().type(within(sheet).getByLabelText('Amount (€)'), '45.5');
-    await user().click(within(sheet).getByRole('radio', { name: 'Repairs & upkeep' }));
+    await user().selectOptions(
+      within(sheet).getByRole('combobox', { name: 'Category' }),
+      within(sheet).getByRole('option', { name: 'Repairs & upkeep' }),
+    );
     await user().click(within(sheet).getByRole('button', { name: 'Save' }));
 
     expect(m.createCost).toHaveBeenCalledWith('a1', {
@@ -345,7 +348,7 @@ describe('costs', () => {
     const sheet = screen.getByRole('dialog', { name: 'Add cost' });
 
     expect(within(sheet).queryByRole('button', { name: 'About not deductible' })).toBeNull();
-    await user().click(within(sheet).getByRole('radio', { name: 'Financing charge' }));
+    await user().selectOptions(within(sheet).getByRole('combobox', { name: 'Category' }), 'Financing charge');
     await user().click(within(sheet).getByRole('button', { name: 'About not deductible' }));
     expect(screen.getByRole('note').textContent).toMatch(/acquisition cost/);
   });
@@ -572,7 +575,7 @@ describe('the navigation drawer', () => {
 
     expect(isOpen()).toBe(false);
     expect(screen.getByRole('button', { name: 'Tax' }).getAttribute('aria-current')).toBe('page');
-    expect(screen.getByText(/Taxable rental income · 2026/)).toBeTruthy();
+    expect(screen.getByText(/Taxable rental income 2026/)).toBeTruthy();
   });
 
   it('keeps Tab inside the open drawer, wrapping at both ends', async () => {
@@ -671,9 +674,9 @@ describe('settings topics', () => {
     render(<RentalApp />);
     await user().click(await screen.findByRole('button', { name: 'Settings' }));
 
-    expect(screen.getByRole('button', { name: /^Owners.*2 owners · you own 60 %/ })).toBeTruthy();
+    expect(screen.getByRole('button', { name: /^Owners.*2 owners, you own 60 %/ })).toBeTruthy();
     expect(screen.getByRole('button', { name: /^Property details.*Alpha street 1/ })).toBeTruthy();
-    expect(screen.getByRole('button', { name: /^Advanced.*Property of my own · Building depreciation 2.5 %/ })).toBeTruthy();
+    expect(screen.getByRole('button', { name: /^Advanced.*Property of my own, Building depreciation 2.5 %/ })).toBeTruthy();
   });
 
   it('keeps the uncommon choices off the details page, behind Advanced', async () => {
@@ -741,9 +744,9 @@ describe('tax year', () => {
     expect(screen.queryByTestId('history-total')).toBeNull();
     const year = screen.getByLabelText('Tax year') as HTMLSelectElement;
     expect(year.value).toBe('2026');
-    expect(screen.getByText(/Taxable rental income · 2026/)).toBeTruthy();
+    expect(screen.getByText(/Taxable rental income 2026/)).toBeTruthy();
 
     await user().selectOptions(year, '2024');
-    expect(screen.getByText(/Taxable rental income · 2024/)).toBeTruthy();
+    expect(screen.getByText(/Taxable rental income 2024/)).toBeTruthy();
   });
 });

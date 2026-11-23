@@ -277,7 +277,7 @@ export default function Sale({ apt, onChanged }: Props) {
                     <div className="t">{c.description || t(`sale.kind.${c.kind}`)}</div>
                     <div className="s">
                       {shortDate(c.date, lang)}
-                      {c.description && ` · ${t(`sale.kind.${c.kind}`)}`}
+                      {c.description && `, ${t(`sale.kind.${c.kind}`)}`}
                     </div>
                   </div>
                   <div className="strong num">{eur(c.amount)}</div>

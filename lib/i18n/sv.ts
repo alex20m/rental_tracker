@@ -54,7 +54,7 @@ export const sv: Record<MessageKey, string> = {
 
   // — first run —
   'welcome.title': 'Lägg till din första lägenhet',
-  'welcome.lead': 'Bara ett namn för att börja – du kan fylla i resten senare.',
+  'welcome.lead': 'Bara ett namn för att börja. Du kan fylla i resten senare.',
   'add.name': 'Lägenhetens namn',
   'add.placeholder': 't.ex. Kauppakatu 12 B 7',
   'add.submit': 'Lägg till lägenhet',
@@ -75,19 +75,19 @@ export const sv: Record<MessageKey, string> = {
 
   // — co-owner scope toggle —
   'scope.label': 'Siffror för',
-  'scope.mine': 'Din andel · {pct}',
+  'scope.mine': 'Din andel ({pct})',
   'scope.whole': 'Hela lägenheten',
 
   // — home & portfolio —
   'home.rentalLoss': 'Uthyrningsförlust',
   'home.netIncome': 'Nettoinkomst från uthyrning',
   'home.netAbout': 'nettoinkomst',
-  'home.netInfo': 'Mottagen hyra minus avdragsgilla kostnader och avskrivning – beloppet du beskattas för.',
+  'home.netInfo': 'Mottagen hyra minus avdragsgilla kostnader och avskrivning: beloppet du beskattas för.',
   'home.deductions': 'Avdrag',
   'home.estTax': 'Beräknad skatt',
   'home.estTaxAbout': 'skatteberäkningen',
   'home.estTaxInfo':
-    '{capLow} % upp till {capLimit} € kapitalinkomst, {capHigh} % över{onYourShare}. En grov uppskattning – andra kapitalinkomster ingår inte.',
+    '{capLow} % upp till {capLimit} € kapitalinkomst, {capHigh} % över{onYourShare}. En grov uppskattning. Andra kapitalinkomster ingår inte.',
   'home.onYourShare': ', på din andel',
   'home.todo': 'Att göra',
   'home.moreTodo': '{n} till att kontrollera',
@@ -113,22 +113,22 @@ export const sv: Record<MessageKey, string> = {
   'home.logFirstRent': 'Logga den första hyran',
   'home.prepare': 'Förbered deklarationen {year}',
 
-  'portfolio.net': 'Din nettoinkomst, alla lägenheter · {year}',
+  'portfolio.net': 'Din nettoinkomst från alla lägenheter år {year}',
   'portfolio.netInfo':
     'Din andel av mottagen hyra minus din andel av avdragsgilla kostnader och avskrivning, sammanlagt för alla dina lägenheter.',
   'portfolio.estTaxInfo':
-    '{capLow} % upp till {capLimit} € kapitalinkomst, {capHigh} % över – beräknad på alla dina lägenheter tillsammans, eftersom skattesatsen beror på totalen. Andra kapitalinkomster ingår inte.',
+    '{capLow} % upp till {capLimit} € kapitalinkomst, {capHigh} % över. Beräknad på alla dina lägenheter tillsammans, eftersom skattesatsen beror på totalen. Andra kapitalinkomster ingår inte.',
   'portfolio.apartments': 'Lägenheter',
   'portfolio.youOwn': 'Du äger {pct}',
-  'portfolio.owners': ' · {n} ägare',
+  'portfolio.owners': ', {n} ägare',
   'portfolio.netTitle': 'Din nettoinkomst {year}',
 
   // — rent log —
-  'rent.received': 'Mottagen hyra · {year}',
+  'rent.received': 'Mottagen hyra år {year}',
   'rent.timingAbout': 'hyrans tidpunkt',
   'rent.timingInfo':
     'Hyra beskattas det år du får den, så mottagningsdatumet avgör vilket år den räknas.',
-  'rent.coOwned': ' Logga hyran för hela lägenheten – varje ägares andel räknas ut åt dig.',
+  'rent.coOwned': ' Logga hyran för hela lägenheten. Varje ägares andel räknas ut åt dig.',
   'rent.months': 'Månader',
   'rent.add': 'Lägg till',
   'rent.paid': 'Betald',
@@ -143,12 +143,12 @@ export const sv: Record<MessageKey, string> = {
   'rent.addNote': '+ Lägg till en anteckning',
 
   // — costs —
-  'costs.deductible': 'Avdragsgilla kostnader · {year}',
+  'costs.deductible': 'Avdragsgilla kostnader år {year}',
   'costs.about': 'kostnader',
   'costs.entries.one': '{n} post i år.',
   'costs.entries.other': '{n} poster i år.',
   'costs.financingInfo': ' Grundförbättringar och dyrare möbler räknas med årets andel; finansieringsvederlag räknas bara om bostadsbolaget bokför det som intäkt.',
-  'costs.coOwned': ' Logga kostnader för hela lägenheten – varje ägares andel räknas ut åt dig.',
+  'costs.coOwned': ' Logga kostnader för hela lägenheten. Varje ägares andel räknas ut åt dig.',
   'costs.none': 'Inga kostnader loggade för {year}. Tryck på + för att lägga till den första.',
   'costs.add': 'Lägg till kostnad',
   'costs.edit': 'Redigera kostnad',
@@ -167,10 +167,10 @@ export const sv: Record<MessageKey, string> = {
   'costs.yearsAbout': 'fördelningen',
   'costs.yearsInfo':
     'En grundförbättring av en bostadsaktie dras av i lika stora delar från betalningsåret, under lika många år som den håller: {improvementMin}–{improvementMax} år.',
-  'costs.shortLived': 'Håller under {minLife} år – dra av direkt',
+  'costs.shortLived': 'Håller under {minLife} år: dra av direkt',
   'costs.overYears': 'under {n} år',
   'costs.furnitureRate': '{movableRate} % per år',
-  'costs.descriptionPlaceholder': 'Valfritt – t.ex. byte av köksblandare',
+  'costs.descriptionPlaceholder': 'Valfritt, t.ex. byte av köksblandare',
   'costs.date': 'Datum',
   'costs.processing': 'Bearbetar…',
   'costs.replacePhoto': 'Byt bild',
@@ -184,7 +184,7 @@ export const sv: Record<MessageKey, string> = {
   'costs.kilometres': 'Körda kilometer (valfritt)',
   'costs.kilometresAbout': 'kilometersatsen',
   'costs.kilometresInfo':
-    'Egen bil: {mileage} € per kilometer för {year} – Skatteförvaltningens sats för resor som hör till uthyrningen, inte den högre skattefria ersättning som en arbetsgivare får betala.',
+    'Egen bil: {mileage} € per kilometer för {year}, Skatteförvaltningens sats för resor som hör till uthyrningen, inte den högre skattefria ersättning som en arbetsgivare får betala.',
   'costs.kilometresFilled': '{km} km × {mileage} € = {amount}',
 
   'cat.maintenance_charge.label': 'Skötselvederlag',
@@ -193,7 +193,7 @@ export const sv: Record<MessageKey, string> = {
   'cat.water_charge.hint': 'Vattenavgifter som betalas till bostadsbolaget, dras av det år de betalas.',
   'cat.financing_charge.label': 'Finansieringsvederlag',
   'cat.financing_charge.hint':
-    'Avdragsgillt bara om bostadsbolaget bokför det som intäkt – ange det i lägenhetens inställningar. Ett fonderat vederlag är inte avdragsgillt: det läggs till anskaffningsutgiften.',
+    'Avdragsgillt bara om bostadsbolaget bokför det som intäkt. Ange det i lägenhetens inställningar. Ett fonderat vederlag är inte avdragsgillt: det läggs till anskaffningsutgiften.',
   'cat.repairs.label': 'Reparationer och underhåll',
   'cat.repairs.hint':
     'Årsreparationer som håller bostaden i samma skick dras av det år de betalas. En reparation som höjer standarden är en grundförbättring.',
@@ -212,7 +212,7 @@ export const sv: Record<MessageKey, string> = {
   'cat.brokerage.hint': 'Arvoden till hyresförmedlare och annonser när du söker hyresgäst.',
   'cat.travel.label': 'Resor',
   'cat.travel.hint':
-    'Resor för att visa bostaden, träffa en hyresgäst, sköta underhåll eller delta i bolagsstämman. Med egen bil är Skatteförvaltningens sats för {year} {mileage} € per kilometer – ange kilometerna så fylls beloppet i. Andra faktiska kostnader (biljetter, logi) går också att dra av.',
+    'Resor för att visa bostaden, träffa en hyresgäst, sköta underhåll eller delta i bolagsstämman. Med egen bil är Skatteförvaltningens sats för {year} {mileage} € per kilometer. Ange kilometerna så fylls beloppet i. Andra faktiska kostnader (biljetter, logi) går också att dra av.',
   'cat.utilities.label': 'Av ägaren betalda förbrukningsavgifter',
   'cat.utilities.hint': 'El, uppvärmning eller internet som du betalar för den uthyrda bostaden.',
   'cat.property_tax.label': 'Fastighetsskatt',
@@ -225,7 +225,7 @@ export const sv: Record<MessageKey, string> = {
   'checklist.shared': 'Delas med alla ägare av den här lägenheten.',
   'checklist.progress': '{done} av {total} klara',
   'checklist.items': 'Punkter i checklistan',
-  'checklist.empty': 'Inget här ännu. Lägg till det som är värt att komma ihåg om lägenheten — alla ägare ser samma lista.',
+  'checklist.empty': 'Inget här ännu. Lägg till det som är värt att komma ihåg om lägenheten. Alla ägare ser samma lista.',
   'checklist.newItem': 'Ny punkt',
   'checklist.remove': 'Ta bort {item}',
   'checklist.add': 'Lägg till',
@@ -319,7 +319,7 @@ export const sv: Record<MessageKey, string> = {
     'Varje ägare deklarerar sin egen andel. “Din andel” är det som hamnar i din deklaration; “Hela lägenheten” är till för jämförelse.',
   'tax.estimated': 'Beräknad skatt',
   'tax.estimateInfo':
-    'Skatt på kapitalinkomst: {capLow} % upp till {capLimit} €, {capHigh} % över. Enbart en uppskattning – andra kapitalinkomster och avdrag ingår inte. Vyn för alla lägenheter beräknar den på allt du äger tillsammans. Samma satser gäller en ägare som bor utomlands (källskatten på {sourceTax} % gäller lön, inte hyra), men bosättningslandet kan också beskatta hyran.',
+    'Skatt på kapitalinkomst: {capLow} % upp till {capLimit} €, {capHigh} % över. Enbart en uppskattning. Andra kapitalinkomster och avdrag ingår inte. Vyn för alla lägenheter beräknar den på allt du äger tillsammans. Samma satser gäller en ägare som bor utomlands (källskatten på {sourceTax} % gäller lön, inte hyra), men bosättningslandet kan också beskatta hyran.',
   'tax.beforeFiling': 'Innan du deklarerar',
   'tax.income': 'Inkomster',
   'tax.rentReceived': 'Mottagen hyra',
@@ -330,7 +330,7 @@ export const sv: Record<MessageKey, string> = {
   'tax.noCosts': 'Inga kostnader loggade för {year}.',
   'tax.depr.building': 'Avskrivning på byggnaden',
   'tax.depr.buildingInfo':
-    'Poisto – årets andel av byggnadens återstående utgift, där förbättringar ingår. Anges i lägenhetens inställningar.',
+    'Poisto: årets andel av byggnadens återstående utgift, där förbättringar ingår. Anges i lägenhetens inställningar.',
   'tax.depr.improvements': 'Grundförbättringar, årets andel',
   'tax.depr.improvementsInfo': 'Varje grundförbättring dras av i lika stora delar under de år den fördelas över, från betalningsåret.',
   'tax.depr.furniture': 'Möbler och hushållsmaskiner, årets andel',
@@ -347,11 +347,11 @@ export const sv: Record<MessageKey, string> = {
   'tax.credit': 'Underskottsgottgörelse, högst',
   'tax.creditAbout': 'underskottsgottgörelsen',
   'tax.creditInfo':
-    'En hyresförlust sänker din kapitalinkomst. Har du inga andra kapitalinkomster att jämka mot dras {creditRate} % av underskottet av från skatten på dina förvärvsinkomster som en gottgörelse (underskottsgottgörelse), högst {creditMax} € – {creditMaxOneChild} € med ett minderårigt barn och {creditMaxChildren} € med två eller fler. Beloppet som visas är det högsta möjliga: det beror också på dina övriga kapitalinkomster och på hur mycket skatt på förvärvsinkomst det finns att dra av från. Det som inte rymms blir en förlust som du kan jämka mot kapitalinkomster i {carryYears} år.',
+    'En hyresförlust sänker din kapitalinkomst. Har du inga andra kapitalinkomster att jämka mot dras {creditRate} % av underskottet av från skatten på dina förvärvsinkomster som en gottgörelse (underskottsgottgörelse), högst {creditMax} €, {creditMaxOneChild} € med ett minderårigt barn och {creditMaxChildren} € med två eller fler. Beloppet som visas är det högsta möjliga: det beror också på dina övriga kapitalinkomster och på hur mycket skatt på förvärvsinkomst det finns att dra av från. Det som inte rymms blir en förlust som du kan jämka mot kapitalinkomster i {carryYears} år.',
   'tax.declaration': 'Deklaration',
   'tax.packageAbout': 'deklarationspaketet',
   'tax.packageInfo':
-    'Zip-filen innehåller en PDF som följer skärmarna i MinSkatt (OmaVero) steg för steg, med din andel av varje belopp att skriva in i respektive fält (en egen fastighet följer i stället blankett 7K), en CSV-liggare och alla kvittobilder. Du lämnar in den själv i OmaVero – appen har ingen koppling till Skatteförvaltningen.',
+    'Zip-filen innehåller en PDF som följer skärmarna i MinSkatt (OmaVero) steg för steg, med din andel av varje belopp att skriva in i respektive fält (en egen fastighet följer i stället blankett 7K), en CSV-liggare och alla kvittobilder. Du lämnar in den själv i OmaVero. Appen har ingen koppling till Skatteförvaltningen.',
   'tax.building': 'Skapar…',
   'tax.download': 'Ladda ner deklarationen {year} (.zip)',
   'tax.pdfOnly': 'Endast PDF-sammanfattning',
@@ -440,10 +440,10 @@ export const sv: Record<MessageKey, string> = {
   'check.logged.todo.one': '{n} månad är inte loggad ännu',
   'check.logged.todo.other': '{n} månader är inte loggade ännu',
   'check.unpaid.ok': 'Inga obetalda månader',
-  'check.unpaid.todo.one': '{n} månad obetald – räknas inte som inkomst',
-  'check.unpaid.todo.other': '{n} månader obetalda – räknas inte som inkomst',
-  'check.invites.todo.one': '{n} inbjuden ägare har inte anslutit ännu – kontrollera att andelarna är slutgiltiga',
-  'check.invites.todo.other': '{n} inbjudna ägare har inte anslutit ännu – kontrollera att andelarna är slutgiltiga',
+  'check.unpaid.todo.one': '{n} månad obetald: räknas inte som inkomst',
+  'check.unpaid.todo.other': '{n} månader obetalda: räknas inte som inkomst',
+  'check.invites.todo.one': '{n} inbjuden ägare har inte anslutit ännu: kontrollera att andelarna är slutgiltiga',
+  'check.invites.todo.other': '{n} inbjudna ägare har inte anslutit ännu: kontrollera att andelarna är slutgiltiga',
 
 
   // — settings —
@@ -452,7 +452,7 @@ export const sv: Record<MessageKey, string> = {
   'settings.owners': 'Ägare',
   'settings.ownersAbout': 'ägare och andelar',
   'settings.ownersInfo':
-    'Delning ger en annan ägare tillgång till just den här lägenheten – dina övriga lägenheter förblir privata. Andelarna måste bli exakt 100 %. En ägare med 0 % kan tas bort eller lämna lägenheten.',
+    'Delning ger en annan ägare tillgång till just den här lägenheten. Dina övriga lägenheter förblir privata. Andelarna måste bli exakt 100 %. En ägare med 0 % kan tas bort eller lämna lägenheten.',
   'settings.editShares': 'Redigera andelar',
   'settings.you': 'du',
   'settings.invited': 'inbjuden',
@@ -461,7 +461,7 @@ export const sv: Record<MessageKey, string> = {
   'settings.shareFor': 'Andel för {who}',
   'settings.withdraw': 'Återkalla',
   'settings.total': 'Totalt {pct}',
-  'settings.mustBe100': ' – måste vara exakt 100 %',
+  'settings.mustBe100': ', måste vara exakt 100 %',
   'settings.saveShares': 'Spara andelar',
   'settings.invite': 'Bjud in en delägare',
   'settings.leaveConfirm': 'Lämna {name}? Du förlorar åtkomsten till den.',
@@ -479,15 +479,15 @@ export const sv: Record<MessageKey, string> = {
   'settings.details': 'Objektets uppgifter',
   'settings.back': 'Tillbaka till inställningar',
   'settings.ownersSolo': 'Bara du',
-  'settings.ownersShared': '{n} ägare · du äger {pct}',
+  'settings.ownersShared': '{n} ägare, du äger {pct}',
   'settings.depreciationNA': 'Används inte för en bostadsrätt',
-  'settings.depreciationOn': 'På · {rate} % per år',
+  'settings.depreciationOn': 'På, {rate} % per år',
   'settings.depreciationOff': 'Av',
   'settings.name': 'Namn',
   'settings.address': 'Adress',
   'settings.company': 'Bostadsbolag',
   'settings.companyAbout': 'bostadsbolaget',
-  'settings.companyInfo': 'Asunto-osakeyhtiö – bolaget som äger byggnaden.',
+  'settings.companyInfo': 'Asunto-osakeyhtiö: bolaget som äger byggnaden.',
   'settings.propertyType': 'Typ av bostad',
   'settings.propertyTypeAbout': 'typen av bostad',
   'settings.propertyTypeInfo':
@@ -508,14 +508,14 @@ export const sv: Record<MessageKey, string> = {
   'settings.depreciation': 'Avskrivning på byggnaden',
   'settings.depreciationAbout': 'avskrivning',
   'settings.depreciationInfo':
-    'Poisto – ett årligt avdrag för byggnadens slitage, beräknat på dess återstående utgift: högst {buildingResidential} % per år för en bostadsbyggnad och {buildingCommercial} % för butiker, lager, fabriker och verkstäder. Förbättringar läggs till byggnadens utgift. Tomten skrivs aldrig av, och inget avdrag görs det år du säljer.',
+    'Poisto: ett årligt avdrag för byggnadens slitage, beräknat på dess återstående utgift: högst {buildingResidential} % per år för en bostadsbyggnad och {buildingCommercial} % för butiker, lager, fabriker och verkstäder. Förbättringar läggs till byggnadens utgift. Tomten skrivs aldrig av, och inget avdrag görs det år du säljer.',
   'settings.noBuildingDepreciation':
-    'Priset på en bostadsaktie skrivs inte av – det dras av när du säljer. Grundförbättringar och dyrare möbler fördelas över åren utifrån kostnaderna du loggar.',
+    'Priset på en bostadsaktie skrivs inte av. Det dras av när du säljer. Grundförbättringar och dyrare möbler fördelas över åren utifrån kostnaderna du loggar.',
   'settings.useDepreciation': 'Dra av avskrivning på byggnaden i deklarationen',
   'settings.buildingShare': 'Byggnadens andel (%)',
   'settings.buildingShareAbout': 'den avskrivningsgrundande andelen',
   'settings.buildingShareInfo':
-    'Den del av inköpspriset som är byggnaden, inte marken – bara byggnaden skrivs av.',
+    'Den del av inköpspriset som är byggnaden, inte marken: bara byggnaden skrivs av.',
   'settings.rate': 'Sats (% / år)',
   'settings.prior': 'Avskrivet före det året (€)',
   'settings.priorAbout': 'tidigare avskrivning',
@@ -555,7 +555,7 @@ export const sv: Record<MessageKey, string> = {
   'recurring.kind.rent': 'Hyra',
   'recurring.rentTitle': 'Månadshyra',
   'recurring.perMonth': '{amount} i månaden',
-  'recurring.next': 'dag {day} · bokförs nästa gång i {month}',
+  'recurring.next': 'dag {day}, bokförs nästa gång i {month}',
   'recurring.amount': 'Belopp varje månad (€)',
   'recurring.firstMonth': 'Första månaden',
   'recurring.firstMonthAbout': 'första månaden',
@@ -581,7 +581,7 @@ export const sv: Record<MessageKey, string> = {
   'settings.letShare': 'Andel av bostaden som hyrs ut (%)',
   'settings.letShareAbout': 'den uthyrda andelen',
   'settings.letShareInfo':
-    'Kostnaderna för hela bostaden – skötsel- och vattenavgifter, finansieringsvederlag, försäkring, förbrukningsavgifter, fastighetsskatt, låneräntor och avskrivning på byggnaden – räknas bara med denna andel, uträknad efter yta eller antal personer. Reparationer, möbler, resor, förmedlingsarvoden och övriga kostnader räknas fullt ut, så logga bara det som hör till den uthyrda delen.',
+    'Kostnaderna för hela bostaden (skötsel- och vattenavgifter, finansieringsvederlag, försäkring, förbrukningsavgifter, fastighetsskatt, låneräntor och avskrivning på byggnaden) räknas bara med denna andel, uträknad efter yta eller antal personer. Reparationer, möbler, resor, förmedlingsarvoden och övriga kostnader räknas fullt ut, så logga bara det som hör till den uthyrda delen.',
   'settings.belowMarket': 'Hyran är lägre än gängse hyra för bostaden',
   'settings.belowMarketAbout': 'hyra under gängse nivå',
   'settings.belowMarketInfo':
@@ -589,7 +589,7 @@ export const sv: Record<MessageKey, string> = {
   'settings.furnishing': 'Möbler',
   'settings.furnishingAbout': 'avdraget för möbler',
   'settings.furnishingInfo':
-    'För en möblerad bostad väljer du mellan schablonavdraget – {flatStudio} € i månaden för en etta eller ett rum, {flatLarger} € för en större bostad, oavsett antal hyresgäster, och som täcker alla möbler och lösa hushållsmaskiner – och de faktiska kostnaderna för möblerna du loggar. Schablonen räknas för varje månad som loggats som betald eller obetald, inte för vakanta månader. Fasta hushållsmaskiner (kylskåp, spis, diskmaskin) dras av utöver den: logga dem som Reparationer och underhåll. Behåll samma val från år till år om inget ändras.',
+    'För en möblerad bostad väljer du mellan schablonavdraget ({flatStudio} € i månaden för en etta eller ett rum, {flatLarger} € för en större bostad, oavsett antal hyresgäster, och som täcker alla möbler och lösa hushållsmaskiner) och de faktiska kostnaderna för möblerna du loggar. Schablonen räknas för varje månad som loggats som betald eller obetald, inte för vakanta månader. Fasta hushållsmaskiner (kylskåp, spis, diskmaskin) dras av utöver den: logga dem som Reparationer och underhåll. Behåll samma val från år till år om inget ändras.',
   'settings.furnishing.actual': 'Faktiska kostnader',
   'settings.furnishing.flat': 'Schablon',
   'settings.roomClass': 'Bostadens storlek',
@@ -637,7 +637,7 @@ export const sv: Record<MessageKey, string> = {
   'auth.passwordChanged': 'Lösenordet är ändrat. Logga in med ditt nya lösenord.',
   // — install —
   'install.title': 'Installera Rental Tracker',
-  'install.lead': 'Lägg till den på hemskärmen – den öppnas som en app, i helskärm, ett tryck bort.',
+  'install.lead': 'Lägg till den på hemskärmen. Den öppnas som en app, i helskärm, ett tryck bort.',
   'install.button': 'Installera appen',
   'install.notNow': 'Inte nu',
   'install.never': 'Visa inte igen',

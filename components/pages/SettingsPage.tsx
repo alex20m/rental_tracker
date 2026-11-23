@@ -98,7 +98,7 @@ export default function SettingsPage({ apt, year, account, onChanged, onGone }: 
         pct: pct(apt.mySharePct),
       });
   const choices = advancedChoices(saved);
-  const advanced = choices.length ? choices.map(([key, params]) => t(key, params)).join(' · ') : t('settings.advancedStandard');
+  const advanced = choices.length ? choices.map(([key, params]) => t(key, params)).join(', ') : t('settings.advancedStandard');
 
   return (
     <>

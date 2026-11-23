@@ -51,7 +51,7 @@ export default function Tax({ apt, year, taxpayerName, scope, onScope, go }: Pro
       <section className="hero">
         {shared && <ScopeToggle sharePct={apt.mySharePct} scope={scope} onScope={onScope} />}
         <div className="label" style={{ marginTop: shared ? 10 : 0 }}>
-          {f.netIncome >= 0 ? t('tax.taxable') : t('home.rentalLoss')} · {year}
+          {f.netIncome >= 0 ? t('tax.taxable') : t('home.rentalLoss')} {year}
           {shared && <Info about={t('tax.coOwnedAbout')}>{t('tax.coOwnedInfo')}</Info>}
         </div>
         <div className={'big ' + (f.netIncome < 0 ? 'neg' : '')}>

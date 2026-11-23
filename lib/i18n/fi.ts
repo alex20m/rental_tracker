@@ -54,7 +54,7 @@ export const fi: Record<MessageKey, string> = {
 
   // — first run —
   'welcome.title': 'Lisää ensimmäinen asuntosi',
-  'welcome.lead': 'Aluksi riittää pelkkä nimi – loput voit täyttää myöhemmin.',
+  'welcome.lead': 'Aluksi riittää pelkkä nimi. Loput voit täyttää myöhemmin.',
   'add.name': 'Asunnon nimi',
   'add.placeholder': 'esim. Kauppakatu 12 B 7',
   'add.submit': 'Lisää asunto',
@@ -75,19 +75,19 @@ export const fi: Record<MessageKey, string> = {
 
   // — co-owner scope toggle —
   'scope.label': 'Luvut kohteelle',
-  'scope.mine': 'Osuutesi · {pct}',
+  'scope.mine': 'Osuutesi ({pct})',
   'scope.whole': 'Koko asunto',
 
   // — home & portfolio —
   'home.rentalLoss': 'Vuokrauksen tappio',
   'home.netIncome': 'Vuokrauksen nettotulo',
   'home.netAbout': 'nettotulo',
-  'home.netInfo': 'Saadut vuokrat vähennettynä vähennyskelpoisilla kuluilla ja poistoilla – summa, josta sinua verotetaan.',
+  'home.netInfo': 'Saadut vuokrat vähennettynä vähennyskelpoisilla kuluilla ja poistoilla: summa, josta sinua verotetaan.',
   'home.deductions': 'Vähennykset',
   'home.estTax': 'Arvioitu vero',
   'home.estTaxAbout': 'veroarvio',
   'home.estTaxInfo':
-    '{capLow} % pääomatuloista {capLimit} euroon asti, {capHigh} % sen ylittävältä osalta{onYourShare}. Karkea arvio – muut pääomatulot eivät ole mukana.',
+    '{capLow} % pääomatuloista {capLimit} euroon asti, {capHigh} % sen ylittävältä osalta{onYourShare}. Karkea arvio. Muut pääomatulot eivät ole mukana.',
   'home.onYourShare': ', osuudestasi',
   'home.todo': 'Tehtävät',
   'home.moreTodo': '{n} muuta tarkistettavaa',
@@ -113,21 +113,21 @@ export const fi: Record<MessageKey, string> = {
   'home.logFirstRent': 'Kirjaa ensimmäinen vuokra',
   'home.prepare': 'Valmistele vuoden {year} veroilmoitus',
 
-  'portfolio.net': 'Nettotulosi, kaikki asunnot · {year}',
+  'portfolio.net': 'Nettotulosi kaikista asunnoista vuonna {year}',
   'portfolio.netInfo':
     'Osuutesi saaduista vuokrista vähennettynä osuudellasi vähennyskelpoisista kuluista ja poistoista, laskettuna yhteen kaikista asunnoistasi.',
   'portfolio.estTaxInfo':
-    '{capLow} % pääomatuloista {capLimit} euroon asti, {capHigh} % sen ylittävältä osalta – arvioitu kaikista asunnoistasi yhdessä, koska verokanta riippuu kokonaissummasta. Muut pääomatulot eivät ole mukana.',
+    '{capLow} % pääomatuloista {capLimit} euroon asti, {capHigh} % sen ylittävältä osalta. Arvioitu kaikista asunnoistasi yhdessä, koska verokanta riippuu kokonaissummasta. Muut pääomatulot eivät ole mukana.',
   'portfolio.apartments': 'Asunnot',
   'portfolio.youOwn': 'Omistat {pct}',
-  'portfolio.owners': ' · {n} omistajaa',
+  'portfolio.owners': ', omistajia {n}',
   'portfolio.netTitle': 'Nettotulosi {year}',
 
   // — rent log —
-  'rent.received': 'Saadut vuokrat · {year}',
+  'rent.received': 'Saadut vuokrat vuonna {year}',
   'rent.timingAbout': 'vuokran ajoitus',
   'rent.timingInfo': 'Vuokra verotetaan sinä vuonna, jona saat sen, joten saantipäivä ratkaisee, minkä vuoden tuloa se on.',
-  'rent.coOwned': ' Kirjaa vuokra koko asunnolle – kunkin omistajan osuus lasketaan puolestasi.',
+  'rent.coOwned': ' Kirjaa vuokra koko asunnolle. Kunkin omistajan osuus lasketaan puolestasi.',
   'rent.months': 'Kuukaudet',
   'rent.add': 'Lisää',
   'rent.paid': 'Maksettu',
@@ -142,12 +142,12 @@ export const fi: Record<MessageKey, string> = {
   'rent.addNote': '+ Lisää muistiinpano',
 
   // — costs —
-  'costs.deductible': 'Vähennyskelpoiset kulut · {year}',
+  'costs.deductible': 'Vähennyskelpoiset kulut vuonna {year}',
   'costs.about': 'kulut',
   'costs.entries.one': '{n} kirjaus tänä vuonna.',
   'costs.entries.other': '{n} kirjausta tänä vuonna.',
   'costs.financingInfo': ' Perusparannuksista ja kalliimmista kalusteista lasketaan vain tämän vuoden osuus; rahoitusvastike lasketaan vain, jos taloyhtiö tulouttaa sen.',
-  'costs.coOwned': ' Kirjaa kulut koko asunnolle – kunkin omistajan osuus lasketaan puolestasi.',
+  'costs.coOwned': ' Kirjaa kulut koko asunnolle. Kunkin omistajan osuus lasketaan puolestasi.',
   'costs.none': 'Vuodelle {year} ei ole kirjattu kuluja. Lisää ensimmäinen painamalla +.',
   'costs.add': 'Lisää kulu',
   'costs.edit': 'Muokkaa kulua',
@@ -166,10 +166,10 @@ export const fi: Record<MessageKey, string> = {
   'costs.yearsAbout': 'jaksotus',
   'costs.yearsInfo':
     'Asunto-osakkeen perusparannus vähennetään yhtä suurina osina maksuvuodesta alkaen niin monelle vuodelle kuin se kestää: {improvementMin}–{improvementMax} vuotta.',
-  'costs.shortLived': 'Käyttöikä alle {minLife} vuotta – vähennä heti',
+  'costs.shortLived': 'Käyttöikä alle {minLife} vuotta: vähennä heti',
   'costs.overYears': '{n} vuodelle',
   'costs.furnitureRate': '{movableRate} % vuodessa',
-  'costs.descriptionPlaceholder': 'Valinnainen – esim. keittiön hanan vaihto',
+  'costs.descriptionPlaceholder': 'Valinnainen, esim. keittiön hanan vaihto',
   'costs.date': 'Päivämäärä',
   'costs.processing': 'Käsitellään…',
   'costs.replacePhoto': 'Vaihda kuva',
@@ -183,7 +183,7 @@ export const fi: Record<MessageKey, string> = {
   'costs.kilometres': 'Ajetut kilometrit (valinnainen)',
   'costs.kilometresAbout': 'kilometrikorvaus',
   'costs.kilometresInfo':
-    'Oma auto: {mileage} € kilometriltä vuodelle {year} – Verohallinnon määrä vuokraukseen liittyville matkoille, ei se korkeampi verovapaa korvaus, jonka työnantaja saa maksaa.',
+    'Oma auto: {mileage} € kilometriltä vuodelle {year}, Verohallinnon määrä vuokraukseen liittyville matkoille, ei se korkeampi verovapaa korvaus, jonka työnantaja saa maksaa.',
   'costs.kilometresFilled': '{km} km × {mileage} € = {amount}',
 
   'cat.maintenance_charge.label': 'Hoitovastike',
@@ -192,7 +192,7 @@ export const fi: Record<MessageKey, string> = {
   'cat.water_charge.hint': 'Taloyhtiölle maksetut vesimaksut, vähennetään maksuvuonna.',
   'cat.financing_charge.label': 'Rahoitusvastike',
   'cat.financing_charge.hint':
-    'Vähennyskelpoinen vain, jos taloyhtiö tulouttaa sen – merkitse se asunnon asetuksiin. Rahastoitu vastike ei ole vähennyskelpoinen: se lisätään hankintamenoon.',
+    'Vähennyskelpoinen vain, jos taloyhtiö tulouttaa sen. Merkitse se asunnon asetuksiin. Rahastoitu vastike ei ole vähennyskelpoinen: se lisätään hankintamenoon.',
   'cat.repairs.label': 'Korjaukset ja kunnossapito',
   'cat.repairs.hint':
     'Vuosikorjaukset, jotka pitävät asunnon ennallaan, vähennetään maksuvuonna. Tasoa nostava korjaus on perusparannus.',
@@ -211,7 +211,7 @@ export const fi: Record<MessageKey, string> = {
   'cat.brokerage.hint': 'Vuokranvälittäjän palkkiot ja ilmoitukset vuokralaista etsittäessä.',
   'cat.travel.label': 'Matkakulut',
   'cat.travel.hint':
-    'Matkat asunnon esittelyyn, vuokralaisen tapaamiseen, huoltoon tai yhtiökokoukseen. Omalla autolla Verohallinnon määrä vuodelle {year} on {mileage} € kilometriltä – kirjoita kilometrit, niin summa täytetään. Myös muut todelliset kulut (liput, majoitus) ovat vähennyskelpoisia.',
+    'Matkat asunnon esittelyyn, vuokralaisen tapaamiseen, huoltoon tai yhtiökokoukseen. Omalla autolla Verohallinnon määrä vuodelle {year} on {mileage} € kilometriltä. Kirjoita kilometrit, niin summa täytetään. Myös muut todelliset kulut (liput, majoitus) ovat vähennyskelpoisia.',
   'cat.utilities.label': 'Omistajan maksamat käyttömaksut',
   'cat.utilities.hint': 'Sähkö, lämmitys tai internet, jonka maksat vuokra-asunnosta.',
   'cat.property_tax.label': 'Kiinteistövero',
@@ -224,7 +224,7 @@ export const fi: Record<MessageKey, string> = {
   'checklist.shared': 'Jaettu kaikkien tämän asunnon omistajien kanssa.',
   'checklist.progress': '{done}/{total} tehty',
   'checklist.items': 'Tarkistuslistan kohdat',
-  'checklist.empty': 'Ei vielä mitään. Lisää tähän asioita, jotka kannattaa muistaa tästä asunnosta — kaikki omistajat näkevät saman listan.',
+  'checklist.empty': 'Ei vielä mitään. Lisää tähän asioita, jotka kannattaa muistaa tästä asunnosta. Kaikki omistajat näkevät saman listan.',
   'checklist.newItem': 'Uusi kohta',
   'checklist.remove': 'Poista {item}',
   'checklist.add': 'Lisää',
@@ -318,7 +318,7 @@ export const fi: Record<MessageKey, string> = {
     'Jokainen omistaja ilmoittaa oman osuutensa. “Osuutesi” on se, mikä menee omaan veroilmoitukseesi; “Koko asunto” on vain vertailua varten.',
   'tax.estimated': 'Arvioitu vero',
   'tax.estimateInfo':
-    'Pääomatuloveroa: {capLow} % {capLimit} euroon asti, {capHigh} % sen ylittävältä osalta. Vain arvio – muita pääomatuloja ja vähennyksiä ei oteta huomioon. Kaikkien asuntojen näkymässä arvio lasketaan kaikesta omistamastasi yhteensä. Samat verokannat koskevat ulkomailla asuvaa omistajaa (lähdevero {sourceTax} % koskee palkkaa, ei vuokraa), mutta asuinmaa voi verottaa vuokraakin.',
+    'Pääomatuloveroa: {capLow} % {capLimit} euroon asti, {capHigh} % sen ylittävältä osalta. Vain arvio. Muita pääomatuloja ja vähennyksiä ei oteta huomioon. Kaikkien asuntojen näkymässä arvio lasketaan kaikesta omistamastasi yhteensä. Samat verokannat koskevat ulkomailla asuvaa omistajaa (lähdevero {sourceTax} % koskee palkkaa, ei vuokraa), mutta asuinmaa voi verottaa vuokraakin.',
   'tax.beforeFiling': 'Ennen ilmoittamista',
   'tax.income': 'Tulot',
   'tax.rentReceived': 'Saadut vuokrat',
@@ -329,7 +329,7 @@ export const fi: Record<MessageKey, string> = {
   'tax.noCosts': 'Vuodelle {year} ei ole kirjattu kuluja.',
   'tax.depr.building': 'Rakennuksen poisto',
   'tax.depr.buildingInfo':
-    'Poisto – tämän vuoden osuus rakennuksen jäljellä olevasta menosta, johon perusparannukset kuuluvat. Määritetään asunnon asetuksissa.',
+    'Poisto: tämän vuoden osuus rakennuksen jäljellä olevasta menosta, johon perusparannukset kuuluvat. Määritetään asunnon asetuksissa.',
   'tax.depr.improvements': 'Perusparannukset, tämän vuoden osuus',
   'tax.depr.improvementsInfo': 'Kukin perusparannus vähennetään yhtä suurina osina jaksotusvuosien aikana maksuvuodesta alkaen.',
   'tax.depr.furniture': 'Kalusteet ja kodinkoneet, tämän vuoden osuus',
@@ -346,11 +346,11 @@ export const fi: Record<MessageKey, string> = {
   'tax.credit': 'Alijäämähyvitys, enintään',
   'tax.creditAbout': 'alijäämähyvitys',
   'tax.creditInfo':
-    'Vuokratappio pienentää pääomatulojasi. Jos sinulla ei ole muita pääomatuloja, joita vastaan sen voi vähentää, {creditRate} % alijäämästä vähennetään ansiotuloistasi menevästä verosta alijäämähyvityksenä, enintään {creditMax} € – {creditMaxOneChild} € yhdellä alaikäisellä lapsella ja {creditMaxChildren} € kahdella tai useammalla. Näytetty määrä on enintään mahdollinen: se riippuu myös muista pääomatuloistasi ja siitä, kuinka paljon ansiotulon veroa hyvitettäväksi on. Se, mikä ei mahdu, jää tappioksi, jonka voit vähentää pääomatuloista {carryYears} vuoden ajan.',
+    'Vuokratappio pienentää pääomatulojasi. Jos sinulla ei ole muita pääomatuloja, joita vastaan sen voi vähentää, {creditRate} % alijäämästä vähennetään ansiotuloistasi menevästä verosta alijäämähyvityksenä, enintään {creditMax} €, {creditMaxOneChild} € yhdellä alaikäisellä lapsella ja {creditMaxChildren} € kahdella tai useammalla. Näytetty määrä on enintään mahdollinen: se riippuu myös muista pääomatuloistasi ja siitä, kuinka paljon ansiotulon veroa hyvitettäväksi on. Se, mikä ei mahdu, jää tappioksi, jonka voit vähentää pääomatuloista {carryYears} vuoden ajan.',
   'tax.declaration': 'Veroilmoitus',
   'tax.packageAbout': 'veroilmoituspaketti',
   'tax.packageInfo':
-    'Zip-tiedosto sisältää PDF:n, joka seuraa OmaVeron näkymiä vaihe vaiheelta ja jossa on osuutesi jokaisesta summasta syötettäväksi kuhunkin kenttään (oma kiinteistö noudattaa sen sijaan lomaketta 7K), CSV-kirjanpidon sekä kaikki kuittikuvat. Ilmoitat tiedot itse OmaVerossa – sovelluksella ei ole yhteyttä Veroon.',
+    'Zip-tiedosto sisältää PDF:n, joka seuraa OmaVeron näkymiä vaihe vaiheelta ja jossa on osuutesi jokaisesta summasta syötettäväksi kuhunkin kenttään (oma kiinteistö noudattaa sen sijaan lomaketta 7K), CSV-kirjanpidon sekä kaikki kuittikuvat. Ilmoitat tiedot itse OmaVerossa. Sovelluksella ei ole yhteyttä Veroon.',
   'tax.building': 'Luodaan…',
   'tax.download': 'Lataa vuoden {year} veroilmoitus (.zip)',
   'tax.pdfOnly': 'Vain PDF-yhteenveto',
@@ -439,10 +439,10 @@ export const fi: Record<MessageKey, string> = {
   'check.logged.todo.one': '{n} kuukausi ei ole vielä kirjattu',
   'check.logged.todo.other': '{n} kuukautta ei ole vielä kirjattu',
   'check.unpaid.ok': 'Ei maksamattomia kuukausia',
-  'check.unpaid.todo.one': '{n} kuukausi maksamatta – ei lasketa tuloksi',
-  'check.unpaid.todo.other': '{n} kuukautta maksamatta – ei lasketa tuloksi',
-  'check.invites.todo.one': '{n} kutsuttu omistaja ei ole vielä liittynyt – tarkista, että osuudet ovat lopulliset',
-  'check.invites.todo.other': '{n} kutsuttua omistajaa ei ole vielä liittynyt – tarkista, että osuudet ovat lopulliset',
+  'check.unpaid.todo.one': '{n} kuukausi maksamatta: ei lasketa tuloksi',
+  'check.unpaid.todo.other': '{n} kuukautta maksamatta: ei lasketa tuloksi',
+  'check.invites.todo.one': '{n} kutsuttu omistaja ei ole vielä liittynyt: tarkista, että osuudet ovat lopulliset',
+  'check.invites.todo.other': '{n} kutsuttua omistajaa ei ole vielä liittynyt: tarkista, että osuudet ovat lopulliset',
 
 
   // — settings —
@@ -451,7 +451,7 @@ export const fi: Record<MessageKey, string> = {
   'settings.owners': 'Omistajat',
   'settings.ownersAbout': 'omistajat ja osuudet',
   'settings.ownersInfo':
-    'Jakaminen antaa toiselle omistajalle pääsyn vain tähän asuntoon – muut asuntosi pysyvät yksityisinä. Osuuksien summan on oltava tasan 100 %. Omistajan, jolla on 0 %, voi poistaa tai hän voi poistua itse.',
+    'Jakaminen antaa toiselle omistajalle pääsyn vain tähän asuntoon. Muut asuntosi pysyvät yksityisinä. Osuuksien summan on oltava tasan 100 %. Omistajan, jolla on 0 %, voi poistaa tai hän voi poistua itse.',
   'settings.editShares': 'Muokkaa osuuksia',
   'settings.you': 'sinä',
   'settings.invited': 'kutsuttu',
@@ -460,7 +460,7 @@ export const fi: Record<MessageKey, string> = {
   'settings.shareFor': 'Osuus: {who}',
   'settings.withdraw': 'Peruuta kutsu',
   'settings.total': 'Yhteensä {pct}',
-  'settings.mustBe100': ' – on oltava tasan 100 %',
+  'settings.mustBe100': ', on oltava tasan 100 %',
   'settings.saveShares': 'Tallenna osuudet',
   'settings.invite': 'Kutsu osaomistaja',
   'settings.leaveConfirm': 'Poistutaanko asunnosta {name}? Menetät pääsyn siihen.',
@@ -478,15 +478,15 @@ export const fi: Record<MessageKey, string> = {
   'settings.details': 'Kohteen tiedot',
   'settings.back': 'Takaisin asetuksiin',
   'settings.ownersSolo': 'Vain sinä',
-  'settings.ownersShared': '{n} omistajaa · omistat {pct}',
+  'settings.ownersShared': '{n} omistajaa, omistat {pct}',
   'settings.depreciationNA': 'Ei käytössä asunto-osakkeelle',
-  'settings.depreciationOn': 'Käytössä · {rate} % vuodessa',
+  'settings.depreciationOn': 'Käytössä, {rate} % vuodessa',
   'settings.depreciationOff': 'Pois käytöstä',
   'settings.name': 'Nimi',
   'settings.address': 'Osoite',
   'settings.company': 'Taloyhtiö',
   'settings.companyAbout': 'taloyhtiö',
-  'settings.companyInfo': 'Asunto-osakeyhtiö – yhtiö, joka omistaa rakennuksen.',
+  'settings.companyInfo': 'Asunto-osakeyhtiö: yhtiö, joka omistaa rakennuksen.',
   'settings.propertyType': 'Kohteen tyyppi',
   'settings.propertyTypeAbout': 'kohteen tyyppi',
   'settings.propertyTypeInfo':
@@ -507,13 +507,13 @@ export const fi: Record<MessageKey, string> = {
   'settings.depreciation': 'Rakennuksen poisto',
   'settings.depreciationAbout': 'poistot',
   'settings.depreciationInfo':
-    'Poisto – vuosittainen vähennys rakennuksen kulumisesta, laskettuna sen jäljellä olevasta menosta: asuinrakennukselle enintään {buildingResidential} % ja myymälöille, varastoille, tehtaille ja työpajoille {buildingCommercial} % vuodessa. Perusparannukset lisätään rakennuksen menoon. Maapohjasta ei tehdä poistoja, eikä poistoa vähennetä myyntivuonna.',
+    'Poisto: vuosittainen vähennys rakennuksen kulumisesta, laskettuna sen jäljellä olevasta menosta: asuinrakennukselle enintään {buildingResidential} % ja myymälöille, varastoille, tehtaille ja työpajoille {buildingCommercial} % vuodessa. Perusparannukset lisätään rakennuksen menoon. Maapohjasta ei tehdä poistoja, eikä poistoa vähennetä myyntivuonna.',
   'settings.noBuildingDepreciation':
-    'Asunto-osakkeen hankintahinnasta ei tehdä poistoja – se vähennetään, kun myyt. Perusparannukset ja kalliimmat kalusteet jaksotetaan kirjaamiesi kulujen perusteella.',
+    'Asunto-osakkeen hankintahinnasta ei tehdä poistoja. Se vähennetään, kun myyt. Perusparannukset ja kalliimmat kalusteet jaksotetaan kirjaamiesi kulujen perusteella.',
   'settings.useDepreciation': 'Vähennä rakennuksen poisto veroilmoituksessa',
   'settings.buildingShare': 'Rakennuksen osuus (%)',
   'settings.buildingShareAbout': 'poistettava osuus',
-  'settings.buildingShareInfo': 'Se osa ostohinnasta, joka on rakennusta eikä maata – vain rakennus poistetaan.',
+  'settings.buildingShareInfo': 'Se osa ostohinnasta, joka on rakennusta eikä maata: vain rakennus poistetaan.',
   'settings.rate': 'Prosentti (% / vuosi)',
   'settings.prior': 'Poistettu ennen sitä vuotta (€)',
   'settings.priorAbout': 'aiemmat poistot',
@@ -553,7 +553,7 @@ export const fi: Record<MessageKey, string> = {
   'recurring.kind.rent': 'Vuokra',
   'recurring.rentTitle': 'Kuukausivuokra',
   'recurring.perMonth': '{amount} kuukaudessa',
-  'recurring.next': 'päivä {day} · kirjautuu seuraavaksi: {month}',
+  'recurring.next': 'päivä {day}, kirjautuu seuraavaksi: {month}',
   'recurring.amount': 'Summa joka kuukausi (€)',
   'recurring.firstMonth': 'Ensimmäinen kuukausi',
   'recurring.firstMonthAbout': 'ensimmäinen kuukausi',
@@ -579,7 +579,7 @@ export const fi: Record<MessageKey, string> = {
   'settings.letShare': 'Vuokratun osan osuus asunnosta (%)',
   'settings.letShareAbout': 'vuokrattu osuus',
   'settings.letShareInfo':
-    'Koko asunnon kulut – hoito- ja vesimaksut, rahoitusvastike, vakuutukset, käyttömaksut, kiinteistövero, lainankorot ja rakennuksen poisto – lasketaan vain tällä osuudella, pinta-alan tai henkilömäärän mukaan. Korjaukset, kalusteet, matkat, välityspalkkiot ja muut kulut lasketaan kokonaan, joten kirjaa vain vuokrattuun osaan kuuluva.',
+    'Koko asunnon kulut (hoito- ja vesimaksut, rahoitusvastike, vakuutukset, käyttömaksut, kiinteistövero, lainankorot ja rakennuksen poisto) lasketaan vain tällä osuudella, pinta-alan tai henkilömäärän mukaan. Korjaukset, kalusteet, matkat, välityspalkkiot ja muut kulut lasketaan kokonaan, joten kirjaa vain vuokrattuun osaan kuuluva.',
   'settings.belowMarket': 'Vuokra on alle asunnon käyvän vuokran',
   'settings.belowMarketAbout': 'käypää alempi vuokra',
   'settings.belowMarketInfo':
@@ -587,7 +587,7 @@ export const fi: Record<MessageKey, string> = {
   'settings.furnishing': 'Kalusteet',
   'settings.furnishingAbout': 'kalustevähennys',
   'settings.furnishingInfo':
-    'Kalustetussa asunnossa valitset kiinteän vähennyksen – {flatStudio} € kuukaudessa yksiöstä tai huoneesta, {flatLarger} € suuremmasta asunnosta, vuokralaisten määrästä riippumatta, ja se kattaa kaikki kalusteet ja irtaimet kodinkoneet – ja kirjaamiesi kalusteiden todellisten kulujen välillä. Kiinteä määrä lasketaan jokaiselta kuukaudelta, joka on kirjattu maksetuksi tai maksamattomaksi, ei tyhjiltä kuukausilta. Kiinteät kodinkoneet (jääkaappi, liesi, astianpesukone) vähennetään sen lisäksi: kirjaa ne vuosikorjauksina. Pidä sama valinta vuodesta toiseen, ellei olosuhteet muutu.',
+    'Kalustetussa asunnossa valitset kiinteän vähennyksen ({flatStudio} € kuukaudessa yksiöstä tai huoneesta, {flatLarger} € suuremmasta asunnosta, vuokralaisten määrästä riippumatta, ja se kattaa kaikki kalusteet ja irtaimet kodinkoneet) ja kirjaamiesi kalusteiden todellisten kulujen välillä. Kiinteä määrä lasketaan jokaiselta kuukaudelta, joka on kirjattu maksetuksi tai maksamattomaksi, ei tyhjiltä kuukausilta. Kiinteät kodinkoneet (jääkaappi, liesi, astianpesukone) vähennetään sen lisäksi: kirjaa ne vuosikorjauksina. Pidä sama valinta vuodesta toiseen, ellei olosuhteet muutu.',
   'settings.furnishing.actual': 'Todelliset kulut',
   'settings.furnishing.flat': 'Kiinteä määrä',
   'settings.roomClass': 'Asunnon koko',
@@ -635,7 +635,7 @@ export const fi: Record<MessageKey, string> = {
   'auth.passwordChanged': 'Salasana vaihdettu. Kirjaudu sisään uudella salasanallasi.',
   // — install —
   'install.title': 'Asenna Rental Tracker',
-  'install.lead': 'Lisää se aloitusnäytölle – se avautuu kuin sovellus, koko näytölle, yhdellä napautuksella.',
+  'install.lead': 'Lisää se aloitusnäytölle. Se avautuu kuin sovellus, koko näytölle, yhdellä napautuksella.',
   'install.button': 'Asenna sovellus',
   'install.notNow': 'Ei nyt',
   'install.never': 'Älä näytä uudelleen',

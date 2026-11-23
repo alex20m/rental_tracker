@@ -146,9 +146,9 @@ test.describe('costs and receipts', () => {
     await page.getByRole('button', { name: 'Add cost' }).click();
     const sheet = page.getByRole('dialog', { name: 'Add cost' });
     await sheet.getByLabel('Amount (€)').fill('142.50');
-    await sheet.getByRole('radio', { name: 'Financing charge' }).click();
+    await sheet.getByRole('combobox', { name: 'Category' }).selectOption({ label: 'Financing charge' });
     await expect(sheet.getByText('Not deductible', { exact: true })).toBeVisible();
-    await sheet.getByRole('radio', { name: 'Repairs & upkeep' }).click();
+    await sheet.getByRole('combobox', { name: 'Category' }).selectOption({ label: 'Repairs & upkeep' });
     await expect(sheet.getByText('Not deductible', { exact: true })).toHaveCount(0);
     await sheet.getByLabel('Description').fill('Kitchen tap ');
     await sheet.getByLabel('Date').fill(`${m(2)}-14`);
@@ -161,7 +161,7 @@ test.describe('costs and receipts', () => {
     await sheet.getByRole('button', { name: 'Save' }).click();
 
     await expect(page.locator('.list li')).toContainText('Kitchen tap');
-    await expect(page.locator('.list li')).toContainText('14 Feb · Repairs & upkeep');
+    await expect(page.locator('.list li')).toContainText('14 Feb, Repairs & upkeep');
     await expect(page.locator('.list img.thumb')).toBeVisible();
     expect(apt.costs[0]).toMatchObject({ date: `${m(2)}-14`, category: 'repairs', description: 'Kitchen tap', amount: 142.5, hasReceipt: true });
   });
@@ -173,7 +173,11 @@ test.describe('costs and receipts', () => {
     await section(page, 'Costs');
     await page.getByRole('button', { name: 'Add cost' }).click();
     const sheet = page.getByRole('dialog', { name: 'Add cost' });
-    await sheet.evaluate((el) => el.scrollTo(0, el.scrollHeight));
+    const scrolled = await sheet.locator('.sheet-body').evaluate((el) => {
+      el.scrollTo(0, el.scrollHeight);
+      return el.scrollTop;
+    });
+    expect(scrolled, 'the form is taller than the dialog, so it scrolled').toBeGreaterThan(0);
 
     const gap = await sheet.evaluate((el) => {
       const head = el.querySelector('.sheet-head')!.getBoundingClientRect();
@@ -445,7 +449,7 @@ test.describe('costs and receipts', () => {
     const sheet = page.getByRole('dialog', { name: 'Add cost' });
     await sheet.getByLabel('Amount (€)').fill('3000');
     await expect(sheet.getByLabel('Spread over (years)')).toHaveCount(0);
-    await sheet.getByRole('radio', { name: 'Basic improvement' }).click();
+    await sheet.getByRole('combobox', { name: 'Category' }).selectOption({ label: 'Basic improvement' });
     await expect(sheet.getByLabel('Spread over (years)')).toHaveValue('10');
     await sheet.getByRole('button', { name: 'About spreading' }).click();
     await expect(page.getByRole('note')).toContainText('over as many years as it lasts: from 3 to 10 years');
@@ -472,8 +476,8 @@ test.describe('costs and receipts', () => {
     await section(page, 'Costs');
     await page.getByRole('button', { name: 'Add cost' }).click();
     const sheet = page.getByRole('dialog', { name: 'Add cost' });
-    await sheet.getByRole('radio', { name: 'Furniture & appliances' }).click();
-    const shortLived = sheet.getByRole('switch', { name: 'Lasts under 3 years — deduct at once' });
+    await sheet.getByRole('combobox', { name: 'Category' }).selectOption({ label: 'Furniture & appliances' });
+    const shortLived = sheet.getByRole('switch', { name: 'Lasts under 3 years: deduct at once' });
     // Up to 1 200 € it is deducted at once anyway.
     await sheet.getByLabel('Amount (€)').fill('1200');
     await expect(shortLived).toHaveCount(0);
@@ -489,7 +493,7 @@ test.describe('costs and receipts', () => {
     await page.locator('.list li').click();
     await page.getByRole('dialog', { name: 'Cost' }).getByRole('button', { name: 'Edit' }).click();
     const edit = page.getByRole('dialog', { name: 'Edit cost' });
-    await edit.getByRole('switch', { name: 'Lasts under 3 years — deduct at once' }).click();
+    await edit.getByRole('switch', { name: 'Lasts under 3 years: deduct at once' }).click();
     await edit.getByRole('button', { name: 'Save' }).click();
     await expect(page.locator('.list li')).not.toContainText('25 % a year');
     await expect(page.locator('.hero .big')).toHaveText('2 000,00 €');
@@ -497,7 +501,7 @@ test.describe('costs and receipts', () => {
 
     await page.locator('.list li').click();
     await page.getByRole('dialog', { name: 'Cost' }).getByRole('button', { name: 'Edit' }).click();
-    await page.getByRole('dialog', { name: 'Edit cost' }).getByRole('switch', { name: 'Lasts under 3 years — deduct at once' }).click();
+    await page.getByRole('dialog', { name: 'Edit cost' }).getByRole('switch', { name: 'Lasts under 3 years: deduct at once' }).click();
     await page.getByRole('dialog', { name: 'Edit cost' }).getByRole('button', { name: 'Save' }).click();
     await expect(page.locator('.hero .big')).toHaveText('500,00 €');
   });
@@ -520,7 +524,7 @@ test.describe('costs and receipts', () => {
     await page.getByRole('button', { name: 'Add cost' }).click();
     const sheet = page.getByRole('dialog', { name: 'Add cost' });
     await sheet.getByLabel('Amount (€)').fill('20000');
-    await sheet.getByRole('radio', { name: 'Basic improvement' }).click();
+    await sheet.getByRole('combobox', { name: 'Category' }).selectOption({ label: 'Basic improvement' });
 
     await expect(sheet.getByLabel('Spread over (years)')).toHaveCount(0);
     await expect(sheet.getByText('added to building cost')).toBeVisible();
@@ -544,7 +548,7 @@ test.describe('costs and receipts', () => {
     await page.getByRole('button', { name: 'Add cost' }).click();
     const sheet = page.getByRole('dialog', { name: 'Add cost' });
     await sheet.getByLabel('Amount (€)').fill('2000');
-    await sheet.getByRole('radio', { name: 'Furniture & appliances' }).click();
+    await sheet.getByRole('combobox', { name: 'Category' }).selectOption({ label: 'Furniture & appliances' });
 
     await expect(sheet.getByText('Not deductible', { exact: true })).toBeVisible();
     // Nothing to decide about how long it lasts: it is not deducted either way.
@@ -566,7 +570,7 @@ test.describe('costs and receipts', () => {
     await page.getByRole('button', { name: 'Add cost' }).click();
     const sheet = page.getByRole('dialog', { name: 'Add cost' });
     await sheet.getByLabel('Amount (€)').fill('300');
-    await sheet.getByRole('radio', { name: 'Loan interest' }).click();
+    await sheet.getByRole('combobox', { name: 'Category' }).selectOption({ label: 'Loan interest' });
 
     await expect(sheet.getByText('Not deductible', { exact: true })).toBeVisible();
     await openInfo(page, 'About not deductible');
@@ -581,7 +585,7 @@ test.describe('costs and receipts', () => {
     await page.getByRole('button', { name: 'Add cost' }).click();
     const sheet = page.getByRole('dialog', { name: 'Add cost' });
     await expect(sheet.getByLabel('Kilometres driven (optional)')).toHaveCount(0);
-    await sheet.getByRole('radio', { name: 'Travel' }).click();
+    await sheet.getByRole('combobox', { name: 'Category' }).selectOption({ label: 'Travel' });
 
     await sheet.getByLabel('Kilometres driven (optional)').fill('120');
     await expect(sheet.getByLabel('Amount (€)')).toHaveValue('32.4');
@@ -641,4 +645,45 @@ test.describe('popups on a narrow phone', () => {
       expect(left.right).toBeLessThan(right.left);
     });
   }
+});
+
+test.describe('the cost form', () => {
+  test('gives every field and the photo button one height, and lines up the two that share a row', async ({ page, api }) => {
+    api.addApartment({ name: 'Flat' });
+    await page.goto('/');
+    await section(page, 'Costs');
+    await page.getByRole('button', { name: 'Add cost' }).click();
+    const sheet = page.getByRole('dialog', { name: 'Add cost' });
+    // Measure the form at rest: while the dialog slides in, each box is read at a different point of the slide.
+    await sheet.evaluate((el) => Promise.all(el.getAnimations({ subtree: true }).map((a) => a.finished)));
+
+    const box = async (control: import('@playwright/test').Locator) => (await control.boundingBox())!;
+    const amount = await box(sheet.getByLabel('Amount (€)'));
+    const category = await box(sheet.getByRole('combobox', { name: 'Category' }));
+    const description = await box(sheet.getByLabel('Description'));
+    const date = await box(sheet.getByLabel('Date'));
+    const photo = await box(sheet.getByRole('button', { name: 'Receipt' }));
+
+    for (const [name, b] of Object.entries({ amount, category, description, photo })) {
+      expect(b.height, `${name} is as tall as the date field`).toBeCloseTo(date.height, 0);
+    }
+    expect(photo.y, 'the photo button starts level with the date field beside it').toBeCloseTo(date.y, 0);
+  });
+
+  test('keeps the category arrow inside the field, as far from the right edge as the text is from the left', async ({ page, api }) => {
+    api.addApartment({ name: 'Flat' });
+    await page.goto('/');
+    await section(page, 'Costs');
+    await page.getByRole('button', { name: 'Add cost' }).click();
+    const select = page.getByRole('dialog', { name: 'Add cost' }).getByRole('combobox', { name: 'Category' });
+
+    const { appearance, arrowInset, textInset } = await select.evaluate((el) => {
+      const s = getComputedStyle(el);
+      // The arrow is drawn by the page (the browser's own sits flush against the edge), at calc(100% - Npx).
+      const insets = [...s.backgroundPositionX.matchAll(/calc\(100% - ([\d.]+)px\)/g)].map((m) => Number(m[1]));
+      return { appearance: s.appearance, arrowInset: insets.length ? Math.min(...insets) : 0, textInset: parseFloat(s.paddingLeft) };
+    });
+    expect(appearance).toBe('none');
+    expect(arrowInset).toBeGreaterThanOrEqual(textInset);
+  });
 });

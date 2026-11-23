@@ -59,6 +59,22 @@ test.describe('install popup', () => {
     await expect(popup(page)).toBeVisible();
   });
 
+  test('Escape closes it even when pressed the very moment it appears', async ({ page, api }) => {
+    api.addApartment({ name: 'Flat' });
+    // Press Escape as soon as the dialog is in the page: before React's after-paint effects have run.
+    await page.addInitScript(() => {
+      new MutationObserver((_, observer) => {
+        if (!document.querySelector('[role=dialog]')) return;
+        observer.disconnect();
+        (window as unknown as { __pressed: boolean }).__pressed = true;
+        document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+      }).observe(document, { childList: true, subtree: true });
+    });
+    await page.goto('/');
+    await expect.poll(() => page.evaluate(() => (window as unknown as { __pressed?: boolean }).__pressed)).toBe(true);
+    await expect(popup(page)).toBeHidden();
+  });
+
   test('Escape closes it for this visit, and it is back after a reload', async ({ page, api }) => {
     api.addApartment({ name: 'Flat' });
     await page.goto('/');

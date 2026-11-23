@@ -183,9 +183,28 @@ To keep a skill worth having:
 Existing skills follow this: `merge-on-green`, `test-first`,
 `isolated-task-branch`, `cli-first-provisioning`, `deploy-gate`,
 `capture-a-discovery`, `attach-a-repo`, `deadline-fair-batch`, `money-arithmetic`,
-`e2e-ui-coverage`. Improve one
+`e2e-ui-coverage`, `design-system`. Improve one
 rather than writing a near-duplicate — if a new situation is a variation on something already
 covered, extend that skill.
+
+---
+
+## The Design System Is DESIGN.md
+
+How the app looks is written down in `DESIGN.md` at the root: the principles,
+every token with its light and dark value and its use, the components, motion,
+copy rules and how to check a change. It is the source of truth, not the
+stylesheet you happen to be reading.
+
+- **Every change to how the app looks follows DESIGN.md**, and a change that
+  goes beyond it (a new token, a new value, a new rule for where colour may
+  appear) **updates DESIGN.md in the same MR**, with a line in its Changelog.
+- `tests/design-doc.test.ts` fails if a stylesheet declares a token DESIGN.md
+  does not describe, or DESIGN.md describes one that no longer exists. Do not
+  loosen it to get a change through; document the token.
+- **Use the `design-system` skill** for the procedure: reading the system
+  first, using tokens instead of literals, adding a token in both dark blocks,
+  the checks to run, and the traps that have already cost a change.
 
 ---
 
