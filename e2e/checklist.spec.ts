@@ -75,6 +75,22 @@ test.describe('the apartment’s checklist', () => {
     await expect.poll(() => apt.checklist).toEqual([SEEDED[0], { ...PLUMBER, done: true }, { ...SEEDED[2]!, done: false }]);
   });
 
+  test('crosses out a ticked item, so what is done reads as done at a glance', async ({ page, api }) => {
+    api.addApartment({ name: 'Flat' }, { checklist: [PLUMBER, SEEDED[2]!] });
+    await page.goto('/');
+    await section(page, 'Checklist');
+    const struck = (text: string) =>
+      list(page).getByText(text, { exact: true }).evaluate((el) => getComputedStyle(el).textDecorationLine);
+
+    await expect.poll(() => struck('Renew the insurance')).toBe('line-through');
+    expect(await struck('Call the plumber')).toBe('none');
+
+    await list(page).getByRole('checkbox', { name: 'Call the plumber' }).check();
+    await expect.poll(() => struck('Call the plumber')).toBe('line-through');
+    await list(page).getByRole('checkbox', { name: 'Renew the insurance' }).uncheck();
+    await expect.poll(() => struck('Renew the insurance')).toBe('none');
+  });
+
   test('ticks the box the moment it is tapped, before the save has come back', async ({ page, api }) => {
     api.addApartment({ name: 'Flat' }, { checklist: [PLUMBER] });
     await page.goto('/');

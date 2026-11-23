@@ -266,17 +266,28 @@ input[type="date"], input[type="month"] { display: block; appearance: none; -web
 .sheet-foot { display: flex; gap: var(--space-sm); margin-top: var(--space-lg); }
 .sheet-foot .btn { flex: 1; }
 .sheet-foot .btn.primary { flex: 2; }
-/* The apartment's checklist: one row per item, its checkbox and text, and a × at the end to remove it. */
-.checklist .iconbtn { flex: none; color: var(--muted); }
-.checklist .iconbtn svg.i { width: 18px; height: 18px; }
-.checklist { list-style: none; margin: 0; padding: 0; }
-.checklist > li { display: flex; align-items: center; gap: var(--space-xs); padding: var(--space-xs) 0; border-bottom: 1px solid var(--line); }
+/* The apartment's checklist: a page head with the progress chip, then a sheet with one row per item (a round tick, its text, a × to remove it) and the box to add one under it. */
+.checklist-head { display: flex; flex-direction: column; gap: var(--space-2xs); }
+.checklist-head .pagehead { justify-content: space-between; gap: var(--space-sm); }
+.checklist-hint { font-size: var(--text-sm); color: var(--muted); }
+.checklist-body { display: flex; flex-direction: column; gap: var(--space-sm); }
+.checklist-empty { padding: var(--space-lg) var(--space-md); text-align: center; color: var(--muted); }
+.checklist > li { display: flex; align-items: center; gap: var(--space-xs); min-height: 56px; padding: var(--space-2xs) 0; border-bottom: 1px solid var(--line); }
 .checklist > li:last-child { border-bottom: 0; }
-.checklist label { flex: 1; min-width: 0; margin: 0; min-height: 28px; gap: var(--space-sm); font-size: var(--text-md); font-weight: 400; color: var(--text); }
-.checklist input[type=checkbox] { flex: none; width: 24px; min-height: 24px; height: 24px; padding: 0; accent-color: var(--brand-deep); }
-.checklist-add { display: flex; gap: var(--space-sm); margin: var(--space-sm) 0 var(--space-2xs); }
+.checklist label { position: relative; flex: 1; min-width: 0; margin: 0; min-height: 44px; gap: var(--space-sm); font-size: var(--text-md); font-weight: 400; color: var(--text); cursor: pointer; }
+.checklist .text { min-width: 0; overflow-wrap: anywhere; padding: var(--space-xs) 0; }
+.checklist li.done .text { color: var(--muted); text-decoration: line-through; text-decoration-color: var(--muted); }
+/* The real checkbox sits unseen over the drawn tick, so it is still what is clicked, focused and announced. */
+.checklist input[type=checkbox] { position: absolute; left: 0; top: 0; bottom: 0; width: 24px; height: 24px; min-height: 0; margin: auto 0; padding: 0; opacity: 0; cursor: pointer; }
+.checklist .tick { display: grid; place-items: center; flex: none; width: 24px; height: 24px; border: 1.5px solid var(--field-edge); border-radius: var(--radius-pill); color: transparent; transition: background-color var(--dur-short) var(--ease-out), border-color var(--dur-short) var(--ease-out), color var(--dur-short) var(--ease-out); }
+.checklist .tick svg.i { width: 16px; height: 16px; stroke-width: 2.4; }
+.checklist input:checked + .tick { background: var(--good-soft); border-color: transparent; color: var(--good); }
+.checklist input:focus-visible + .tick { outline: 2px solid var(--color-focus); outline-offset: 2px; }
+.checklist .iconbtn { flex: none; margin-right: calc(-1 * var(--space-xs)); color: var(--muted); }
+.checklist .iconbtn svg.i { width: 18px; height: 18px; }
+.checklist-add { display: flex; gap: var(--space-sm); }
+.checklist-add input { flex: 1; }
 .checklist-add .btn { flex: none; }
-.checklist-hint { font-size: var(--text-sm); color: var(--muted); margin: var(--space-xs) 0 0; }
 /* The actions under a form on a page (not in a sheet): their own size, on the right, a destructive one on the left. */
 .form-foot { display: flex; align-items: center; justify-content: flex-end; gap: var(--space-sm); margin: var(--space-md) 0 var(--space-sm); }
 .form-foot .btn.danger { margin-right: auto; }
@@ -387,6 +398,7 @@ a.btn.primary { color: var(--brand-ink); }
   .btn.primary:not(:disabled):hover { background: var(--brand-deep); box-shadow: var(--shadow-lift); }
   .btn.quiet:not(:disabled):hover { background: var(--tray); }
   .iconbtn:hover:not(:disabled) { background: var(--tint); color: var(--text); }
+  .checklist label:hover input:not(:checked) + .tick { border-color: var(--text-2); }
   .year:hover { background-color: var(--tint); }
   .month:not(.future):hover { border-color: var(--brand-deep); transform: translateY(-2px); box-shadow: var(--shadow-lift); }
   .choice:hover { border-color: var(--brand-deep); }

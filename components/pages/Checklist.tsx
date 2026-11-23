@@ -6,7 +6,7 @@ import type { ApartmentView } from '@/lib/domain/types';
 import type { ChecklistItem } from '@/lib/domain/apartmentChecklist';
 import { api } from '@/lib/client/api';
 import { useI18n } from '@/components/I18nProvider';
-import { ErrorNote, Heading, Icon } from '@/components/ui';
+import { ErrorNote, Icon } from '@/components/ui';
 
 type Props = { apt: ApartmentView; onChanged: () => Promise<void> };
 
@@ -79,27 +79,31 @@ export default function Checklist({ apt, onChanged }: Props) {
   };
 
   return (
-    <section className="section">
-      <Heading
-        action={items.length > 0 ? <span className="chip">{t('checklist.progress', { done, total: items.length })}</span> : undefined}
-      >
-        {t('nav.checklist')}
-      </Heading>
-      <p className="checklist-hint">{t('checklist.shared')}</p>
-      <div className="card pad">
+    <>
+      <header className="checklist-head">
+        <div className="pagehead">
+          <h1>{t('nav.checklist')}</h1>
+          {items.length > 0 && <span className="chip">{t('checklist.progress', { done, total: items.length })}</span>}
+        </div>
+        <p className="checklist-hint">{t('checklist.shared')}</p>
+      </header>
+      <section className="checklist-body">
         {items.length === 0 ? (
-          <p className="checklist-hint">{t('checklist.empty')}</p>
+          <p className="card checklist-empty">{t('checklist.empty')}</p>
         ) : (
-          <ul className="checklist" aria-label={t('checklist.items')}>
+          <ul className="card list checklist" aria-label={t('checklist.items')}>
             {items.map((it, i) => (
-              <li key={i}>
+              <li key={i} className={it.done ? 'done' : undefined}>
                 <label>
                   <input
                     type="checkbox"
                     checked={it.done}
                     onChange={() => change((list) => list.map((x, j) => (j === i ? { ...x, done: !x.done } : x)))}
                   />
-                  <span>{it.text}</span>
+                  <span className="tick" aria-hidden="true">
+                    {Icon.check}
+                  </span>
+                  <span className="text">{it.text}</span>
                 </label>
                 <button
                   type="button"
@@ -120,12 +124,12 @@ export default function Checklist({ apt, onChanged }: Props) {
             value={item}
             onChange={(e) => setItem(e.target.value)}
           />
-          <button className="btn quiet" type="submit" disabled={item.trim() === ''}>
+          <button className="btn primary" type="submit" disabled={item.trim() === ''}>
             {t('checklist.add')}
           </button>
         </form>
         <ErrorNote message={error} />
-      </div>
-    </section>
+      </section>
+    </>
   );
 }
