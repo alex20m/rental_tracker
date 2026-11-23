@@ -7,6 +7,7 @@ import { ErrorNote, Icon, Segmented, YearSelect } from '@/components/ui';
 import { useI18n } from '@/components/I18nProvider';
 import AddApartment from '@/components/AddApartment';
 import AppNav, { NAV_ID } from '@/components/AppNav';
+import ScopeToggle from '@/components/ScopeToggle';
 import Portfolio from '@/components/pages/Portfolio';
 import Home from '@/components/pages/Home';
 import RentLog from '@/components/pages/RentLog';
@@ -203,6 +204,9 @@ export default function RentalApp() {
   const aptName = apt?.settings.name ?? items.find((i) => i.id === selectedId)?.name ?? '…';
   // The year matters wherever there are figures for it; settings and the account have none.
   const showYear = !welcome && tab !== 'settings' && tab !== 'sale' && tab !== 'checklist' && !onAccount;
+  // On a desktop the share switch of a co-owned apartment sits up here beside the year, on the pages it changes;
+  // on a phone the bar has no room for it, and Home and Tax show it above their figures instead.
+  const scopeApt = apt && apt.mySharePct !== 100 && inApartment && (tab === 'home' || tab === 'tax') ? apt : null;
 
   return (
     <div
@@ -222,6 +226,7 @@ export default function RentalApp() {
           {Icon.menu}
         </button>
         {inApartment ? <h1 className="grow aptname">{aptName}</h1> : <div className="grow brand">{t('app.name')}</div>}
+        {scopeApt && <ScopeToggle sharePct={scopeApt.mySharePct} scope={scope} onScope={setScope} />}
         {showYear && <YearSelect year={year} years={years} onChange={setYear} />}
       </header>
 

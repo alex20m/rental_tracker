@@ -243,11 +243,17 @@ describe('a co-owned apartment', () => {
     // 6 × 700 = 4 200 for the apartment, half of it is mine
     expect(screen.getByTestId('net-income').textContent).toMatch(/2\s?100,00/);
 
-    await user().click(screen.getByRole('radio', { name: 'Whole apartment' }));
+    // The switch is there twice: above the figures for phones and in the top bar for desktops (CSS shows one).
+    // Either one switches the figures, and the other follows it.
+    const onPage = within(screen.getByRole('main'));
+    const inTopBar = within(screen.getByRole('banner'));
+    await user().click(onPage.getByRole('radio', { name: 'Whole apartment' }));
     expect(screen.getByTestId('net-income').textContent).toMatch(/4\s?200,00/);
+    expect(inTopBar.getByRole('radio', { name: 'Whole apartment' }).getAttribute('aria-checked')).toBe('true');
 
-    await user().click(screen.getByRole('radio', { name: /Your share/ }));
+    await user().click(inTopBar.getByRole('radio', { name: /Your share/ }));
     expect(screen.getByTestId('net-income').textContent).toMatch(/2\s?100,00/);
+    expect(onPage.getByRole('radio', { name: /Your share/ }).getAttribute('aria-checked')).toBe('true');
   });
 
   it('has no share toggle when you own all of it', async () => {

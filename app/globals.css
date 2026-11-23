@@ -135,7 +135,8 @@ svg.i { width: 20px; height: 20px; flex: none; }
 
 /* ── The figure: bare on the paper, the page's one large number, its parts in columns under a hairline ── */
 .hero { display: flex; flex-direction: column; gap: var(--space-xs); padding: var(--space-xs) 0 0; }
-.hero > .seg { margin-bottom: var(--space-sm); }
+.hero > .seg { margin-bottom: var(--space-lg); }
+.topbar > .seg { display: none; }
 .stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--space-sm); margin-top: var(--space-md); padding-top: var(--space-md); border-top: 1px solid var(--line); }
 .stats.two { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 .stat .v { font-family: var(--font-display); font-size: var(--text-xl); line-height: 1.1; font-weight: 700; letter-spacing: var(--tracking-display); font-variant-numeric: proportional-nums; }
@@ -437,6 +438,13 @@ a.btn.primary { color: var(--brand-ink); }
   .shell > .topbar { gap: var(--space-sm); }
   .topbar .brand { visibility: hidden; } /* the sidebar already names the app */
   .shell > .topbar .aptname { font-size: var(--text-2xl); }
+
+  /* The share switch moves up beside the year, so both columns start on the same line under the title. */
+  .topbar > .seg { display: flex; }
+  .topbar > .seg button { flex: none; padding: 0 var(--space-md); }
+  .hero > .seg { display: none; }
+  .hero { padding-top: 0; }
+  .stats.insights { padding-top: 0; border-top: 0; }
 
   /* Columns, not a grid: sections of unequal height pack without gaps. */
   .page-home, .page-portfolio, .page-tax, .page-sale { display: block; column-count: 2; column-gap: var(--space-2xl); }
