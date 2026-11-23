@@ -190,7 +190,8 @@ column does not also have. Beside a column of cards, the bare summary starts
   Disabled: tint fill, muted text, not-allowed cursor.
 - **Fields:** 48px, `--field-edge` border, 14px radius, focus ring inside.
   Selects draw `--chevron` 16px in from the right. Labels sit above, 14px,
-  weight 500.
+  weight 500. A date or month value starts on the left and sits on the
+  field's middle, like typed text, not where iOS puts it.
 - **Segmented control** (`.seg`): a pill tray; the chosen segment is raised.
 - **Share switch** (co-owned apartments, Home and Tax): a segmented control,
   "Your share (n %)" or "Whole apartment". On a phone it sits above the
@@ -283,6 +284,10 @@ the rest follow the light mapping.
 
 ## Changelog
 
+- **2026-11:** A date field on an iPhone shows its date on the left and on the
+  field's middle line, like the amount beside it. It had sat centred and
+  pressed to the top, because the rule that kept it inside its column also
+  switched off Safari's own vertical centring.
 - **2026-11:** Sheets hold the page behind them still, which they had
   only claimed to: the scroll lock sat on `<body>`, where it does nothing once
   the root clips overflow. A long value in a key-value row (a cost's
