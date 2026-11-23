@@ -57,8 +57,11 @@ export function Sheet({ title, children, onClose }: { title: string; children: R
   // first frame it is on screen. A plain effect waits until after paint, and an Escape in between did nothing.
   useLayoutEffect(() => {
     const before = document.activeElement as HTMLElement | null;
-    const overflow = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
+    // The page behind holds still. The lock goes on <html>, not <body>: the root clips overflow-x, so a body's
+    // overflow no longer reaches the viewport, and a body set to hidden let the page scroll under the sheet.
+    const root = document.documentElement;
+    const overflow = root.style.overflow;
+    root.style.overflow = 'hidden';
     // Move focus in, unless a field inside already took it with autoFocus.
     if (panel.current && !panel.current.contains(document.activeElement)) panel.current.focus();
     const onKey = (e: KeyboardEvent) => {
@@ -67,7 +70,7 @@ export function Sheet({ title, children, onClose }: { title: string; children: R
     document.addEventListener('keydown', onKey);
     return () => {
       document.removeEventListener('keydown', onKey);
-      document.body.style.overflow = overflow;
+      root.style.overflow = overflow;
       before?.focus?.();
     };
   }, []);
