@@ -38,7 +38,7 @@ calm, with colour kept for status.
 | `app/tokens.css` | The raw theme (Mono colours, faces, radii, shadows) and the shared scales: spacing, type, motion, z-index. |
 | `app/base.css` | Base rules every page gets: box sizing, `overflow-x: clip`, focus ring, headings, reduced motion. |
 | `app/globals.css` | The app's own token names mapped onto the theme, the dark palette, and every component. Its first lines are the Hallmark stamp. |
-| `app/layout.tsx` | Loads Plus Jakarta Sans as `--font-jakarta`; the browser's theme colours for light and dark. |
+| `app/layout.tsx` | Loads Plus Jakarta Sans (self-hosted from `@fontsource-variable/plus-jakarta-sans`, so a build never needs the network) as `--font-jakarta`; the browser's theme colours for light and dark. |
 | `public/manifest.webmanifest` | The installed app's background (the light paper) and theme colour (the logo's black). |
 | `public/icon.svg`, `public/*.png` | The logo. `components/ui.tsx` holds the same mark as `Icon.logo`. |
 | `tests/theme.test.ts` | Asserts the system: greys for chrome, status hues, contrast, heights, radius. |
@@ -125,7 +125,7 @@ green of similar lightness.
 
 ## Type
 
-One face, **Plus Jakarta Sans**, loaded by `next/font` as `--font-jakarta` and
+One face, **Plus Jakarta Sans**, self-hosted with `next/font/local` as `--font-jakarta` and
 used for `--font-display` (heads and figures), `--font-body` and
 `--font-outlier`. Weights 400, 500, 600 and 700. `--font` is the body face.
 

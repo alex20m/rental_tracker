@@ -1,13 +1,19 @@
 import type { Metadata, Viewport } from 'next';
 import type { ReactNode } from 'react';
-import { Plus_Jakarta_Sans } from 'next/font/google';
+import localFont from 'next/font/local';
 import { I18nProvider } from '@/components/I18nProvider';
 import { INSTALL_PROMPT_SCRIPT } from '@/lib/pwa';
 import { THEME_INIT_SCRIPT } from '@/lib/ui/theme';
 import './globals.css';
 
-// Kuusi's one face: Plus Jakarta Sans, round and modern, for heads, figures and text alike.
-const jakarta = Plus_Jakarta_Sans({ subsets: ['latin'], weight: ['400', '500', '600', '700'], variable: '--font-jakarta', display: 'swap' });
+// The app's one face, Plus Jakarta Sans, self-hosted from @fontsource-variable: a build that fetched it from Google
+// Fonts failed whenever that download did. One variable file covers every weight used (400 to 700).
+const jakarta = localFont({
+  src: '../node_modules/@fontsource-variable/plus-jakarta-sans/files/plus-jakarta-sans-latin-wght-normal.woff2',
+  weight: '200 800',
+  variable: '--font-jakarta',
+  display: 'swap',
+});
 
 export const metadata: Metadata = {
   title: 'Rental Tracker',

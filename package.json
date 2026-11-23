@@ -2,7 +2,7 @@
   "name": "rental-tracker",
   "version": "2.0.0",
   "private": true,
-  "description": "Track rental apartments, their co-owners and ownership shares, and prepare each owner\u2019s Finnish rental income tax declaration.",
+  "description": "Track rental apartments, their co-owners and ownership shares, and prepare each owner’s Finnish rental income tax declaration.",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
@@ -16,6 +16,7 @@
     "migrate:new": "node-pg-migrate create --migrations-dir db/migrations --migration-file-language sql"
   },
   "dependencies": {
+    "@fontsource-variable/plus-jakarta-sans": "5.2.5",
     "@neondatabase/auth": "0.5.0-beta",
     "@neondatabase/serverless": "^1.1.0",
     "jspdf": "^4.2.1",
