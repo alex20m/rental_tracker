@@ -54,10 +54,11 @@ const isCard = (s: Surface) => s.background !== s.paper && !s.background.endsWit
 
 /** Asserts the page has exactly these titled cards (plus any untitled ones), and that its summary, if any, is not a card. */
 async function expectCards(page: Page, headings: string[]) {
-  await expect(page.getByRole('heading', { name: headings[0] })).toBeVisible();
+  if (headings[0]) await expect(page.getByRole('heading', { name: headings[0] })).toBeVisible();
   const all = await surfaces(page);
   const summary = all.filter((s) => s.heading === '(summary)');
   const rest = all.filter((s) => s.heading !== '(summary)');
+  expect(rest.length, 'cards on the page').toBeGreaterThan(0);
   for (const s of summary) expect(isCard(s), 'the opening summary sits bare on the paper').toBe(false);
   for (const h of headings) expect(rest.map((s) => s.heading), `a section titled ${h}`).toContainEqual(expect.stringContaining(h));
   for (const s of rest) expect(isCard(s), `the section "${s.heading}" is a card`).toBe(true);
@@ -81,8 +82,11 @@ for (const scheme of ['light', 'dark'] as const) {
       await expectCards(page, ['Before you file', 'Income', 'Expenses', 'Declaration']);
       await section(page, 'Sale');
       await expectCards(page, ['Your purchase', 'Your sale', 'Acquisition costs', 'Two ways to count the gain', 'Your tax']);
+      // The checklist's title and progress are its summary; its rows and the box to add one are a single card.
       await section(page, 'Checklist');
-      await expectCards(page, ['Checklist']);
+      await expect(page.getByRole('heading', { name: 'Checklist', level: 1 })).toBeVisible();
+      await expectCards(page, []);
+      await expect(page.locator('.panel').filter({ has: page.getByRole('button', { name: 'Add', exact: true }) })).toHaveCount(1);
     });
 
     test('keeps the recurring list off the edge of its card', async ({ page, api }) => {
