@@ -112,10 +112,10 @@ describe('the Mono theme', () => {
     expect(luminance(token('bg', 'dark'))).toBeLessThan(0.05);
   });
 
-  it('is Mono: black and white like the logo, with colour kept for errors', () => {
+  it('is Mono: black and white like the logo, with colour kept for status', () => {
     // Every surface, text and control colour is a pure grey: equal red, green and blue.
     for (const scheme of ['light', 'dark'] as const) {
-      for (const name of ['bg', 'card', 'text', 'text-2', 'muted', 'line', 'tint', 'tray', 'brand', 'brand-soft', 'good', 'good-soft']) {
+      for (const name of ['bg', 'card', 'text', 'text-2', 'muted', 'line', 'tint', 'tray', 'brand', 'brand-soft']) {
         const [r, g, b] = rgb(token(name, scheme));
         expect(r === g && g === b, `${name} ${scheme} is grey`).toBe(true);
       }
@@ -125,13 +125,26 @@ describe('the Mono theme', () => {
     expect(luminance(token('brand', 'dark'))).toBeGreaterThan(0.8);
   });
 
-  it('keeps what is missing or late a quiet neutral, never amber or red', () => {
+  it('marks status in colour: rent that is in green, what needs a look amber, cost bars yellow', () => {
     for (const scheme of ['light', 'dark'] as const) {
-      for (const name of ['warn', 'warn-soft']) {
-        // A neutral's three channels sit close together; amber or red pulls them far apart.
+      for (const name of ['good', 'good-soft']) {
         const [r, g, b] = rgb(token(name, scheme));
-        expect(Math.max(r, g, b) - Math.min(r, g, b), `${name} ${scheme} is a neutral`).toBeLessThan(24);
+        expect(g > r && g > b, `${name} ${scheme} is green`).toBe(true);
       }
+      for (const name of ['warn', 'warn-soft', 'bar-cost']) {
+        // Amber and yellow: red leads, then green, with blue far behind.
+        const [r, g, b] = rgb(token(name, scheme));
+        expect(r >= g && g > b + 20, `${name} ${scheme} is amber or yellow`).toBe(true);
+      }
+    }
+  });
+
+  it('draws rent green and costs yellow, far enough apart in lightness to tell without colour', () => {
+    for (const scheme of ['light', 'dark'] as const) {
+      const [r, g, b] = rgb(token('bar-rent', scheme));
+      expect(g > r && g > b, `rent bars ${scheme} are green`).toBe(true);
+      // Red-green colour blindness sees hue poorly but lightness well: bars of equal lightness would merge.
+      expect(contrast(token('bar-rent', scheme), token('bar-cost', scheme)), `rent and cost bars ${scheme}`).toBeGreaterThanOrEqual(1.8);
     }
   });
 

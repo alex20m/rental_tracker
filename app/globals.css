@@ -1,6 +1,6 @@
 /* Hallmark · shape: app screen · genre: modern-minimal · theme: custom "Mono" (by request) · redesign: full
- * nav: kept (a drawer on phones, a sidebar from 960px; nine destinations) · signature: the year as a tray of twelve month compartments, a black tile like the logo where the rent is in · states: loading, empty, error, full · ground: near-white by day, the logo's black at night
- * axes: light/geometric-sans/neutral · posture: restrained · contrast: pass · v2.0.0 */
+ * nav: kept (a drawer on phones, a sidebar from 960px; nine destinations) · signature: the year as a tray of twelve month compartments, green where the rent is in · states: loading, empty, error, full · ground: near-white by day, the logo's black at night
+ * axes: light/geometric-sans/neutral, status in colour · posture: restrained · contrast: pass · v2.0.0 */
 /* Hallmark · pre-emit critique: P4 H4 E4 S4 R5 V3 · weakest: V, an app shell has few structural axes to vary; the variety is in the surfaces: the figure sits bare on paper, lists are white sheets, to-dos and months sit in sunken trays */
 /* Hallmark · dismissed 40 · the low pairs mix light and night values of one token; tests/theme.test.ts resolves each scheme and holds every drawn text pair at 4.5:1 */
 /* Hallmark · dismissed 41 · the same mixed-scheme reading: buttons, the current tab and the nav item set --text on --card, 4.5:1 or more in both schemes */
@@ -34,11 +34,12 @@
   --brand-deep: oklch(30% 0 0);
   --brand-ink: var(--color-accent-ink);
   --brand-soft: var(--color-accent-soft);
-  /* Black does every signal, as in the logo; what is missing or late is a quiet grey. Red is kept for errors and for deleting. */
-  --good: var(--color-accent-deep);
-  --good-soft: var(--color-accent-soft);
-  --warn: var(--color-ink-2);
-  --warn-soft: var(--color-paper-3);
+  /* The app is black and white; colour is kept for status, in small places: green for rent that is in and things
+     done, amber for costs and what needs a look, red for unpaid rent, errors and deleting. Vacant is grey. */
+  --good: oklch(46% 0.12 150);
+  --good-soft: oklch(94.5% 0.045 150);
+  --warn: oklch(50% 0.11 68);
+  --warn-soft: oklch(95.5% 0.05 85);
   --bad: var(--color-error);
   --bad-soft: oklch(95% 0.03 27);
   --scrim: oklch(0% 0 0 / 0.38);
@@ -50,7 +51,10 @@
   --shadow-edge: var(--shadow-card);
   /* A field's edge stays at 3:1 against the white it sits on. */
   --field-edge: oklch(62% 0 0);
-  --bar-cost: oklch(78% 0 0);
+  /* The chart: rent in the green of a paid month, costs in yellow. The two differ in lightness as well as hue,
+     so they stay apart for someone who cannot tell red from green. */
+  --bar-rent: oklch(52% 0.13 150);
+  --bar-cost: oklch(78% 0.15 80);
   /* The dropdown's chevron, in the ink colour: drawn by the page so it can stand clear of the field's edge. */
   --chevron: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1.5 1.75 6 6.25l4.5-4.5' fill='none' stroke='%230a0a0a' stroke-width='1.75' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
   --shadow-inset: inset 0 1px 2px oklch(0% 0 0 / 0.06);
@@ -65,7 +69,7 @@
     --color-ink: oklch(96% 0 0); --color-ink-2: oklch(84% 0 0); --color-muted: oklch(70% 0 0);
     --color-rule: oklch(27% 0 0);
     --color-accent: oklch(96% 0 0); --color-accent-deep: oklch(96% 0 0); --color-accent-soft: oklch(27% 0 0); --color-accent-ink: oklch(14.5% 0 0);
-    --color-focus: oklch(92% 0 0); --brand-deep: oklch(84% 0 0); --bar-cost: oklch(46% 0 0); --color-error: oklch(74% 0.14 27);
+    --color-focus: oklch(92% 0 0); --brand-deep: oklch(84% 0 0); --bar-rent: oklch(62% 0.13 150); --bar-cost: oklch(84% 0.13 82); --good: oklch(78% 0.13 150); --good-soft: oklch(29% 0.06 150); --warn: oklch(82% 0.12 80); --warn-soft: oklch(30% 0.06 75); --color-error: oklch(74% 0.14 27);
     --surface: oklch(18.5% 0 0); --bad-soft: oklch(28% 0.05 27); --knob: oklch(96% 0 0); --tint: oklch(17.5% 0 0); --tray: oklch(21% 0 0); --raised: oklch(27% 0 0);
     --field-edge: oklch(46% 0 0);
     --chevron: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1.5 1.75 6 6.25l4.5-4.5' fill='none' stroke='%23f2f2f2' stroke-width='1.75' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
@@ -82,7 +86,7 @@
   --color-ink: oklch(96% 0 0); --color-ink-2: oklch(84% 0 0); --color-muted: oklch(70% 0 0);
   --color-rule: oklch(27% 0 0);
   --color-accent: oklch(96% 0 0); --color-accent-deep: oklch(96% 0 0); --color-accent-soft: oklch(27% 0 0); --color-accent-ink: oklch(14.5% 0 0);
-  --color-focus: oklch(92% 0 0); --brand-deep: oklch(84% 0 0); --bar-cost: oklch(46% 0 0); --color-error: oklch(74% 0.14 27);
+  --color-focus: oklch(92% 0 0); --brand-deep: oklch(84% 0 0); --bar-rent: oklch(62% 0.13 150); --bar-cost: oklch(84% 0.13 82); --good: oklch(78% 0.13 150); --good-soft: oklch(29% 0.06 150); --warn: oklch(82% 0.12 80); --warn-soft: oklch(30% 0.06 75); --color-error: oklch(74% 0.14 27);
   --surface: oklch(18.5% 0 0); --bad-soft: oklch(28% 0.05 27); --knob: oklch(96% 0 0); --tint: oklch(17.5% 0 0); --tray: oklch(21% 0 0); --raised: oklch(27% 0 0);
   --field-edge: oklch(46% 0 0);
   --chevron: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1.5 1.75 6 6.25l4.5-4.5' fill='none' stroke='%23f2f2f2' stroke-width='1.75' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
@@ -157,7 +161,7 @@ svg.i { width: 20px; height: 20px; flex: none; }
 .todo { padding: var(--space-2xs) var(--space-md); background: var(--tray); border-color: transparent; box-shadow: var(--shadow-inset); }
 .todo .row-btn, .todo .row { border-bottom-color: color-mix(in oklab, var(--line) 70%, var(--tray)); }
 .todo .row-btn:last-child, .todo .row:last-child { border-bottom: 0; }
-.todo .dot { display: grid; place-items: center; width: 24px; height: 24px; border-radius: var(--radius-pill); background: var(--card); color: var(--text-2); flex: none; box-shadow: inset 0 0 0 1px var(--line); }
+.todo .dot { display: grid; place-items: center; width: 24px; height: 24px; border-radius: var(--radius-pill); background: var(--warn-soft); color: var(--warn); flex: none; }
 .todo .dot svg.i { width: 16px; height: 16px; }
 .todo .dot.ok { background: var(--good-soft); color: var(--good); box-shadow: none; }
 .todo .done { color: var(--muted); }
@@ -170,10 +174,10 @@ svg.i { width: 20px; height: 20px; flex: none; }
 .kv.sum { border-top: 2px solid var(--text); border-bottom: 0; font-weight: 700; }
 .card .kv:last-child { border-bottom: 0; }
 .section { display: flex; flex-direction: column; }
-.link { background: none; border: 0; padding: var(--space-2xs) 0; color: var(--good); font-weight: 500; text-decoration: underline; text-underline-offset: 0.2em; text-decoration-thickness: 1px; }
+.link { background: none; border: 0; padding: var(--space-2xs) 0; color: var(--text); font-weight: 500; text-decoration: underline; text-underline-offset: 0.2em; text-decoration-thickness: 1px; }
 .link.danger { color: var(--bad); }
 .chip { display: inline-block; padding: var(--space-3xs) var(--space-xs); border-radius: var(--radius-pill); font-size: var(--text-xs); font-weight: 500; white-space: nowrap; background: var(--brand-soft); color: var(--good); vertical-align: 1px; }
-.chip.warn { background: var(--tray); color: var(--text-2); }
+.chip.warn { background: var(--warn-soft); color: var(--warn); }
 
 /* ── Navigation: a drawer on phones, a sidebar from 960px ── */
 .nav { position: fixed; top: 0; bottom: 0; left: 0; z-index: 30; display: flex; flex-direction: column; gap: var(--space-2xs); width: min(300px, 86vw); padding: calc(var(--space-xs) + env(safe-area-inset-top)) var(--space-sm) calc(var(--space-md) + env(safe-area-inset-bottom)); overflow-y: auto; background: var(--tint); border-right: 1px solid var(--line); }
@@ -186,7 +190,7 @@ svg.i { width: 20px; height: 20px; flex: none; }
 .nav button { display: flex; align-items: center; gap: var(--space-sm); min-height: 44px; padding: 0 var(--space-md); background: none; border: 0; border-radius: var(--radius-pill); color: var(--text-2); font-size: var(--text-md); font-weight: 500; text-align: left; }
 .nav button span { min-width: 0; overflow-wrap: anywhere; } /* a long label wraps inside its bubble instead of running out of it */
 .nav button[aria-current='page'] { background: var(--raised); color: var(--text); box-shadow: var(--seg-shadow), inset 0 0 0 1px var(--line); }
-.nav button[aria-current='page'] svg.i { color: var(--good); }
+.nav button[aria-current='page'] svg.i { color: var(--text); }
 
 /* ── Buttons & fields ── flat and exact: a hairline edge, a darker fill when pressed ── */
 .btn { display: inline-flex; align-items: center; justify-content: center; gap: var(--space-xs); min-height: var(--control-height); border: 0; background: var(--card); color: var(--text); border-radius: var(--radius-pill); padding: var(--space-sm) var(--space-lg); font-weight: 600; white-space: nowrap; box-shadow: 0 0 0 1px var(--line); }
@@ -240,7 +244,7 @@ input[type="date"], input[type="month"] { display: block; appearance: none; -web
 /* ── Info icon + popover ── */
 .info { display: inline-grid; place-items: center; width: 32px; height: 32px; min-height: 0; padding: 0; margin-left: 0; background: none; border: 0; border-radius: var(--radius-pill); color: var(--muted); vertical-align: middle; }
 .info svg.i { width: 16px; height: 16px; }
-.info[aria-expanded='true'] { color: var(--good); }
+.info[aria-expanded='true'] { color: var(--text); }
 .popover { position: fixed; z-index: 40; max-width: 280px; padding: var(--space-sm) var(--space-md); border-radius: var(--radius-input); background: var(--text); color: var(--bg); font-size: var(--text-sm); line-height: 1.45; font-weight: 400; box-shadow: var(--shadow); animation: pop var(--dur-micro) var(--ease-out); }
 @keyframes pop { from { opacity: 0; transform: translateY(-4px); } }
 .popover.above { animation-name: pop-up; }
@@ -281,16 +285,16 @@ input[type="date"], input[type="month"] { display: block; appearance: none; -web
 @keyframes fade { from { opacity: 0; } }
 @keyframes rise { from { transform: translateY(16px) scale(0.98); opacity: 0; } }
 
-/* ── The month tray ── the year as twelve compartments: a filled tile like the logo where the rent is in, grey and open where it is not ── */
+/* ── The month tray ── the year as twelve compartments: green where the rent is in, grey when vacant, red when unpaid, open and dashed where it is still to log ── */
 .months { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--space-xs); padding: var(--space-xs); background: var(--tray); border-radius: var(--radius-card); box-shadow: var(--shadow-inset-deep); }
 .month { display: flex; flex-direction: column; justify-content: space-between; gap: var(--space-xs); min-height: 80px; padding: var(--space-sm); text-align: left; color: var(--text); background: var(--card); border: 1px solid transparent; border-radius: var(--radius-input); box-shadow: var(--shadow-card); }
 .month .m { font-weight: 500; font-size: var(--text-sm); }
 .month .a { font-family: var(--font-outlier); font-size: var(--text-sm); color: var(--muted); font-variant-numeric: tabular-nums; }
-.month.paid { background: var(--brand); border-color: var(--brand); color: var(--brand-ink); }
-.month.paid .a { color: var(--brand-ink); font-weight: 500; }
+.month.paid { background: var(--good-soft); border-color: color-mix(in oklab, var(--good) 28%, var(--good-soft)); }
+.month.paid .a { color: var(--good); font-weight: 600; }
 .month.vacant { background: var(--tint); border-color: transparent; box-shadow: none; }
-.month.unpaid { background: var(--card); border: 1px solid var(--text-2); }
-.month.unpaid .a { color: var(--text); font-weight: 500; }
+.month.unpaid { background: var(--bad-soft); border-color: color-mix(in oklab, var(--bad) 28%, var(--bad-soft)); box-shadow: none; }
+.month.unpaid .a { color: var(--bad); font-weight: 600; }
 .month.todo-m { background: transparent; border: 1px dashed var(--muted); box-shadow: none; }
 .month.todo-m .a { color: var(--text-2); }
 .month.future { background: transparent; border-color: transparent; box-shadow: none; color: var(--muted); }
@@ -311,12 +315,12 @@ a.btn.primary { color: var(--brand-ink); }
 .bars { display: flex; align-items: flex-end; gap: var(--space-xs); height: 96px; }
 .bars .col { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; height: 100%; gap: var(--space-2xs); }
 .bars .pair { display: flex; align-items: flex-end; gap: var(--space-3xs); width: 100%; height: 100%; border-bottom: 1px solid var(--line); }
-.bars .bar { flex: 1; border-radius: 3px 3px 0 0; background: var(--brand); }
+.bars .bar { flex: 1; border-radius: 3px 3px 0 0; background: var(--bar-rent); }
 .bars .bar.cost { background: var(--bar-cost); }
 .bars .lbl { font-size: var(--text-xs); color: var(--muted); }
 .bars .col.now .lbl { color: var(--text); font-weight: 600; }
 .legend { display: flex; gap: var(--space-md); margin-top: var(--space-sm); font-size: var(--text-sm); color: var(--muted); }
-.legend i { display: inline-block; width: 10px; height: 10px; margin-right: var(--space-xs); border-radius: 2px; background: var(--brand); }
+.legend i { display: inline-block; width: 10px; height: 10px; margin-right: var(--space-xs); border-radius: 2px; background: var(--bar-rent); }
 .legend i.cost { background: var(--bar-cost); }
 
 /* ── Notices ── a note in the tray; red only when something failed ── */
@@ -385,7 +389,7 @@ a.btn.primary { color: var(--brand-ink); }
   .year:hover { background-color: var(--tint); }
   .month:not(.future):hover { border-color: var(--brand-deep); transform: translateY(-2px); box-shadow: var(--shadow-lift); }
   .choice:hover { border-color: var(--brand-deep); }
-  .info:hover { color: var(--good); }
+  .info:hover { color: var(--text); }
   .row-btn:hover .t { text-decoration: underline; text-decoration-color: var(--brand); text-underline-offset: 0.2em; }
   .link:hover { text-decoration-thickness: 2px; }
   .nav button:not([aria-current]):hover { background: color-mix(in oklab, var(--card) 60%, var(--tint)); }
