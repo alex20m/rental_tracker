@@ -93,7 +93,7 @@ export default function Home({ apt, year, account, scope, onScope, go }: Props) 
 
       <section className="hero">
         {shared && <ScopeToggle sharePct={apt.mySharePct} scope={scope} onScope={onScope} />}
-        <div className="label" style={{ marginTop: shared ? 10 : 0 }}>
+        <div className="label">
           {f.netIncome < 0 ? t('home.rentalLoss') : t('home.netIncome')} {year}
           <Info about={t('home.netAbout')}>{t('home.netInfo')}</Info>
         </div>

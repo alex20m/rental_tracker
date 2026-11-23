@@ -171,7 +171,9 @@ so the cents sit close. The big figure shows the cents smaller and muted.
   `--z-sticky-nav` 300, `--z-modal` 400, `--z-toast` 500, `--z-tooltip` 600.
 
 The shell is 560px on a phone, 720px from 640px, and from 960px a 232px sidebar
-with two-column pages up to 1040px.
+with two-column pages up to 1040px. The first line of each column sits at the
+same height: nothing goes above the left column's first figure that the right
+column does not also have.
 
 ## Components
 
@@ -184,6 +186,11 @@ with two-column pages up to 1040px.
   Selects draw `--chevron` 16px in from the right. Labels sit above, 14px,
   weight 500.
 - **Segmented control** (`.seg`): a pill tray; the chosen segment is raised.
+- **Share switch** (co-owned apartments, Home and Tax): a segmented control,
+  "Your share (n %)" or "Whole apartment". On a phone it sits above the
+  figures; from 960px it moves to the top bar beside the year picker, since
+  both decide what the page shows, and both columns then start on the same line
+  under the title.
 - **Choices** (`.choice`): pills; the chosen one is soft-filled.
 - **Lists:** a white sheet; rows with a hairline between them and none under
   the last.
@@ -244,6 +251,9 @@ the rest follow the light mapping.
 
 ## Changelog
 
+- **2026-11:** The share switch moved into the top bar on desktops, beside the
+  year, so Home's and Tax's two columns start on the same line; the rule above
+  Home's occupancy and yield went with it on desktops.
 - **2026-11 (#82):** Mono. A full Hallmark redesign: black and white like the
   logo, Plus Jakarta Sans, round controls, trays and sheets, status colour,
   the month grid, the category dropdown, one control height, the logo's door
