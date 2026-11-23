@@ -1,7 +1,7 @@
 import type { Page } from '@playwright/test';
 import { expect, test } from './fixtures';
 import { coOwned, ledger, m, YEAR } from './data';
-import { alert, openAccount, openMenu, openPortfolio, section } from './nav';
+import { alert, openAccount, openMenu, openPortfolio, pickYear, section, yearList, yearPicker } from './nav';
 
 const netIncome = (page: Page) => page.getByTestId('net-income');
 
@@ -179,7 +179,7 @@ test.describe('home', () => {
     // Only once the year is over: a year is declared the spring after it ends.
     await page.clock.setFixedTime(new Date(`${YEAR + 1}-01-02T12:00:00`));
     await page.goto('/');
-    await page.getByLabel('Tax year').selectOption(String(YEAR));
+    await pickYear(page, YEAR);
 
     await expect(page.getByText(`Ready for the ${YEAR} declaration`)).toBeVisible();
     await expect(page.getByRole('heading', { name: 'To do' })).toHaveCount(0);
@@ -237,9 +237,9 @@ test.describe('home', () => {
     api.addApartment({ name: 'Flat' }, ledger());
     await page.goto('/');
 
-    const year = page.getByLabel('Tax year');
-    await expect(year).toHaveValue(String(YEAR));
-    await expect(year.locator('option')).toHaveText([String(YEAR)]);
+    await expect(yearPicker(page)).toHaveText(String(YEAR));
+    await yearPicker(page).click();
+    await expect(yearList(page).getByRole('option')).toHaveText([String(YEAR)]);
   });
 
   test('lists a year whose only income is rent paid early for a month of the next year', async ({ page, api }) => {
@@ -250,10 +250,10 @@ test.describe('home', () => {
     });
     await page.goto('/');
 
-    const year = page.getByLabel('Tax year');
-    await expect(year.locator('option')).toHaveText([String(YEAR), String(YEAR - 1)]);
+    await yearPicker(page).click();
+    await expect(yearList(page).getByRole('option')).toHaveText([String(YEAR), String(YEAR - 1)]);
     await expect(netIncome(page)).toHaveText('0,00 €');
-    await year.selectOption(String(YEAR - 1));
+    await yearList(page).getByRole('option', { name: String(YEAR - 1) }).click();
     await expect(netIncome(page)).toHaveText('800,00 €');
   });
 
@@ -264,14 +264,85 @@ test.describe('home', () => {
     });
     await page.goto('/');
 
-    const year = page.getByLabel('Tax year');
-    await expect(year).toHaveValue(String(YEAR));
-    await expect(year.locator('option')).toHaveText([String(YEAR), String(YEAR - 1)]);
-    await year.selectOption(String(YEAR - 1));
-    await expect(year).toHaveValue(String(YEAR - 1));
+    await expect(yearPicker(page)).toHaveText(String(YEAR));
+    await yearPicker(page).click();
+    await expect(yearList(page).getByRole('option')).toHaveText([String(YEAR), String(YEAR - 1)]);
+    await expect(yearList(page).getByRole('option', { selected: true })).toHaveText(String(YEAR));
+    await yearList(page).getByRole('option', { name: String(YEAR - 1) }).click();
+    await expect(yearList(page)).toHaveCount(0);
+    await expect(yearPicker(page)).toHaveText(String(YEAR - 1));
     await expect(netIncome(page)).toHaveText('500,00 €');
-    await year.selectOption(String(YEAR));
+    await pickYear(page, YEAR);
     await expect(netIncome(page)).toHaveText('2 184,00 €');
+  });
+
+  test('opens the year list again on a tap straight after it closed', async ({ page, api }) => {
+    // On an iPhone the native year list swallowed a tap that came while it was still closing.
+    api.addApartment({ name: 'Flat', useDepreciation: false }, {
+      rents: [...ledger().rents, { month: `${YEAR - 1}-06`, status: 'paid', amount: 500, receivedDate: `${YEAR - 1}-06-02`, note: '' }],
+      costs: ledger().costs,
+    });
+    await page.goto('/');
+
+    await pickYear(page, YEAR - 1);
+    await expect(yearList(page)).toHaveCount(0);
+    await yearPicker(page).click();
+    await expect(yearList(page)).toBeVisible();
+    await expect(yearPicker(page)).toHaveAttribute('aria-expanded', 'true');
+
+    // A second tap on the picker closes it, and a third opens it again at once.
+    await yearPicker(page).click();
+    await expect(yearList(page)).toHaveCount(0);
+    await expect(yearPicker(page)).toHaveAttribute('aria-expanded', 'false');
+    await yearPicker(page).click();
+    await expect(yearList(page)).toBeVisible();
+
+    // A tap anywhere else closes it without changing the year.
+    await page.getByRole('heading', { name: 'Flat' }).click();
+    await expect(yearList(page)).toHaveCount(0);
+    await expect(yearPicker(page)).toHaveText(String(YEAR - 1));
+    await expect(netIncome(page)).toHaveText('500,00 €');
+  });
+
+  test('changes the year from the keyboard, and gives focus back to the picker', async ({ page, api }) => {
+    api.addApartment({ name: 'Flat', useDepreciation: false }, {
+      rents: [...ledger().rents, { month: `${YEAR - 1}-06`, status: 'paid', amount: 500, receivedDate: `${YEAR - 1}-06-02`, note: '' }],
+      costs: ledger().costs,
+    });
+    await page.goto('/');
+    const option = (y: number) => yearList(page).getByRole('option', { name: String(y), exact: true });
+
+    // Opening lands on the year already chosen; the arrows stop at either end.
+    await yearPicker(page).focus();
+    await page.keyboard.press('Enter');
+    await expect(option(YEAR)).toBeFocused();
+    await page.keyboard.press('ArrowUp');
+    await expect(option(YEAR)).toBeFocused();
+    await page.keyboard.press('ArrowDown');
+    await expect(option(YEAR - 1)).toBeFocused();
+    await page.keyboard.press('ArrowDown');
+    await expect(option(YEAR - 1)).toBeFocused();
+    await page.keyboard.press('Enter');
+    await expect(yearList(page)).toHaveCount(0);
+    await expect(yearPicker(page)).toBeFocused();
+    await expect(yearPicker(page)).toHaveText(String(YEAR - 1));
+    await expect(netIncome(page)).toHaveText('500,00 €');
+
+    // Escape closes the list and keeps the year.
+    await page.keyboard.press('Enter');
+    await expect(option(YEAR - 1)).toBeFocused();
+    await page.keyboard.press('ArrowUp');
+    await page.keyboard.press('Escape');
+    await expect(yearList(page)).toHaveCount(0);
+    await expect(yearPicker(page)).toBeFocused();
+    await expect(yearPicker(page)).toHaveText(String(YEAR - 1));
+
+    // Tab leaves the list closed behind it.
+    await page.keyboard.press('Space');
+    await expect(option(YEAR - 1)).toBeFocused();
+    await page.keyboard.press('Tab');
+    await expect(yearList(page)).toHaveCount(0);
+    await expect(yearPicker(page)).toHaveText(String(YEAR - 1));
   });
 
   test('explains a figure in a popover that closes on Escape, outside, on scroll and on a second tap', async ({ page, api }) => {
@@ -525,7 +596,7 @@ test.describe('the navigation drawer', () => {
     await expect(drawer(page).getByRole('button')).toHaveText(['Account settings']);
     await drawer(page).getByRole('button', { name: 'Account settings' }).click();
     await expect(page.getByRole('heading', { name: 'Account settings', exact: true })).toBeVisible();
-    await expect(page.getByLabel('Tax year')).toHaveCount(0);
+    await expect(yearPicker(page)).toHaveCount(0);
   });
 });
 

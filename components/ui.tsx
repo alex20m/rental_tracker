@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useId, useLayoutEffect, useRef, useState } from 'react';
-import type { ReactNode } from 'react';
+import type { KeyboardEvent as ReactKeyboardEvent, ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import { useI18n } from '@/components/I18nProvider';
 import { download, fetchPhoto } from '@/lib/client/api';
@@ -191,7 +191,11 @@ export function Info({ about, children }: { about: string; children: ReactNode }
 
 /* ───────────────────────── Small controls ───────────────────────── */
 
-/** The year being looked at: quiet on purpose, since it is rarely changed. A native list, so it works everywhere. */
+/**
+ * The year being looked at: quiet on purpose, since it is rarely changed. Its own list rather than a native
+ * <select>, because an iPhone's native list swallows a tap that lands while it is still closing, so the picker
+ * would not open again on a tap straight after choosing. This one is open exactly when the app says it is.
+ */
 export function YearSelect({
   year,
   years,
@@ -202,19 +206,79 @@ export function YearSelect({
   onChange: (y: number) => void;
 }) {
   const { t } = useI18n();
+  const [open, setOpen] = useState(false);
+  const wrap = useRef<HTMLDivElement>(null);
+  const trigger = useRef<HTMLButtonElement>(null);
+  const list = useRef<HTMLDivElement>(null);
+  const id = useId();
+
+  useEffect(() => {
+    if (!open) return;
+    list.current!.querySelector<HTMLElement>('[aria-selected="true"]')!.focus();
+    // A tap on the picker itself is its own toggle, so only one outside it closes the list here.
+    const onPointer = (e: PointerEvent) => {
+      if (!wrap.current!.contains(e.target as Node)) setOpen(false);
+    };
+    document.addEventListener('pointerdown', onPointer);
+    return () => document.removeEventListener('pointerdown', onPointer);
+  }, [open]);
+
+  /** Closing from the keyboard hands focus back to the picker; after a tap it is left alone, as elsewhere. */
+  const close = (fromKeyboard: boolean) => {
+    setOpen(false);
+    if (fromKeyboard) trigger.current!.focus();
+  };
+
+  const onKey = (e: ReactKeyboardEvent<HTMLDivElement>) => {
+    if (e.key === 'Escape') {
+      e.preventDefault();
+      close(true);
+    } else if (e.key === 'Tab') {
+      setOpen(false);
+    } else if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
+      e.preventDefault();
+      const options = [...list.current!.querySelectorAll<HTMLElement>('[role=option]')];
+      const at = options.indexOf(document.activeElement as HTMLElement) + (e.key === 'ArrowDown' ? 1 : -1);
+      options[Math.max(0, Math.min(options.length - 1, at))]!.focus();
+    }
+  };
+
   return (
-    <select
-      className="year"
-      aria-label={t('common.taxYear')}
-      value={year}
-      onChange={(e) => onChange(Number(e.target.value))}
-    >
-      {years.map((y) => (
-        <option key={y} value={y}>
-          {y}
-        </option>
-      ))}
-    </select>
+    <div className="year-pick" ref={wrap}>
+      <button
+        ref={trigger}
+        type="button"
+        role="combobox"
+        className="year"
+        aria-label={t('common.taxYear')}
+        aria-haspopup="listbox"
+        aria-expanded={open}
+        aria-controls={open ? id : undefined}
+        onClick={() => setOpen((o) => !o)}
+      >
+        {year}
+      </button>
+      {open && (
+        <div ref={list} id={id} role="listbox" aria-label={t('common.taxYear')} className="year-list" onKeyDown={onKey}>
+          {years.map((y) => (
+            <button
+              key={y}
+              type="button"
+              role="option"
+              tabIndex={-1}
+              aria-selected={y === year}
+              onClick={(e) => {
+                onChange(y);
+                // A click with no detail came from Enter or Space, not a pointer.
+                close(e.detail === 0);
+              }}
+            >
+              {y}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
   );
 }
 

@@ -108,3 +108,15 @@ export async function closeInstallPopup(page: Page) {
   await page.keyboard.press('Escape');
   await popup.waitFor({ state: 'hidden' });
 }
+
+/** The year picker in the top bar: a button that opens the list of years with figures. */
+export const yearPicker = (page: Page) => page.getByRole('combobox', { name: 'Tax year' });
+
+/** The list the year picker opens. */
+export const yearList = (page: Page) => page.getByRole('listbox', { name: 'Tax year' });
+
+/** Opens the year picker and taps one of its years. */
+export async function pickYear(page: Page, year: number) {
+  await yearPicker(page).click();
+  await yearList(page).getByRole('option', { name: String(year), exact: true }).click();
+}

@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs';
 import JSZip from 'jszip';
 import { expect, test } from './fixtures';
 import { coOwned, ledger, m, YEAR } from './data';
-import { alert, openApartment, openInfo, section } from './nav';
+import { alert, openApartment, openInfo, pickYear, section } from './nav';
 
 test.describe('the tax page', () => {
   test('shows one year at a time, chosen with the year picker, and has no all-years view', async ({ page, api }) => {
@@ -15,7 +15,7 @@ test.describe('the tax page', () => {
     await expect(page.getByRole('radio', { name: 'All years' })).toHaveCount(0);
     const kv = page.locator('.kv').filter({ hasText: 'Rent received' });
     await expect(kv).toContainText('2 400,00 €');
-    await page.getByLabel('Tax year').selectOption(String(YEAR - 2));
+    await pickYear(page, YEAR - 2);
     await expect(kv).toContainText('500,00 €');
   });
 

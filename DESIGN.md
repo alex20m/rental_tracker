@@ -191,6 +191,11 @@ column does not also have. Beside a column of cards, the bare summary starts
 - **Fields:** 48px, `--field-edge` border, 14px radius, focus ring inside.
   Selects draw `--chevron` 16px in from the right. Labels sit above, 14px,
   weight 500.
+- **Year picker** (`.year`): a quiet pill in the top bar showing the year,
+  with the select chevron. A tap drops its own list (`.year-list`) below it,
+  right-aligned: a card-coloured tray with a hairline ring and the sheet shadow, one 44px pill per
+  year, the chosen one on `--tray` in weight 700. Not a native `<select>`: an
+  iPhone's native list ignores a tap that lands while it is still closing.
 - **Segmented control** (`.seg`): a pill tray; the chosen segment is raised.
 - **Share switch** (co-owned apartments, Home and Tax): a segmented control,
   "Your share (n %)" or "Whole apartment". On a phone it sits above the
@@ -283,6 +288,8 @@ the rest follow the light mapping.
 
 ## Changelog
 
+- **2026-11:** The year picker opens its own list instead of the native one,
+  which on an iPhone would not open again on a tap straight after closing.
 - **2026-11:** Sheets hold the page behind them still, which they had
   only claimed to: the scroll lock sat on `<body>`, where it does nothing once
   the root clips overflow. A long value in a key-value row (a cost's
