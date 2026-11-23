@@ -12,7 +12,7 @@ const FLAT = { name: 'Flat' };
 const hero = (page: import('@playwright/test').Page) => page.locator('.hero');
 type Page = import('@playwright/test').Page;
 /** The card of a method, which names itself in bold. */
-const card = (page: Page, title: string) => page.locator('.card', { hasText: title });
+const card = (page: Page, title: string) => page.locator('.method', { hasText: title });
 /** A section by its heading. */
 const section_ = (page: Page, heading: string) =>
   page.locator('section').filter({ has: page.getByRole('heading', { name: new RegExp(`^${heading}`) }) });

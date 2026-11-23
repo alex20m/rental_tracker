@@ -59,11 +59,11 @@ export default function Costs({ apt, year, onChanged }: Props) {
         </div>
       </section>
 
-      <section>
+      <section className="panel">
         {list.length === 0 ? (
           <div className="empty">{t('costs.none', { year })}</div>
         ) : (
-          <ul className="list card">
+          <ul className="list">
             {list.map((c) => {
               const how = deductionOf(c, apt.settings);
               return (

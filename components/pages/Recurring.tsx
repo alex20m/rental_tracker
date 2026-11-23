@@ -29,14 +29,14 @@ export default function Recurring({ apt, onChanged }: Props) {
       {apt.recurring.length === 0 ? (
         <div className="empty">{t('recurring.empty')}</div>
       ) : (
-        <ul className="list card">
+        <ul className="list panel">
           {apt.recurring.map((r) => (
             <li key={r.id}>
               <button className="row-btn" onClick={() => setEditing(r)}>
                 {r.kind === 'rent' ? Icon.rent : Icon.cost}
                 <div className="main">
                   <div className="t">{r.description || (r.category ? t(`cat.${r.category}.label`) : t('recurring.rentTitle'))}</div>
-                  <div className="s">
+                  <div className="s wrap">
                     {r.category && r.description && `${t(`cat.${r.category}.label`)}, `}
                     {t('recurring.next', { day: r.dayOfMonth, month: monthTitle(r.nextMonth, lang) })}
                   </div>

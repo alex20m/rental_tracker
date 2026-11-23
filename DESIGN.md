@@ -22,10 +22,15 @@ calm, with colour kept for status.
    Grey: vacant, not yet logged, disabled. Colour is never decoration, never a
    brand accent and never on a button that is not destructive.
 3. **One idea per screen, set big.** The screen's main figure sits bare on the
-   paper at display size; its parts sit in columns under a hairline.
-4. **Surfaces by role, not one card for everything.** Lists are white sheets on
-   a soft shadow (no hairline border). To-dos, the month grid and segmented
-   controls sit in sunken grey trays. Nothing is a card inside a card.
+   paper at display size; its parts sit in columns under a hairline. This
+   opening summary (`.hero`, or a page's title) is the only thing that is not
+   a card.
+4. **Every section is a card.** A section's heading and everything under it sit
+   on one white sheet (`.panel`) on a soft shadow, with no hairline border.
+   Inside a card, lists, to-dos, key-value rows and fields sit straight on it;
+   the month grid's tiles sit on the card instead of a tray. Segmented controls
+   stay sunken trays, and the sale's two methods are small trays inside their
+   card. Nothing is a card inside a card.
 5. **Round and quiet.** Pills for every control, 20px cards, 14px tiles and
    fields. Motion reports a state; it never decorates.
 6. **Nothing tappable moves after a page opens.** Entrances fade in place. A
@@ -78,13 +83,13 @@ chrome token to that.
 | Token | Light | Dark | Use |
 | --- | --- | --- | --- |
 | `--bg` | the paper | | Page background. |
-| `--surface`, `--card` | 100% 0 0 | 18.5% 0 0 | Lists, sheets, fields, month tiles. |
+| `--surface`, `--card` | 100% 0 0 | 18.5% 0 0 | Section cards, sheets, fields, month tiles. |
 | `--text` | the ink | | Body text. |
 | `--text-2` | ink-2 | | Secondary text. |
 | `--muted` | muted | | Labels and hints. |
 | `--line` | the rule | | Hairlines. |
 | `--tint` | paper-2 | 17.5% 0 0 | Sidebar, hover fills, vacant months, the quiet button. |
-| `--tray` | paper-3 | 21% 0 0 | Sunken trays: to-dos, the month grid, segmented controls. |
+| `--tray` | paper-3 | 21% 0 0 | Sunken trays: segmented controls, the sale's methods, notices. |
 | `--raised` | the card | 27% 0 0 | The chosen segment, the current menu item. |
 | `--brand` | accent (black) | white | Primary buttons, the add button. |
 | `--brand-deep` | 30% 0 0 | 84% 0 0 | A primary button under the pointer. |
@@ -151,14 +156,14 @@ so the cents sit close. The big figure shows the cents smaller and muted.
   8px, `--space-sm` 12px, `--space-md` 16px, `--space-lg` 24px, `--space-xl`
   40px, `--space-2xl` 64px, `--space-3xl` 96px, `--space-4xl` 144px. Padding,
   margin and gap use these; a raw length where a token exists is a Floor fail.
-- **Radius:** `--radius-card` 20px for cards and trays (also `--radius`),
+- **Radius:** `--radius-card` 20px for section cards and trays (also `--radius`),
   `--radius-input` 14px for fields and month tiles, `--radius-pill` 999px for
   every button, tab, chip and the year picker. Dialogs are the card radius plus
   8px. `--rule-hair` is 1px.
 - **Control height:** `--control-height` 48px for every single-line field,
   select and button, so a field never sits taller than the button beside it.
   Small buttons are 40px; hit targets are never under 44px.
-- **Depth:** `--shadow-card` lifts lists and month tiles (no border with it),
+- **Depth:** `--shadow-card` lifts section cards and month tiles (no border with it),
   `--shadow-lift` lifts what floats or hovers (also `--shadow`),
   `--shadow-sheet` lifts dialogs and the menu, `--shadow-edge` is the card
   shadow under another name, `--seg-shadow` lifts the chosen segment,
@@ -173,7 +178,8 @@ so the cents sit close. The big figure shows the cents smaller and muted.
 The shell is 560px on a phone, 720px from 640px, and from 960px a 232px sidebar
 with two-column pages up to 1040px. The first line of each column sits at the
 same height: nothing goes above the left column's first figure that the right
-column does not also have.
+column does not also have. Beside a column of cards, the bare summary starts
+24px down, the card's padding, so its first line meets the card's.
 
 ## Components
 
@@ -192,10 +198,24 @@ column does not also have.
   both decide what the page shows, and both columns then start on the same line
   under the title.
 - **Choices** (`.choice`): pills; the chosen one is soft-filled.
-- **Lists:** a white sheet; rows with a hairline between them and none under
-  the last.
-- **Month grid:** a tray of twelve tiles, three across on a phone, four from
-  640px, six from 960px. States as in the status table.
+- **Section card** (`.panel`): a section's heading and content on one white
+  sheet, `--radius-card`, `--shadow-card`, 16px padding on a phone and 24px
+  from 640px. Cards stand 24px apart, and from 960px fill two columns 40px
+  apart. Rows' own padding is taken off the card's edge, so a list starts and
+  ends as far from the edge as anything else. A card that opens on a field has
+  no label margin above it.
+- **Lists:** rows in a card, with a hairline between them and none under the
+  last. A page that is one list (Recurring) is that list as a card, with the
+  same side padding as any card. A row's second line is cut off with an
+  ellipsis, except where it has to be read whole (when a recurring entry books
+  next), which wraps instead.
+- **To-dos:** rows in their section's card, each with an amber dot (a green
+  tick when done).
+- **Month grid:** twelve tiles, three across on a phone, four from 640px, six
+  from 960px, straight on their card (a sunken tray where one stands alone).
+  States as in the status table.
+- **Sale methods** (`.method`): the two ways of counting a gain, as trays in
+  their card; the better one has a 2px ink outline.
 - **Chart:** rent and cost bars per month on one baseline; bars grow from it
   on load.
 - **Dialogs** (`Sheet`): the title stays put while the body scrolls; Escape,
@@ -204,11 +224,11 @@ column does not also have.
   960px; the current item is raised.
 - **Chips:** tiny pills; `.warn` is amber.
 - **Checklist:** a page head like Settings (the progress chip at its right,
-  the "shared" line under it), then a white sheet of rows: a round tick, the
-  text, a × to remove it. Ticked is `--good` on `--good-soft`, like the done
+  the "shared" line under it), as the page's summary, then one card: the rows
+  (a round tick, the text, a × to remove it) and under them the box to add an
+  item, with a primary Add. Ticked is `--good` on `--good-soft`, like the done
   dot, and the text turns muted and crossed out. The real checkbox sits unseen
-  over the drawn tick, so it is what is clicked, focused and announced. The box
-  to add an item sits under the sheet, never inside it, with a primary Add.
+  over the drawn tick, so it is what is clicked, focused and announced.
 
 ## Motion
 
@@ -256,6 +276,15 @@ the rest follow the light mapping.
    skill).
 
 ## Changelog
+
+- **2026-11:** Every section is a card. A section's heading and content sit on
+  one white `.panel`; only the opening figure stays bare on the paper. Lists,
+  to-dos and the month grid lost their own sheets and trays inside a card, the
+  sale's methods became trays, and cards stand 24px apart (40px between
+  desktop columns). The checklist's rows and its add box share one card. The
+  recurring list, a list that is itself the card, had lost its side padding on
+  phones; it now has the card's, and its "books next" line wraps instead of
+  being cut off.
 
 - **2026-11:** The checklist page brought into the system: a page head like
   Settings, round ticks instead of the browser's square checkboxes, done items

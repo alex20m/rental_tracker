@@ -135,7 +135,7 @@ export function InstallSection() {
   const state = useInstallability();
   if (state === 'installed') return null;
   return (
-    <section>
+    <section className="panel">
       <Heading>{t('install.settings')}</Heading>
       <InstallOffer state={state} />
     </section>
