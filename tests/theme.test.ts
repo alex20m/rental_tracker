@@ -98,7 +98,7 @@ function px(value: string): number {
   return Number(m[1]) * (m[2] === 'rem' ? 16 : 1);
 }
 
-describe('the Kuusi theme', () => {
+describe('the Mono theme', () => {
   it('draws the same dark palette when the device is dark as when Dark is chosen', () => {
     const tokens = (block: string) => block.match(/--[\w-]+:[^;]+;/g)?.map((t) => t.replace(/\s+/g, ' ')) ?? [];
     const forced = tokens(rule(":root[data-theme='dark']"));
@@ -112,16 +112,17 @@ describe('the Kuusi theme', () => {
     expect(luminance(token('bg', 'dark'))).toBeLessThan(0.05);
   });
 
-  it('is Kuusi: near-white paper, and one dark green for every signal', () => {
-    const [r, g, b] = rgb(token('bg', 'light'));
-    expect(Math.min(r, g, b), 'light paper is near white').toBeGreaterThan(240);
-    expect(g, 'with a breath of green').toBeGreaterThanOrEqual(Math.max(r, b));
+  it('is Mono: black and white like the logo, with colour kept for errors', () => {
+    // Every surface, text and control colour is a pure grey: equal red, green and blue.
     for (const scheme of ['light', 'dark'] as const) {
-      for (const name of ['brand', 'good']) {
-        const [rr, gg, bb] = rgb(token(name, scheme));
-        expect(gg > rr && gg > bb, `${name} ${scheme} is green`).toBe(true);
+      for (const name of ['bg', 'card', 'text', 'text-2', 'muted', 'line', 'tint', 'tray', 'brand', 'brand-soft', 'good', 'good-soft']) {
+        const [r, g, b] = rgb(token(name, scheme));
+        expect(r === g && g === b, `${name} ${scheme} is grey`).toBe(true);
       }
     }
+    // The primary colour is the logo's own black by day and its inverse at night.
+    expect(hex(token('brand', 'light'))).toBe(manifest.theme_color);
+    expect(luminance(token('brand', 'dark'))).toBeGreaterThan(0.8);
   });
 
   it('keeps what is missing or late a quiet neutral, never amber or red', () => {

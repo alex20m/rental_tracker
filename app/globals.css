@@ -1,6 +1,6 @@
-/* Hallmark · shape: app screen · genre: modern-minimal · theme: custom "Kuusi" (by request) · redesign: full
- * nav: kept (a drawer on phones, a sidebar from 960px; nine destinations) · signature: the year as a tray of twelve month compartments, spruce green where the rent is in · states: loading, empty, error, full · ground: near-white by day, spruce night in dark mode
- * axes: light/geometric-sans/chromatic-green · posture: restrained · contrast: pass · v2.0.0 */
+/* Hallmark · shape: app screen · genre: modern-minimal · theme: custom "Mono" (by request) · redesign: full
+ * nav: kept (a drawer on phones, a sidebar from 960px; nine destinations) · signature: the year as a tray of twelve month compartments, a black tile like the logo where the rent is in · states: loading, empty, error, full · ground: near-white by day, the logo's black at night
+ * axes: light/geometric-sans/neutral · posture: restrained · contrast: pass · v2.0.0 */
 /* Hallmark · pre-emit critique: P4 H4 E4 S4 R5 V3 · weakest: V, an app shell has few structural axes to vary; the variety is in the surfaces: the figure sits bare on paper, lists are white sheets, to-dos and months sit in sunken trays */
 /* Hallmark · dismissed 40 · the low pairs mix light and night values of one token; tests/theme.test.ts resolves each scheme and holds every drawn text pair at 4.5:1 */
 /* Hallmark · dismissed 41 · the same mixed-scheme reading: buttons, the current tab and the nav item set --text on --card, 4.5:1 or more in both schemes */
@@ -11,7 +11,7 @@
 @import url("./tokens.css");
 @import url("./base.css");
 
-/* ── Tokens ── the project's own names, each mapped onto Kuusi. Night is the same forest after dark. */
+/* ── Tokens ── the project's own names, each mapped onto Mono: the logo's black and white. Night is the logo inverted. */
 :root {
   color-scheme: light dark;
   --font-display: var(--font-jakarta), ui-sans-serif, system-ui, sans-serif;
@@ -19,77 +19,77 @@
   --font-outlier: var(--font-body);
   --font: var(--font-body);
 
-  --surface: oklch(99.9% 0.001 165);
+  --surface: oklch(100% 0 0);
   --bg: var(--color-paper);
   --card: var(--surface);
   --text: var(--color-ink);
   --text-2: var(--color-ink-2);
   --muted: var(--color-muted);
   --line: var(--color-rule);
-  /* Two quiet greys for chrome and trays, so the green can keep meaning "done". */
+  /* Two quiet greys for chrome and trays, so black can keep meaning "done". */
   --tint: var(--color-paper-2);
   --tray: var(--color-paper-3);
   --raised: var(--card);
   --brand: var(--color-accent);
-  --brand-deep: var(--color-accent-deep);
+  --brand-deep: oklch(30% 0 0);
   --brand-ink: var(--color-accent-ink);
   --brand-soft: var(--color-accent-soft);
-  /* One dark green does every signal; what is missing or late is a quiet neutral. Red is kept for errors and for deleting. */
+  /* Black does every signal, as in the logo; what is missing or late is a quiet grey. Red is kept for errors and for deleting. */
   --good: var(--color-accent-deep);
   --good-soft: var(--color-accent-soft);
   --warn: var(--color-ink-2);
   --warn-soft: var(--color-paper-3);
   --bad: var(--color-error);
   --bad-soft: oklch(95% 0.03 27);
-  --scrim: oklch(20% 0.02 165 / 0.38);
+  --scrim: oklch(0% 0 0 / 0.38);
   --knob: oklch(100% 0 0);
-  --knob-shadow: 0 1px 2px oklch(21% 0.02 165 / 0.3);
-  --seg-shadow: 0 1px 2px oklch(20% 0.02 165 / 0.08), 0 4px 12px -6px oklch(20% 0.02 165 / 0.18);
+  --knob-shadow: 0 1px 2px oklch(0% 0 0 / 0.3);
+  --seg-shadow: 0 1px 2px oklch(0% 0 0 / 0.08), 0 4px 12px -6px oklch(0% 0 0 / 0.18);
   --shadow: var(--shadow-lift);
-  --shadow-sheet: 0 24px 64px -20px oklch(21% 0.02 165 / 0.4);
+  --shadow-sheet: 0 24px 64px -20px oklch(0% 0 0 / 0.4);
   --shadow-edge: var(--shadow-card);
   /* A field's edge stays at 3:1 against the white it sits on. */
-  --field-edge: oklch(64% 0.012 165);
-  --bar-cost: var(--color-ink-2);
+  --field-edge: oklch(62% 0 0);
+  --bar-cost: oklch(78% 0 0);
   /* The dropdown's chevron, in the ink colour: drawn by the page so it can stand clear of the field's edge. */
-  --chevron: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1.5 1.75 6 6.25l4.5-4.5' fill='none' stroke='%230d1914' stroke-width='1.75' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
-  --shadow-inset: inset 0 1px 2px oklch(21% 0.02 165 / 0.06);
-  --shadow-inset-deep: inset 0 1px 2px oklch(21% 0.02 165 / 0.1);
+  --chevron: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1.5 1.75 6 6.25l4.5-4.5' fill='none' stroke='%230a0a0a' stroke-width='1.75' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  --shadow-inset: inset 0 1px 2px oklch(0% 0 0 / 0.06);
+  --shadow-inset-deep: inset 0 1px 2px oklch(0% 0 0 / 0.1);
   --radius: var(--radius-card);
   /* One height for every single-line field and every button, so a field never sits taller than the button beside it. */
   --control-height: 48px;
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme='light']) {
-    --color-paper: oklch(16.5% 0.012 165); --color-paper-2: oklch(19.5% 0.013 165); --color-paper-3: oklch(22.5% 0.014 165);
-    --color-ink: oklch(96% 0.006 165); --color-ink-2: oklch(85% 0.01 165); --color-muted: oklch(71% 0.012 165);
-    --color-rule: oklch(28% 0.014 165);
-    --color-accent: oklch(44% 0.07 152); --color-accent-deep: oklch(76% 0.055 148); --color-accent-soft: oklch(29% 0.04 152); --color-accent-ink: oklch(96% 0.008 140);
-    --color-focus: oklch(70% 0.06 150); --brand-deep: oklch(38% 0.065 152); --bar-cost: oklch(50% 0.01 165); --color-error: oklch(74% 0.14 27);
-    --surface: oklch(20.5% 0.014 165); --bad-soft: oklch(28% 0.05 27); --knob: oklch(96% 0.006 165); --tint: oklch(20% 0.013 165); --tray: oklch(23% 0.014 165); --raised: oklch(29% 0.016 165);
-    --field-edge: oklch(48% 0.014 165);
-  --chevron: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1.5 1.75 6 6.25l4.5-4.5' fill='none' stroke='%23eef3f1' stroke-width='1.75' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
-    --scrim: oklch(6% 0.01 165 / 0.62);
-    --shadow-card: 0 1px 2px oklch(5% 0.01 165 / 0.4), 0 8px 24px -12px oklch(5% 0.01 165 / 0.6);
-    --shadow-lift: 0 2px 4px oklch(5% 0.01 165 / 0.5), 0 18px 36px -18px oklch(5% 0.01 165 / 0.7);
-    --shadow-sheet: 0 24px 64px -20px oklch(3% 0.01 165 / 0.8);
+    --color-paper: oklch(14.5% 0 0); --color-paper-2: oklch(17.5% 0 0); --color-paper-3: oklch(21% 0 0);
+    --color-ink: oklch(96% 0 0); --color-ink-2: oklch(84% 0 0); --color-muted: oklch(70% 0 0);
+    --color-rule: oklch(27% 0 0);
+    --color-accent: oklch(96% 0 0); --color-accent-deep: oklch(96% 0 0); --color-accent-soft: oklch(27% 0 0); --color-accent-ink: oklch(14.5% 0 0);
+    --color-focus: oklch(92% 0 0); --brand-deep: oklch(84% 0 0); --bar-cost: oklch(46% 0 0); --color-error: oklch(74% 0.14 27);
+    --surface: oklch(18.5% 0 0); --bad-soft: oklch(28% 0.05 27); --knob: oklch(96% 0 0); --tint: oklch(17.5% 0 0); --tray: oklch(21% 0 0); --raised: oklch(27% 0 0);
+    --field-edge: oklch(46% 0 0);
+    --chevron: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1.5 1.75 6 6.25l4.5-4.5' fill='none' stroke='%23f2f2f2' stroke-width='1.75' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+    --scrim: oklch(0% 0 0 / 0.62);
+    --shadow-card: 0 1px 2px oklch(0% 0 0 / 0.4), 0 8px 24px -12px oklch(0% 0 0 / 0.6);
+    --shadow-lift: 0 2px 4px oklch(0% 0 0 / 0.5), 0 18px 36px -18px oklch(0% 0 0 / 0.7);
+    --shadow-sheet: 0 24px 64px -20px oklch(0% 0 0 / 0.8);
   }
 }
 :root[data-theme='light'] { color-scheme: light; }
 :root[data-theme='dark'] {
   color-scheme: dark;
-  --color-paper: oklch(16.5% 0.012 165); --color-paper-2: oklch(19.5% 0.013 165); --color-paper-3: oklch(22.5% 0.014 165);
-  --color-ink: oklch(96% 0.006 165); --color-ink-2: oklch(85% 0.01 165); --color-muted: oklch(71% 0.012 165);
-  --color-rule: oklch(28% 0.014 165);
-  --color-accent: oklch(44% 0.07 152); --color-accent-deep: oklch(76% 0.055 148); --color-accent-soft: oklch(29% 0.04 152); --color-accent-ink: oklch(96% 0.008 140);
-  --color-focus: oklch(70% 0.06 150); --brand-deep: oklch(38% 0.065 152); --bar-cost: oklch(50% 0.01 165); --color-error: oklch(74% 0.14 27);
-  --surface: oklch(20.5% 0.014 165); --bad-soft: oklch(28% 0.05 27); --knob: oklch(96% 0.006 165); --tint: oklch(20% 0.013 165); --tray: oklch(23% 0.014 165); --raised: oklch(29% 0.016 165);
-  --field-edge: oklch(48% 0.014 165);
-  --chevron: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1.5 1.75 6 6.25l4.5-4.5' fill='none' stroke='%23eef3f1' stroke-width='1.75' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
-  --scrim: oklch(6% 0.01 165 / 0.62);
-  --shadow-card: 0 1px 2px oklch(5% 0.01 165 / 0.4), 0 8px 24px -12px oklch(5% 0.01 165 / 0.6);
-  --shadow-lift: 0 2px 4px oklch(5% 0.01 165 / 0.5), 0 18px 36px -18px oklch(5% 0.01 165 / 0.7);
-  --shadow-sheet: 0 24px 64px -20px oklch(3% 0.01 165 / 0.8);
+  --color-paper: oklch(14.5% 0 0); --color-paper-2: oklch(17.5% 0 0); --color-paper-3: oklch(21% 0 0);
+  --color-ink: oklch(96% 0 0); --color-ink-2: oklch(84% 0 0); --color-muted: oklch(70% 0 0);
+  --color-rule: oklch(27% 0 0);
+  --color-accent: oklch(96% 0 0); --color-accent-deep: oklch(96% 0 0); --color-accent-soft: oklch(27% 0 0); --color-accent-ink: oklch(14.5% 0 0);
+  --color-focus: oklch(92% 0 0); --brand-deep: oklch(84% 0 0); --bar-cost: oklch(46% 0 0); --color-error: oklch(74% 0.14 27);
+  --surface: oklch(18.5% 0 0); --bad-soft: oklch(28% 0.05 27); --knob: oklch(96% 0 0); --tint: oklch(17.5% 0 0); --tray: oklch(21% 0 0); --raised: oklch(27% 0 0);
+  --field-edge: oklch(46% 0 0);
+  --chevron: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1.5 1.75 6 6.25l4.5-4.5' fill='none' stroke='%23f2f2f2' stroke-width='1.75' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  --scrim: oklch(0% 0 0 / 0.62);
+  --shadow-card: 0 1px 2px oklch(0% 0 0 / 0.4), 0 8px 24px -12px oklch(0% 0 0 / 0.6);
+  --shadow-lift: 0 2px 4px oklch(0% 0 0 / 0.5), 0 18px 36px -18px oklch(0% 0 0 / 0.7);
+  --shadow-sheet: 0 24px 64px -20px oklch(0% 0 0 / 0.8);
 }
 
 /* ── Base ── */
@@ -281,13 +281,13 @@ input[type="date"], input[type="month"] { display: block; appearance: none; -web
 @keyframes fade { from { opacity: 0; } }
 @keyframes rise { from { transform: translateY(16px) scale(0.98); opacity: 0; } }
 
-/* ── The month tray ── the year as twelve compartments: green where the rent is in, grey and open where it is not ── */
+/* ── The month tray ── the year as twelve compartments: a filled tile like the logo where the rent is in, grey and open where it is not ── */
 .months { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--space-xs); padding: var(--space-xs); background: var(--tray); border-radius: var(--radius-card); box-shadow: var(--shadow-inset-deep); }
 .month { display: flex; flex-direction: column; justify-content: space-between; gap: var(--space-xs); min-height: 80px; padding: var(--space-sm); text-align: left; color: var(--text); background: var(--card); border: 1px solid transparent; border-radius: var(--radius-input); box-shadow: var(--shadow-card); }
 .month .m { font-weight: 500; font-size: var(--text-sm); }
 .month .a { font-family: var(--font-outlier); font-size: var(--text-sm); color: var(--muted); font-variant-numeric: tabular-nums; }
-.month.paid { background: var(--good-soft); border-color: color-mix(in oklab, var(--brand-deep) 30%, var(--good-soft)); }
-.month.paid .a { color: var(--text); font-weight: 500; }
+.month.paid { background: var(--brand); border-color: var(--brand); color: var(--brand-ink); }
+.month.paid .a { color: var(--brand-ink); font-weight: 500; }
 .month.vacant { background: var(--tint); border-color: transparent; box-shadow: none; }
 .month.unpaid { background: var(--card); border: 1px solid var(--text-2); }
 .month.unpaid .a { color: var(--text); font-weight: 500; }
