@@ -93,6 +93,21 @@ function serve(views: ApartmentView[], { name = 'Maija Meikäläinen', emailVeri
 
 const user = () => userEvent.setup();
 
+/** The year picker in the top bar, and the years its list offers once opened. */
+const yearPicker = () => screen.getByRole('combobox', { name: 'Tax year' });
+async function yearsOffered() {
+  await user().click(yearPicker());
+  const years = within(screen.getByRole('listbox', { name: 'Tax year' }))
+    .getAllByRole('option')
+    .map((o) => o.textContent);
+  await user().click(yearPicker());
+  return years;
+}
+async function pickYear(year: string) {
+  await user().click(yearPicker());
+  await user().click(within(screen.getByRole('listbox', { name: 'Tax year' })).getByRole('option', { name: year }));
+}
+
 /** Rent and Costs share the "Rent & costs" tab: open it, then pick one with its switch. */
 async function openLedger(which: 'Rent' | 'Costs') {
   await user().click(await screen.findByRole('button', { name: 'Rent & costs' }));
@@ -208,20 +223,18 @@ describe('moving between apartments', () => {
     serve([view('a1', 'Alpha')]);
     render(<RentalApp />);
     await screen.findByRole('heading', { name: 'Alpha' });
-    const year = screen.getByLabelText('Tax year') as HTMLSelectElement;
-    expect([...year.options].map((o) => o.value)).toEqual(['2026']);
+    expect(await yearsOffered()).toEqual(['2026']);
   });
 
   it('changes the tax year from a quiet list of the years that have data', async () => {
     serve([view('a1', 'Alpha', { rents: [paid('2025-11'), ...view('a1', 'Alpha').rents] })]);
     render(<RentalApp />);
     await screen.findByRole('heading', { name: 'Alpha' });
-    const year = screen.getByLabelText('Tax year') as HTMLSelectElement;
-    expect([...year.options].map((o) => o.value)).toEqual(['2026', '2025']);
-    expect(year.value).toBe('2026');
+    expect(await yearsOffered()).toEqual(['2026', '2025']);
+    expect(yearPicker().textContent).toBe('2026');
 
-    await user().selectOptions(year, '2025');
-    expect(year.value).toBe('2025');
+    await pickYear('2025');
+    expect(yearPicker().textContent).toBe('2025');
     expect(screen.getByTestId('net-income').textContent).toMatch(/700,00/);
   });
 });
@@ -469,7 +482,8 @@ describe('the home screen', () => {
     serve([view('a1', 'Alpha', { rents: months })]);
     render(<RentalApp />);
 
-    await user().selectOptions(await screen.findByLabelText('Tax year'), '2026');
+    await screen.findByRole('combobox', { name: 'Tax year' });
+    await pickYear('2026');
     expect(screen.getByText('Ready for the 2026 declaration')).toBeTruthy();
     await user().click(screen.getByRole('button', { name: 'Prepare the 2026 declaration' }));
     expect(screen.getByRole('heading', { name: 'Before you file' })).toBeTruthy();
@@ -748,11 +762,10 @@ describe('tax year', () => {
 
     expect(screen.queryByRole('radio', { name: 'All years' })).toBeNull();
     expect(screen.queryByTestId('history-total')).toBeNull();
-    const year = screen.getByLabelText('Tax year') as HTMLSelectElement;
-    expect(year.value).toBe('2026');
+    expect(yearPicker().textContent).toBe('2026');
     expect(screen.getByText(/Taxable rental income 2026/)).toBeTruthy();
 
-    await user().selectOptions(year, '2024');
+    await pickYear('2024');
     expect(screen.getByText(/Taxable rental income 2024/)).toBeTruthy();
   });
 });

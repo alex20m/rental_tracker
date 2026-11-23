@@ -192,6 +192,11 @@ column does not also have. Beside a column of cards, the bare summary starts
   Selects draw `--chevron` 16px in from the right. Labels sit above, 14px,
   weight 500. A date or month value starts on the left and sits on the
   field's middle, like typed text, not where iOS puts it.
+- **Year picker** (`.year`): a quiet pill in the top bar showing the year,
+  with the select chevron. A tap drops its own list (`.year-list`) below it,
+  right-aligned: a card-coloured tray with a hairline ring and the sheet shadow, one 44px pill per
+  year, the chosen one on `--tray` in weight 700. Not a native `<select>`: an
+  iPhone's native list ignores a tap that lands while it is still closing.
 - **Segmented control** (`.seg`): a pill tray; the chosen segment is raised.
 - **Share switch** (co-owned apartments, Home and Tax): a segmented control,
   "Your share (n %)" or "Whole apartment". On a phone it sits above the
@@ -294,6 +299,8 @@ the rest follow the light mapping.
 
 ## Changelog
 
+- **2026-11:** The year picker opens its own list instead of the native one,
+  which on an iPhone would not open again on a tap straight after closing.
 - **2026-11:** A date field on an iPhone shows its date on the left and on the
   field's middle line, like the amount beside it. It had sat centred and
   pressed to the top, because the rule that kept it inside its column also

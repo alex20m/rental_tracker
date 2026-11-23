@@ -115,6 +115,10 @@ svg.i { width: 20px; height: 20px; flex: none; }
 .brand, .aptname { font-family: var(--font-display); font-size: var(--text-lg); font-weight: 700; letter-spacing: var(--tracking-display); }
 .aptname { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .year { appearance: none; -webkit-appearance: none; width: auto; min-height: 44px; padding: 0 var(--space-lg) 0 var(--space-sm); background-color: transparent; border: 1px solid var(--line); border-radius: var(--radius-pill); color: var(--text); font-family: var(--font-outlier); font-size: var(--text-md); font-weight: 500; font-variant-numeric: tabular-nums; background-image: linear-gradient(45deg, transparent 50%, currentColor 50%), linear-gradient(135deg, currentColor 50%, transparent 50%); background-position: calc(100% - 15px) 55%, calc(100% - 10px) 55%; background-size: 5px 5px; background-repeat: no-repeat; }
+.year-pick { position: relative; }
+.year-list { position: absolute; top: calc(100% + var(--space-2xs)); right: 0; z-index: var(--z-dropdown); display: flex; flex-direction: column; gap: var(--space-3xs); min-width: 100%; padding: var(--space-2xs); background: var(--card); border-radius: var(--radius-input); box-shadow: 0 0 0 1px var(--line), var(--shadow-sheet); animation: pop var(--dur-micro) var(--ease-out); }
+.year-list button { min-height: 44px; padding: 0 var(--space-md); background: transparent; border: 0; border-radius: var(--radius-pill); color: var(--text); font-family: var(--font-outlier); font-size: var(--text-md); font-weight: 500; font-variant-numeric: tabular-nums; text-align: center; }
+.year-list button[aria-selected="true"] { background: var(--tray); font-weight: 700; }
 .iconbtn { display: inline-grid; place-items: center; min-width: 44px; min-height: 44px; background: none; border: 0; padding: 0; color: var(--text-2); border-radius: var(--radius-pill); }
 .avatar { display: inline-grid; place-items: center; width: 40px; height: 40px; flex: none; border-radius: var(--radius-pill); background: var(--brand-soft); color: var(--good); font-weight: 600; font-size: var(--text-sm); }
 
@@ -432,6 +436,7 @@ a.btn.primary { color: var(--brand-ink); }
   .iconbtn:hover:not(:disabled) { background: var(--tint); color: var(--text); }
   .checklist label:hover input:not(:checked) + .tick { border-color: var(--text-2); }
   .year:hover { background-color: var(--tint); }
+  .year-list button:not([aria-selected="true"]):hover { background: var(--tint); }
   .month:not(.future):hover { border-color: var(--brand-deep); transform: translateY(-2px); box-shadow: var(--shadow-lift); }
   .choice:hover { border-color: var(--brand-deep); }
   .info:hover { color: var(--text); }
