@@ -41,7 +41,7 @@ export default function AccountPanel({ account }: { account: Account }) {
 
   return (
     <div className="stack" role="region" aria-label={t('settings.account')}>
-      <div className="card pad">
+      <div className="panel">
         <div className="row" style={{ borderBottom: 0 }}>
           <Avatar text={account.name} />
           <div className="main">
@@ -53,12 +53,12 @@ export default function AccountPanel({ account }: { account: Account }) {
 
       <ErrorNote message={error} />
 
-      <section>
+      <section className="panel">
         <Heading>{t('language.label')}</Heading>
         <LanguagePicker />
       </section>
 
-      <section>
+      <section className="panel">
         <Heading>{t('theme.label')}</Heading>
         <ThemePicker />
       </section>

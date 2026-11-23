@@ -87,11 +87,11 @@ export default function Checklist({ apt, onChanged }: Props) {
         </div>
         <p className="checklist-hint">{t('checklist.shared')}</p>
       </header>
-      <section className="checklist-body">
+      <section className="panel checklist-body">
         {items.length === 0 ? (
-          <p className="card checklist-empty">{t('checklist.empty')}</p>
+          <p className="checklist-empty">{t('checklist.empty')}</p>
         ) : (
-          <ul className="card list checklist" aria-label={t('checklist.items')}>
+          <ul className="list checklist" aria-label={t('checklist.items')}>
             {items.map((it, i) => (
               <li key={i} className={it.done ? 'done' : undefined}>
                 <label>

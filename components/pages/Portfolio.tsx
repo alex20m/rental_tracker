@@ -62,9 +62,9 @@ export default function Portfolio({ items, details, year, account, onOpen, onCre
         </div>
       </section>
 
-      <section>
+      <section className="panel">
         <Heading>{t('portfolio.apartments')}</Heading>
-        <ul className="list card">
+        <ul className="list">
           {items.map((i) => {
             const s = shares.find((x) => x.item.id === i.id)?.share;
             return (
