@@ -203,6 +203,12 @@ column does not also have.
 - **Menu:** a drawer on phones (hidden only once scripts run), a sidebar from
   960px; the current item is raised.
 - **Chips:** tiny pills; `.warn` is amber.
+- **Checklist:** a page head like Settings (the progress chip at its right,
+  the "shared" line under it), then a white sheet of rows: a round tick, the
+  text, a × to remove it. Ticked is `--good` on `--good-soft`, like the done
+  dot, and the text turns muted and crossed out. The real checkbox sits unseen
+  over the drawn tick, so it is what is clicked, focused and announced. The box
+  to add an item sits under the sheet, never inside it, with a primary Add.
 
 ## Motion
 
@@ -250,6 +256,10 @@ the rest follow the light mapping.
    skill).
 
 ## Changelog
+
+- **2026-11:** The checklist page brought into the system: a page head like
+  Settings, round ticks instead of the browser's square checkboxes, done items
+  crossed out, and the add box moved out of the sheet with a primary Add.
 
 - **2026-11:** The share switch moved into the top bar on desktops, beside the
   year, so Home's and Tax's two columns start on the same line; the rule above
