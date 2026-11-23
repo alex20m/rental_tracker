@@ -18,6 +18,7 @@ import Checklist from '@/components/pages/Checklist';
 import SettingsPage from '@/components/pages/SettingsPage';
 import AccountPage from '@/components/pages/AccountPage';
 import InstallPopup from '@/components/InstallPopup';
+import LoadingScreen from '@/components/LoadingScreen';
 
 export type Tab = 'home' | 'rent' | 'costs' | 'tax' | 'sale' | 'checklist' | 'settings' | 'portfolio' | 'account';
 /** Where a tap can lead: a page. */
@@ -189,10 +190,21 @@ export default function RentalApp() {
   };
 
   if (!account || !items) {
+    if (!error) return <LoadingScreen />;
     return (
       <div className="app">
-        <ErrorNote message={error} />
-        {!error && <div className="spinner" role="status" aria-label={t('common.loading')} />}
+        <div className="empty load-failed">
+          <ErrorNote message={error} />
+          <button
+            className="btn"
+            onClick={() => {
+              setError('');
+              void loadPortfolio();
+            }}
+          >
+            {t('nav.tryAgain')}
+          </button>
+        </div>
       </div>
     );
   }
