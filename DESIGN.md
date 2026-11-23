@@ -219,7 +219,13 @@ column does not also have. Beside a column of cards, the bare summary starts
 - **Chart:** rent and cost bars per month on one baseline; bars grow from it
   on load.
 - **Dialogs** (`Sheet`): the title stays put while the body scrolls; Escape,
-  the backdrop and × close it, from the first frame it is on screen.
+  the backdrop and × close it, from the first frame it is on screen. The page
+  behind holds still while one is open (the lock is on `<html>`, since the
+  root clips overflow-x and a lock on `<body>` never reaches the viewport),
+  and a scroll that reaches the end of the body does not carry on to it.
+- **Key-value rows** (`.kv`): the label on the left, never narrower than its
+  longest word; the value on the right, right-aligned, and a long one (a
+  description) wraps under itself.
 - **Menu:** a drawer on phones (hidden only once scripts run), a sidebar from
   960px; the current item is raised.
 - **Chips:** tiny pills; `.warn` is amber.
@@ -277,6 +283,11 @@ the rest follow the light mapping.
 
 ## Changelog
 
+- **2026-11:** Sheets hold the page behind them still, which they had
+  only claimed to: the scroll lock sat on `<body>`, where it does nothing once
+  the root clips overflow. A long value in a key-value row (a cost's
+  description) now wraps on the right instead of squeezing its label until it
+  ran into the text.
 - **2026-11:** Every section is a card. A section's heading and content sit on
   one white `.panel`; only the opening figure stays bare on the paper. Lists,
   to-dos and the month grid lost their own sheets and trays inside a card, the

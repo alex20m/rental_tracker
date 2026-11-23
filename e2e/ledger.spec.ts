@@ -331,6 +331,56 @@ test.describe('costs and receipts', () => {
     await expect(view.locator('.chip')).toHaveText('over 10 years');
   });
 
+  test('keeps a long description beside its label without running into it', async ({ page, api }) => {
+    api.addApartment({ name: 'Flat' }, {
+      costs: [
+        { id: 'c1', date: `${m(3)}-01`, category: 'other', description: 'Hotel night in connection with the renovation', amount: 79.64, hasReceipt: false },
+      ],
+    });
+    await page.goto('/');
+    await section(page, 'Costs');
+    await page.getByRole('button', { name: /Hotel night/ }).click();
+
+    const row = page.getByRole('dialog', { name: 'Cost' }).locator('.kv').filter({ hasText: 'Description' });
+    const sides = await row.evaluate((kv) => {
+      const [label, value] = [kv.children[0] as HTMLElement, kv.children[1] as HTMLElement];
+      return { labelFits: label.scrollWidth <= label.clientWidth, labelRight: label.getBoundingClientRect().right, valueLeft: value.getBoundingClientRect().left };
+    });
+    // The label's one word is never squeezed narrower than itself, so it cannot spill under the value.
+    expect(sides.labelFits).toBe(true);
+    expect(sides.labelRight).toBeLessThanOrEqual(sides.valueLeft);
+  });
+
+  test('holds the page still while a sheet is open, and lets it scroll again once it closes', async ({ page, api }) => {
+    api.addApartment({ name: 'Flat' }, {
+      costs: Array.from({ length: 30 }, (_, i) => ({
+        id: `c${i}`, date: `${m(3)}-${String(i % 28 + 1).padStart(2, '0')}`, category: 'repairs' as const, description: `Repair ${i + 1}`, amount: 10, hasReceipt: false,
+      })),
+    });
+    await page.goto('/');
+    await section(page, 'Costs');
+    await page.getByRole('button', { name: /Repair 7\D/ }).click();
+    const view = page.getByRole('dialog', { name: 'Cost' });
+    await expect(view).toBeVisible();
+    const scrollY = () => page.evaluate(() => window.scrollY);
+    const settled = () => page.evaluate(() => new Promise((done) => requestAnimationFrame(() => requestAnimationFrame(done))));
+    const before = await scrollY();
+
+    // A scroll on the dimmed page around the sheet, and one on the sheet itself.
+    const box = (await view.boundingBox())!;
+    await page.mouse.move(box.x + box.width / 2, 4);
+    await page.mouse.wheel(0, 600);
+    await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
+    await page.mouse.wheel(0, 600);
+    await settled();
+    expect(await scrollY()).toBe(before);
+
+    await view.getByRole('button', { name: 'Close' }).click();
+    await expect(view).toHaveCount(0);
+    await page.mouse.wheel(0, 600);
+    await expect.poll(scrollY).toBeGreaterThan(before);
+  });
+
   test('edits a cost, removes its photo, and deletes another', async ({ page, api }) => {
     const apt = api.addApartment({ name: 'Flat' }, ledger());
     apt.costs[0]!.hasReceipt = true;

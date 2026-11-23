@@ -174,8 +174,9 @@ svg.i { width: 20px; height: 20px; flex: none; }
 .todo .done { color: var(--muted); }
 .allset { display: flex; align-items: center; gap: var(--space-xs); color: var(--good); font-weight: 600; }
 .kv { display: flex; justify-content: space-between; align-items: center; gap: var(--space-sm); min-height: 48px; padding: var(--space-xs) 0; border-bottom: 1px solid var(--line); }
-.kv > span:first-child { display: flex; align-items: center; gap: var(--space-3xs); min-width: 0; }
-.kv > span:last-child { font-variant-numeric: tabular-nums; }
+.kv > span:first-child { display: flex; align-items: center; gap: var(--space-3xs); min-width: min-content; }
+/* A long value (a description) wraps on the right, under itself; the label is never squeezed below its longest word. */
+.kv > span:last-child { text-align: right; overflow-wrap: break-word; font-variant-numeric: tabular-nums; }
 .kv.faded { color: var(--muted); }
 .kv.total { font-weight: 700; border-bottom: 0; }
 .kv.sum { border-top: 2px solid var(--text); border-bottom: 0; font-weight: 700; }
@@ -260,7 +261,7 @@ input[type="date"], input[type="month"] { display: block; appearance: none; -web
 .sheet-bg { position: fixed; inset: 0; z-index: 20; display: flex; align-items: center; justify-content: center; padding: var(--space-md); background: var(--scrim); animation: fade var(--dur-micro) var(--ease-out); }
 .sheet { display: flex; flex-direction: column; width: 100%; max-width: 560px; max-height: calc(100dvh - 32px); overflow: clip; background: var(--bg); border-radius: calc(var(--radius-card) + 8px); animation: rise var(--dur-long) var(--ease-out); outline: none; }
 .sheet-head { flex: none; display: flex; align-items: center; justify-content: space-between; padding: var(--space-sm) var(--space-lg) var(--space-3xs); background: var(--bg); }
-.sheet-body { min-height: 0; overflow-y: auto; overflow-x: clip; padding: 0 var(--space-lg) var(--space-lg); }
+.sheet-body { min-height: 0; overflow-y: auto; overflow-x: clip; overscroll-behavior: contain; padding: 0 var(--space-lg) var(--space-lg); }
 .sheet-head h3 { font-size: var(--text-xl); }
 .install-lead { margin: var(--space-xs) 0 var(--space-md); color: var(--text-2); }
 .install-how { margin: 0 0 var(--space-xs); font-size: var(--text-md); font-weight: 600; }
