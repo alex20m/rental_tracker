@@ -23,4 +23,16 @@ describe('app icons', () => {
     expect(icons.icon).toContainEqual({ url: '/favicon-48.png', sizes: '48x48', type: 'image/png' });
     expect(png('favicon-48.png').readUInt32BE(16)).toBe(48);
   });
+  it('cuts the door cleanly through the bottom of the building, leaving no hairline under it', () => {
+    // Two edges that meet exactly are each anti-aliased, which paints a faint line between them.
+    const svg = readFileSync('public/icon.svg', 'utf8');
+    const building = /<rect x="144" y="(\d+)" width="224" height="(\d+)"/.exec(svg);
+    const door = /M232 (\d+)v/.exec(svg);
+    expect(building && door, 'the building and its door are where the logo draws them').toBeTruthy();
+    expect(Number(door![1]), 'the door runs past the building').toBeGreaterThan(Number(building![1]) + Number(building![2]));
+    // In the app's own copy of the mark the door is part of the outline, not a hole meeting the edge.
+    const ui = readFileSync('components/ui.tsx', 'utf8');
+    expect(ui).not.toMatch(/M232 416v-60a24 24 0 0 1 48 0v60z/);
+    expect(ui).toMatch(/H280v-60a24 24 0 0 0-48 0v60H164/);
+  });
 });

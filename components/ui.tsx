@@ -53,7 +53,9 @@ export function Sheet({ title, children, onClose }: { title: string; children: R
     close.current = onClose;
   });
 
-  useEffect(() => {
+  // A layout effect, not a plain one: it runs before the dialog is painted, so Escape and focus work from the
+  // first frame it is on screen. A plain effect waits until after paint, and an Escape in between did nothing.
+  useLayoutEffect(() => {
     const before = document.activeElement as HTMLElement | null;
     const overflow = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
@@ -534,7 +536,7 @@ export const Icon = {
     <svg className="i" viewBox="144 96 224 320" fill="currentColor" aria-hidden="true">
       <path
         fillRule="evenodd"
-        d="M164 96h184a20 20 0 0 1 20 20v280a20 20 0 0 1-20 20H164a20 20 0 0 1-20-20V116a20 20 0 0 1 20-20zM190 136h28a6 6 0 0 1 6 6v28a6 6 0 0 1-6 6h-28a6 6 0 0 1-6-6v-28a6 6 0 0 1 6-6zM294 136h28a6 6 0 0 1 6 6v28a6 6 0 0 1-6 6h-28a6 6 0 0 1-6-6v-28a6 6 0 0 1 6-6zM190 208h28a6 6 0 0 1 6 6v28a6 6 0 0 1-6 6h-28a6 6 0 0 1-6-6v-28a6 6 0 0 1 6-6zM294 208h28a6 6 0 0 1 6 6v28a6 6 0 0 1-6 6h-28a6 6 0 0 1-6-6v-28a6 6 0 0 1 6-6zM190 280h28a6 6 0 0 1 6 6v28a6 6 0 0 1-6 6h-28a6 6 0 0 1-6-6v-28a6 6 0 0 1 6-6zM294 280h28a6 6 0 0 1 6 6v28a6 6 0 0 1-6 6h-28a6 6 0 0 1-6-6v-28a6 6 0 0 1 6-6zM232 416v-60a24 24 0 0 1 48 0v60z"
+        d="M164 96h184a20 20 0 0 1 20 20v280a20 20 0 0 1-20 20H280v-60a24 24 0 0 0-48 0v60H164a20 20 0 0 1-20-20V116a20 20 0 0 1 20-20zM190 136h28a6 6 0 0 1 6 6v28a6 6 0 0 1-6 6h-28a6 6 0 0 1-6-6v-28a6 6 0 0 1 6-6zM294 136h28a6 6 0 0 1 6 6v28a6 6 0 0 1-6 6h-28a6 6 0 0 1-6-6v-28a6 6 0 0 1 6-6zM190 208h28a6 6 0 0 1 6 6v28a6 6 0 0 1-6 6h-28a6 6 0 0 1-6-6v-28a6 6 0 0 1 6-6zM294 208h28a6 6 0 0 1 6 6v28a6 6 0 0 1-6 6h-28a6 6 0 0 1-6-6v-28a6 6 0 0 1 6-6zM190 280h28a6 6 0 0 1 6 6v28a6 6 0 0 1-6 6h-28a6 6 0 0 1-6-6v-28a6 6 0 0 1 6-6zM294 280h28a6 6 0 0 1 6 6v28a6 6 0 0 1-6 6h-28a6 6 0 0 1-6-6v-28a6 6 0 0 1 6-6z"
       />
     </svg>
   ),
