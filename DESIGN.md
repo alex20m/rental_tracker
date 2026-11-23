@@ -229,6 +229,15 @@ column does not also have. Beside a column of cards, the bare summary starts
 - **Menu:** a drawer on phones (hidden only once scripts run), a sidebar from
   960px; the current item is raised.
 - **Chips:** tiny pills; `.warn` is amber.
+- **Loading screen:** while the account and apartments load, the outline of
+  the page about to appear (top bar, the opening figure, two cards, and the
+  sidebar on a desktop) in grey shapes: `--tray` on the paper, `--line` on a
+  card, where the tray's grey all but vanishes in dark mode. It is rendered on
+  the server, so it is on screen before any script runs, and fades in only
+  after 150ms, so a fast load never flashes it. To a screen reader it is one
+  status, "Loading", with the shapes hidden. If the load fails, the error and
+  a Try again button take its place. A lone spinner is only for a short wait
+  inside a dialog (deleting the account).
 - **Checklist:** a page head like Settings (the progress chip at its right,
   the "shared" line under it), as the page's summary, then one card: the rows
   (a round tick, the text, a × to remove it) and under them the box to add an
@@ -238,8 +247,9 @@ column does not also have. Beside a column of cards, the bare summary starts
 
 ## Motion
 
-`--ease-out` (an exponential ease-out) for everything; `--ease-in` and
-`--ease-in-out` exist but are unused. Durations: `--dur-micro` 120ms (press,
+`--ease-out` (an exponential ease-out) for everything but the loading
+screen's shapes, which breathe in opacity on `--ease-in-out` (1.6s, down to
+0.45 and back); `--ease-in` exists but is unused. Durations: `--dur-micro` 120ms (press,
 popovers), `--dur-short` 220ms (hover, the menu), `--dur-long` 420ms
 (entrances, dialogs). Page sections and month tiles fade in, staggered a few
 tens of milliseconds; chart bars scale up from the baseline; dialogs rise 16px
@@ -283,6 +293,10 @@ the rest follow the light mapping.
 
 ## Changelog
 
+- **2026-11:** A loading screen instead of a lone spinner: the outline of the
+  page about to appear, breathing slowly, drawn before any script runs and
+  faded in only when a load is slow. A failed first load now offers Try again
+  instead of leaving an error on an empty page.
 - **2026-11:** Sheets hold the page behind them still, which they had
   only claimed to: the scroll lock sat on `<body>`, where it does nothing once
   the root clips overflow. A long value in a key-value row (a cost's
