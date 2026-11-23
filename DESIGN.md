@@ -190,7 +190,8 @@ column does not also have. Beside a column of cards, the bare summary starts
   Disabled: tint fill, muted text, not-allowed cursor.
 - **Fields:** 48px, `--field-edge` border, 14px radius, focus ring inside.
   Selects draw `--chevron` 16px in from the right. Labels sit above, 14px,
-  weight 500.
+  weight 500. A date or month value starts on the left and sits on the
+  field's middle, like typed text, not where iOS puts it.
 - **Year picker** (`.year`): a quiet pill in the top bar showing the year,
   with the select chevron. A tap drops its own list (`.year-list`) below it,
   right-aligned: a card-coloured tray with a hairline ring and the sheet shadow, one 44px pill per
@@ -290,6 +291,10 @@ the rest follow the light mapping.
 
 - **2026-11:** The year picker opens its own list instead of the native one,
   which on an iPhone would not open again on a tap straight after closing.
+- **2026-11:** A date field on an iPhone shows its date on the left and on the
+  field's middle line, like the amount beside it. It had sat centred and
+  pressed to the top, because the rule that kept it inside its column also
+  switched off Safari's own vertical centring.
 - **2026-11:** Sheets hold the page behind them still, which they had
   only claimed to: the scroll lock sat on `<body>`, where it does nothing once
   the root clips overflow. A long value in a key-value row (a cost's

@@ -229,7 +229,11 @@ label { display: flex; align-items: center; min-height: 24px; font-size: var(--t
 .fields { display: flex; flex-direction: column; }
 .cols { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-sm); }
 .cols > * { min-width: 0; }
-input[type="date"], input[type="month"] { display: block; appearance: none; -webkit-appearance: none; max-width: 100%; } /* iOS gives date and month inputs an intrinsic width that ignores the column */
+/* iOS gives date and month inputs an intrinsic width that ignores the column, centres the value
+   horizontally, and centres it vertically only through its own inline-flex: a block-level flex
+   keeps the column's width and the vertical centring, and the value starts on the left like any field. */
+input[type="date"], input[type="month"] { display: flex; align-items: center; appearance: none; -webkit-appearance: none; max-width: 100%; text-align: left; }
+input::-webkit-date-and-time-value { flex: 1; min-width: 0; margin: 0; text-align: left; }
 .amount-input { font-family: var(--font-display); font-size: var(--text-xl); font-weight: 700; letter-spacing: var(--tracking-display); text-align: left; font-variant-numeric: tabular-nums; }
 .pct-input { width: 92px; text-align: right; flex: none; }
 

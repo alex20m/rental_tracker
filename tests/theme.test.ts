@@ -211,4 +211,16 @@ describe('the Mono theme', () => {
       expect(match?.[1], type).toMatch(/max-width:\s*100%/);
     }
   });
+
+  it('starts a date or month value on the left and centres it vertically, like every other field', () => {
+    // iOS centres the value horizontally, and centres it vertically only through its own
+    // inline-flex; replacing that with display: block left "15 okt. 2026" stuck to the top.
+    for (const type of ['date', 'month']) {
+      const field = new RegExp(`input\\[type="${type}"\\][^{]*\\{([^}]*)\\}`).exec(css)?.[1] ?? '';
+      expect(field, type).toMatch(/display:\s*flex/);
+      expect(field, type).toMatch(/align-items:\s*center/);
+    }
+    const value = /::-webkit-date-and-time-value[^{]*\{([^}]*)\}/.exec(css)?.[1] ?? '';
+    expect(value).toMatch(/text-align:\s*left/);
+  });
 });
