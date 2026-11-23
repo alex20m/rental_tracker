@@ -105,7 +105,7 @@ export default function SettingsPage({ apt, year, account, onChanged, onGone }: 
       <div className="pagehead">
         <h1>{t('settings.title')}</h1>
       </div>
-      <div className="card">
+      <section className="panel">
         <ul className="list">
           {(
             [
@@ -137,7 +137,7 @@ export default function SettingsPage({ apt, year, account, onChanged, onGone }: 
             </li>
           ))}
         </ul>
-      </div>
+      </section>
       <DangerZone apt={apt} account={account} onGone={onGone} />
       <SaveBar apt={apt} draft={draft} onDiscard={() => setDraft(saved)} onChanged={onChanged} />
     </>
@@ -228,7 +228,7 @@ function Owners({ apt, account, onChanged, onGone }: Omit<Props, 'year'>) {
     });
 
   return (
-    <section>
+    <section className="panel">
       {!editing && rows.length > 1 && (
         <div className="heading end">
           <button className="link" onClick={startEditing}>
@@ -236,7 +236,7 @@ function Owners({ apt, account, onChanged, onGone }: Omit<Props, 'year'>) {
           </button>
         </div>
       )}
-      <ul className="list card">
+      <ul className="list">
         {rows.map((r) => (
           <li key={r.key} className="row owner">
             <Avatar text={r.label} />
@@ -434,8 +434,8 @@ function DetailsFields({ s, set }: Omit<FieldsProps, 'year'>) {
   const text = (k: keyof ApartmentSettings) => textField(set, k);
   return (
     <>
-      <section>
-        <label htmlFor="s-name" style={{ marginTop: 6 }}>
+      <section className="panel">
+        <label htmlFor="s-name">
           {t('settings.name')}
         </label>
         <input id="s-name" value={s.name} onChange={text('name')} />
@@ -481,7 +481,7 @@ function AdvancedFields({ s, set, year, apt }: FieldsProps & { apt: ApartmentVie
   const params = ruleParams(year, lang);
   return (
     <>
-      <section>
+      <section className="panel">
         <Label id="s-type" info={<Info about={t('settings.propertyTypeAbout')}>{t('settings.propertyTypeInfo')}</Info>}>
           {t('settings.propertyType')}
         </Label>
@@ -501,7 +501,7 @@ function AdvancedFields({ s, set, year, apt }: FieldsProps & { apt: ApartmentVie
         </div>
       </section>
 
-      <section>
+      <section className="panel">
         <div className="cols" style={{ marginTop: 0 }}>
           <div>
             <label htmlFor="s-date">{t('settings.purchaseDate')}</label>
@@ -525,7 +525,7 @@ function AdvancedFields({ s, set, year, apt }: FieldsProps & { apt: ApartmentVie
         </div>
       </section>
 
-      <section>
+      <section className="panel">
         <Heading info={<Info about={t('settings.lettingAbout')}>{t('settings.lettingInfo')}</Info>}>
           {t('settings.letting')}
         </Heading>
@@ -602,7 +602,7 @@ function DepreciationFields({ s, set, year, apt }: FieldsProps & { apt: Apartmen
   const rules = rulesFor(year);
   const params = ruleParams(year, lang);
   return (
-    <section>
+    <section className="panel">
       <Heading info={<Info about={t('settings.depreciationAbout')}>{t('settings.depreciationInfo', params)}</Info>}>
         {t('settings.depreciation')}
       </Heading>
@@ -782,7 +782,7 @@ function DangerZone({ apt, account, onGone }: { apt: ApartmentView; account: Acc
   const alone = apt.owners.length === 1 && apt.owners[0]!.userId === account.userId;
   if (!alone) return null;
   return (
-    <section>
+    <div>
       <button
         className="link danger"
         disabled={busy}
@@ -796,6 +796,6 @@ function DangerZone({ apt, account, onGone }: { apt: ApartmentView; account: Acc
       </button>
       <Info about={t('settings.deleteAbout')}>{t('settings.deleteInfo')}</Info>
       <ErrorNote message={error} />
-    </section>
+    </div>
   );
 }

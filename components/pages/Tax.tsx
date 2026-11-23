@@ -75,9 +75,9 @@ export default function Tax({ apt, year, taxpayerName, scope, onScope, go }: Pro
         )}
       </section>
 
-      <section>
+      <section className="panel">
         <Heading>{t('tax.beforeFiling')}</Heading>
-        <div className="card todo">
+        <div className="todo">
           {checklist.map((i) =>
             i.ok ? (
               <div key={i.id} className="row done" style={{ padding: '11px 0' }}>
@@ -95,9 +95,9 @@ export default function Tax({ apt, year, taxpayerName, scope, onScope, go }: Pro
         </div>
       </section>
 
-      <section className="section">
+      <section className="panel">
         <Heading>{t('tax.income')}</Heading>
-        <div className="card pad">
+        <div>
           <div className="kv">
             <span>
               {t('tax.rentReceived')}
@@ -115,9 +115,9 @@ export default function Tax({ apt, year, taxpayerName, scope, onScope, go }: Pro
         </div>
       </section>
 
-      <section className="section">
+      <section className="panel">
         <Heading>{t('tax.expenses')}</Heading>
-        <div className="card pad">
+        <div>
           {f.lines.length === 0 && f.depreciation === 0 && <div className="kv dim">{t('tax.noCosts', { year })}</div>}
           {f.lines.map((l) => {
             const label = t(`cat.${l.category}.label`);
@@ -168,7 +168,7 @@ export default function Tax({ apt, year, taxpayerName, scope, onScope, go }: Pro
         </div>
       </section>
 
-      <section>
+      <section className="panel">
         <Heading info={<Info about={t('tax.packageAbout')}>{t('tax.packageInfo')}</Info>}>
           {t('tax.declaration')}
         </Heading>

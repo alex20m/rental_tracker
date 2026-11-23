@@ -137,14 +137,14 @@ export default function Sale({ apt, onChanged }: Props) {
         )}
       </section>
 
-      <section className="section">
+      <section className="panel">
         <Heading
           info={<Info about={t('sale.purchaseAbout')}>{t('sale.purchaseInfo', params)}</Info>}
           action={purchaseSaved && hasPurchase ? <span className="chip">{t('sale.saved')}</span> : undefined}
         >
           {t('sale.purchaseHeading')}
         </Heading>
-        <div className="card pad">
+        <div>
           <div className="cols">
             <div>
               <label htmlFor="sale-purchase-date">{t('sale.purchaseDate')}</label>
@@ -194,14 +194,14 @@ export default function Sale({ apt, onChanged }: Props) {
         </div>
       </section>
 
-      <section className="section">
+      <section className="panel">
         <Heading
           info={<Info about={t('sale.detailsAbout')}>{t('sale.detailsInfo')}</Info>}
           action={saleSaved && kept.saleDate !== '' ? <span className="chip">{t('sale.saved')}</span> : undefined}
         >
           {t('sale.details')}
         </Heading>
-        <div className="card pad">
+        <div>
           <div className="cols">
             <div>
               <label htmlFor="sale-date">{t('sale.date')}</label>
@@ -246,7 +246,7 @@ export default function Sale({ apt, onChanged }: Props) {
         </div>
       </section>
 
-      <section className="section">
+      <section className="panel">
         <Heading
           info={<Info about={t('sale.acqAbout')}>{t('sale.acqInfo')}</Info>}
           action={
@@ -261,7 +261,7 @@ export default function Sale({ apt, onChanged }: Props) {
         {apt.acquisitionCosts.length === 0 ? (
           <div className="empty">{t('sale.acqNone')}</div>
         ) : (
-          <ul className="list card">
+          <ul className="list">
             {apt.acquisitionCosts.map((c) => (
               <li key={c.id}>
                 <button className="row-btn" onClick={() => setEditing(c)}>
@@ -290,7 +290,7 @@ export default function Sale({ apt, onChanged }: Props) {
 
       {result && (
         <>
-          <section className="section">
+          <section className="panel">
             <Heading info={<Info about={t('sale.compareAbout')}>{t('sale.compareInfo', params)}</Info>}>
               {t('sale.compare')}
             </Heading>
@@ -298,7 +298,7 @@ export default function Sale({ apt, onChanged }: Props) {
               {result.ownedYears === null ? t('sale.ownedUnknown', params) : tn('sale.owned', result.ownedYears)}
             </p>
 
-            <div className={'card pad' + (result.best === 'actual' ? ' best' : '')}>
+            <div className={'method' + (result.best === 'actual' ? ' best' : '')}>
               <div className="method-head">
                 <b>{t('sale.actual')}</b>
                 {result.best === 'actual' && <span className="chip">{t('sale.better')}</span>}
@@ -333,7 +333,7 @@ export default function Sale({ apt, onChanged }: Props) {
               </div>
             </div>
 
-            <div className={'card pad' + (result.best === 'assumed' ? ' best' : '')} style={{ marginTop: 12 }}>
+            <div className={'method' + (result.best === 'assumed' ? ' best' : '')}>
               <div className="method-head">
                 <b>{t('sale.assumed')}</b>
                 {result.best === 'assumed' && <span className="chip">{t('sale.better')}</span>}
@@ -353,9 +353,9 @@ export default function Sale({ apt, onChanged }: Props) {
             </div>
           </section>
 
-          <section className="section">
+          <section className="panel">
             <Heading>{t('sale.myTax')}</Heading>
-            <div className="card pad">
+            <div>
               <Label
                 htmlFor="sale-other-income"
                 info={<Info about={t('sale.otherIncomeAbout')}>{t('sale.otherIncomeInfo', params)}</Info>}

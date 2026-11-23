@@ -40,7 +40,7 @@ export default function RentLog({ apt, year, onChanged }: Props) {
         </div>
       </section>
 
-      <section>
+      <section className="panel">
         <Heading>{t('rent.months')}</Heading>
         <div className="months">
           {monthsShort(lang).map((name, i) => {

@@ -29,7 +29,7 @@ export default function Recurring({ apt, onChanged }: Props) {
       {apt.recurring.length === 0 ? (
         <div className="empty">{t('recurring.empty')}</div>
       ) : (
-        <ul className="list card">
+        <ul className="list panel">
           {apt.recurring.map((r) => (
             <li key={r.id}>
               <button className="row-btn" onClick={() => setEditing(r)}>

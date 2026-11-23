@@ -79,14 +79,14 @@ export default function Checklist({ apt, onChanged }: Props) {
   };
 
   return (
-    <section className="section">
+    <section className="panel">
       <Heading
         action={items.length > 0 ? <span className="chip">{t('checklist.progress', { done, total: items.length })}</span> : undefined}
       >
         {t('nav.checklist')}
       </Heading>
       <p className="checklist-hint">{t('checklist.shared')}</p>
-      <div className="card pad">
+      <div>
         {items.length === 0 ? (
           <p className="checklist-hint">{t('checklist.empty')}</p>
         ) : (

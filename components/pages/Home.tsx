@@ -125,9 +125,9 @@ export default function Home({ apt, year, account, scope, onScope, go }: Props) 
       </section>
 
       {todo.length > 0 ? (
-        <section>
+        <section className="panel">
           <Heading>{t('home.todo')}</Heading>
-          <div className="card todo">
+          <div className="todo">
             {todo.slice(0, TODO_SHOWN).map((i) => (
               <button key={i.id} className="row-btn" onClick={() => go(i.to)}>
                 <span className="dot">{Icon.alert}</span>
@@ -146,7 +146,7 @@ export default function Home({ apt, year, account, scope, onScope, go }: Props) 
       ) : (
         hasData &&
         yearOver && (
-          <section className="card ready">
+          <section className="panel ready">
             <div className="allset">
               {Icon.check} {t('home.allSet', { year })}
             </div>
@@ -159,7 +159,7 @@ export default function Home({ apt, year, account, scope, onScope, go }: Props) 
 
       {hasData && (
         <>
-          <section>
+          <section className="panel">
             <Heading>{t('home.byMonth')}</Heading>
             <div
               className="bars"
@@ -206,7 +206,7 @@ export default function Home({ apt, year, account, scope, onScope, go }: Props) 
             </div>
           </section>
 
-          <section className="stats two card insights">
+          <section className="panel stats two insights">
             <div className="stat">
               <div className="v">{occupancy === null ? '—' : occupancy + ' %'}</div>
               <div className="l">
@@ -235,7 +235,7 @@ export default function Home({ apt, year, account, scope, onScope, go }: Props) 
         </>
       )}
 
-      <section>
+      <section className="panel">
         <Heading>{t('home.recent')}</Heading>
         {recent.length === 0 ? (
           <div className="empty">
@@ -245,7 +245,7 @@ export default function Home({ apt, year, account, scope, onScope, go }: Props) 
             </button>
           </div>
         ) : (
-          <ul className="list card">
+          <ul className="list">
             {recent.map((r) => (
               <li key={r.key}>
                 <button className="row-btn" onClick={() => go(r.to)}>
