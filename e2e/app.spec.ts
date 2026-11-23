@@ -44,6 +44,45 @@ test.describe('the first visit', () => {
 });
 
 test.describe('loading', () => {
+  test('lays out the shape of the app while it loads, then puts the apartment in its place', async ({ page, api }) => {
+    api.addApartment({ name: 'Rantatie 5' }, ledger());
+    const release = api.holdNext('GET', /^\/api\/apartments$/);
+    await page.goto('/');
+
+    const loading = page.getByRole('status', { name: 'Loading' });
+    await expect(loading).toBeVisible();
+    // Not a lone spinner in the middle of nowhere: the outline of the page, from its top bar down past the fold.
+    const box = (await loading.boundingBox())!;
+    const viewport = page.viewportSize()!;
+    expect(box.y).toBe(0);
+    expect(box.height).toBeGreaterThanOrEqual(viewport.height);
+    // Its outline is drawn, not announced: the only thing a screen reader hears is that the app is loading.
+    await expect(loading).toHaveAccessibleName('Loading');
+    await expect(loading.getByRole('heading')).toHaveCount(0);
+    await expect(page.getByRole('heading', { name: 'Add your first apartment' })).toHaveCount(0);
+
+    release();
+    await expect(page.locator('h1.aptname')).toHaveText('Rantatie 5');
+    await expect(loading).toHaveCount(0);
+  });
+
+  test('offers to try again when the app could not be loaded, and loads it when it can', async ({ page, api }) => {
+    api.addApartment({ name: 'Rantatie 5' }, ledger());
+    api.failNext('GET', /^\/api\/apartments$/, { status: 503, body: { error: 'Try again shortly' } });
+    await page.goto('/');
+
+    await expect(alert(page)).toHaveText('Try again shortly');
+    const release = api.holdNext('GET', /^\/api\/apartments$/);
+    await page.getByRole('button', { name: 'Try again' }).click();
+    // The old error goes at once, and the page shows it is loading again.
+    await expect(alert(page)).toHaveCount(0);
+    await expect(page.getByRole('status', { name: 'Loading' })).toBeVisible();
+
+    release();
+    await expect(page.locator('h1.aptname')).toHaveText('Rantatie 5');
+    await expect(page.getByRole('button', { name: 'Try again' })).toHaveCount(0);
+  });
+
   test('shows why the portfolio could not be loaded', async ({ page, api }) => {
     api.failNext('GET', /^\/api\/apartments$/, { status: 500, body: { error: 'Database unavailable' } });
     await page.goto('/');
