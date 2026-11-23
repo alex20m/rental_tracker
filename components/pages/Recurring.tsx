@@ -36,7 +36,7 @@ export default function Recurring({ apt, onChanged }: Props) {
                 {r.kind === 'rent' ? Icon.rent : Icon.cost}
                 <div className="main">
                   <div className="t">{r.description || (r.category ? t(`cat.${r.category}.label`) : t('recurring.rentTitle'))}</div>
-                  <div className="s">
+                  <div className="s wrap">
                     {r.category && r.description && `${t(`cat.${r.category}.label`)}, `}
                     {t('recurring.next', { day: r.dayOfMonth, month: monthTitle(r.nextMonth, lang) })}
                   </div>

@@ -154,13 +154,16 @@ svg.i { width: 20px; height: 20px; flex: none; }
 /* A card that opens on a field starts at its padding, not a label's top margin as well. */
 .panel > :first-child:is(label, .label-row), .panel > .cols:first-child > * > :first-child:is(label, .label-row) { margin-top: 0; }
 .list { list-style: none; margin: 0; padding: 0; }
-ul.list.panel { padding-block: var(--space-2xs); }
+/* A page that is one list is that list as a card; `.list` zeroes padding, so the card's sides are restated here. */
+.list.panel { padding: var(--space-2xs) var(--space-md); }
 .row-btn { display: flex; align-items: center; gap: var(--space-sm); width: 100%; min-height: 56px; padding: var(--space-sm) 0; text-align: left; background: none; border: 0; border-bottom: 1px solid var(--line); }
 .list > li:last-child .row-btn, .list > li:last-child .row, .list > li.row:last-child { border-bottom: 0; }
 .row { display: flex; align-items: center; gap: var(--space-sm); min-height: 56px; padding: var(--space-sm) 0; border-bottom: 1px solid var(--line); }
 .row .main, .row-btn .main { flex: 1; min-width: 0; }
 .row .t, .row-btn .t { font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .row .s, .row-btn .s { font-size: var(--text-sm); color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+/* A line that must be read whole (when a recurring entry books next) wraps instead of being cut off on a narrow phone. */
+.row .s.wrap, .row-btn .s.wrap { white-space: normal; }
 .row-btn > svg.i:first-child { color: var(--muted); }
 .row-btn > svg.i:last-child { color: var(--muted); width: 18px; height: 18px; }
 .row-btn .strong.num { font-family: var(--font-display); font-weight: 700; letter-spacing: -0.01em; font-variant-numeric: proportional-nums; }
@@ -443,6 +446,7 @@ a.btn.primary { color: var(--brand-ink); }
   .fab { right: max(var(--space-lg), calc(50% - 336px)); }
   .bars { height: 130px; }
   .panel { padding: var(--space-lg); }
+  .list.panel { padding-inline: var(--space-lg); }
 }
 
 /* Desktops: a sidebar instead of the drawer, and two columns per page. */

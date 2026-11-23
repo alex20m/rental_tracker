@@ -205,7 +205,10 @@ column does not also have. Beside a column of cards, the bare summary starts
   ends as far from the edge as anything else. A card that opens on a field has
   no label margin above it.
 - **Lists:** rows in a card, with a hairline between them and none under the
-  last. A page that is one list (Recurring) is that list as a card.
+  last. A page that is one list (Recurring) is that list as a card, with the
+  same side padding as any card. A row's second line is cut off with an
+  ellipsis, except where it has to be read whole (when a recurring entry books
+  next), which wraps instead.
 - **To-dos:** rows in their section's card, each with an amber dot (a green
   tick when done).
 - **Month grid:** twelve tiles, three across on a phone, four from 640px, six
@@ -278,7 +281,10 @@ the rest follow the light mapping.
   one white `.panel`; only the opening figure stays bare on the paper. Lists,
   to-dos and the month grid lost their own sheets and trays inside a card, the
   sale's methods became trays, and cards stand 24px apart (40px between
-  desktop columns). The checklist's rows and its add box share one card.
+  desktop columns). The checklist's rows and its add box share one card. The
+  recurring list, a list that is itself the card, had lost its side padding on
+  phones; it now has the card's, and its "books next" line wraps instead of
+  being cut off.
 
 - **2026-11:** The checklist page brought into the system: a page head like
   Settings, round ticks instead of the browser's square checkboxes, done items

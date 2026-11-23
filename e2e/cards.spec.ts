@@ -1,7 +1,7 @@
 import type { Page } from '@playwright/test';
 import { expect, test } from './fixtures';
 import { coOwned } from './data';
-import { openAccount, section } from './nav';
+import { openAccount, openTopic, section } from './nav';
 
 /**
  * Every section of a page is a card: its heading and everything under it on
@@ -9,7 +9,7 @@ import { openAccount, section } from './nav';
  * figure) sits bare on the paper.
  */
 
-type Surface = { heading: string; background: string; paper: string; shadow: string; radius: string };
+type Surface = { heading: string; background: string; paper: string; shadow: string; radius: string; inset: number };
 
 /** How each section on the page is drawn, with colours in sRGB so the card and the paper compare in any colour space. */
 const surfaces = (page: Page) =>
@@ -23,7 +23,21 @@ const surfaces = (page: Page) =>
       return `rgba(${r}, ${g}, ${b}, ${a})`;
     };
     const paper = srgb(getComputedStyle(document.body).backgroundColor);
-    return [...document.querySelectorAll('.page section')].map((s) => {
+    /** How close the card's text and icons come to its left or right edge, in pixels. */
+    const inset = (card: Element) => {
+      const box = card.getBoundingClientRect();
+      const rects: DOMRect[] = [...card.querySelectorAll('svg')].map((i) => i.getBoundingClientRect());
+      const walker = document.createTreeWalker(card, NodeFilter.SHOW_TEXT);
+      for (let n = walker.nextNode(); n; n = walker.nextNode()) {
+        if (!n.textContent?.trim()) continue;
+        const range = document.createRange();
+        range.selectNodeContents(n);
+        rects.push(range.getBoundingClientRect());
+      }
+      const seen = rects.filter((r) => r.width > 0 && r.height > 0);
+      return Math.min(...seen.map((r) => Math.min(r.left - box.left, box.right - r.right)));
+    };
+    return [...document.querySelectorAll('.page section, .page .panel')].map((s) => {
       const style = getComputedStyle(s);
       return {
         heading: s.querySelector('h2')?.textContent ?? (s.classList.contains('hero') ? '(summary)' : '(untitled)'),
@@ -31,6 +45,7 @@ const surfaces = (page: Page) =>
         paper,
         shadow: style.boxShadow,
         radius: style.borderRadius,
+        inset: s.classList.contains('hero') ? Infinity : inset(s),
       };
     });
   });
@@ -46,6 +61,8 @@ async function expectCards(page: Page, headings: string[]) {
   for (const s of summary) expect(isCard(s), 'the opening summary sits bare on the paper').toBe(false);
   for (const h of headings) expect(rest.map((s) => s.heading), `a section titled ${h}`).toContainEqual(expect.stringContaining(h));
   for (const s of rest) expect(isCard(s), `the section "${s.heading}" is a card`).toBe(true);
+  // A card's padding (16px on a phone) keeps its text and icons off its edge.
+  for (const s of rest) expect(s.inset, `the content of "${s.heading}" stands clear of the card's edge`).toBeGreaterThanOrEqual(15.5);
 }
 
 for (const scheme of ['light', 'dark'] as const) {
@@ -66,6 +83,25 @@ for (const scheme of ['light', 'dark'] as const) {
       await expectCards(page, ['Your purchase', 'Your sale', 'Acquisition costs', 'Two ways to count the gain', 'Your tax']);
       await section(page, 'Checklist');
       await expectCards(page, ['Checklist']);
+    });
+
+    test('keeps the recurring list off the edge of its card', async ({ page, api }) => {
+      const apt = coOwned(api);
+      apt.recurring = [
+        { id: 'r-rent', kind: 'rent', description: '', amount: 800, dayOfMonth: 1, nextMonth: `${new Date().getFullYear()}-12` },
+        { id: 'r-charge', kind: 'cost', category: 'maintenance_charge', description: '', amount: 150, dayOfMonth: 1, nextMonth: `${new Date().getFullYear()}-12` },
+      ];
+      await page.goto('/');
+      await openTopic(page, 'Recurring expenses');
+
+      await expect(page.getByText('Monthly rent')).toBeVisible();
+      const cards = (await surfaces(page)).filter((s) => s.heading !== '(summary)');
+      expect(cards).toHaveLength(1);
+      expect(isCard(cards[0]!), 'the list is a card').toBe(true);
+      expect(cards[0]!.inset, "the rows stand clear of the card's edge").toBeGreaterThanOrEqual(15.5);
+      // Each row says when it books next in full, on a second line if it has to, rather than cutting it off.
+      const cut = await page.locator('.list .s').evaluateAll((els) => els.filter((e) => e.scrollWidth > e.clientWidth).map((e) => e.textContent));
+      expect(cut).toEqual([]);
     });
 
     test('puts each section of the account page on a card', async ({ page, api }) => {
