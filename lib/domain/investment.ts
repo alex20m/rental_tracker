@@ -1,5 +1,5 @@
 import { computeTax, ownerShare, round2 } from './tax';
-import { CATEGORIES, type ApartmentView } from './types';
+import { CATEGORIES, type ApartmentView, type CostCategory, type CostEntry } from './types';
 
 /**
  * The apartment as an investment, for one owner: what it earned them after
@@ -24,8 +24,14 @@ export type InvestmentLedger = Pick<
 export interface InvestmentFlows {
   /** The rent received. */
   rentIncome: number;
-  /** Every cost paid, except improvements and furniture. */
+  /** Every cost paid, except improvements and furniture: the operating costs and the financing costs. */
   runningCosts: number;
+  /** What running the apartment cost: every cost but its financing, improvements and furniture. */
+  operatingCosts: number;
+  /** What the money cost: loan interest and the housing company's financing charges, as logged. */
+  financingCosts: number;
+  /** The rent less the operating costs: what the apartment earns before its financing, renovations and tax. */
+  netOperatingIncome: number;
   /** Basic improvements and furniture, in full in the year paid. */
   investments: number;
   profitBeforeTax: number;
@@ -49,16 +55,18 @@ export interface InvestmentYear extends InvestmentFlows {
   taxableIncome: number;
   /** The loan left at the end of the year, from the latest statement given; null before the first. */
   loanBalance: number | null;
+  /** The months logged as paid out of the months logged, in percent; null with none logged. */
+  occupancy: number | null;
 }
 
 /** Ratios in percent, to a tenth; null when a figure they need is missing or nothing. */
 export interface InvestmentRatios {
   /** The year's rent against the purchase price. */
   grossYield: number | null;
-  /** The year's profit before tax against everything invested. */
-  returnBeforeTax: number | null;
-  /** The year's profit after tax against the owner's own money in it; only with a loan. */
-  returnOnEquity: number | null;
+  /** The year's net operating income against everything invested (the price and the acquisition costs). */
+  netYield: number | null;
+  /** Cash-on-cash: what was left on the account before tax against the owner's own money in it. */
+  cashOnCash: number | null;
   /** The loan against the estimated value. */
   loanToValue: number | null;
 }
@@ -79,6 +87,8 @@ export interface InvestmentSummary {
   equityInvested: number;
   /** The year looked at's balance (see `InvestmentYear`). */
   loanBalance: number | null;
+  /** What is owed now: the year's balance, or what was borrowed while no balance is given. */
+  loanNow: number;
   /** The owner's estimate of what their part is worth; null when not given. */
   marketValue: number | null;
   /** The estimate less the purchase price. */
@@ -93,6 +103,9 @@ export interface InvestmentSummary {
 const FLOWS: (keyof InvestmentFlows)[] = [
   'rentIncome',
   'runningCosts',
+  'operatingCosts',
+  'financingCosts',
+  'netOperatingIncome',
   'investments',
   'profitBeforeTax',
   'tax',
@@ -106,30 +119,55 @@ const yearOf = (date: string) => Number(date.slice(0, 4));
 /** A percentage to a tenth, or null when there is nothing to divide by. */
 const ratio = (part: number, whole: number) => (whole > 0 ? Math.round((part / whole) * 1000) / 10 : null);
 
+/** The let part of a cost: a cost of the whole home counts only by the let share, as in the tax. */
+const letPart = (ledger: InvestmentLedger, c: CostEntry) =>
+  CATEGORIES[c.category].shared ? (c.amount * ledger.settings.letSharePct) / 100 : c.amount;
+
+/** Which of the three a cost is: running the flat, financing it, or improving and furnishing it. */
+function kindOf(c: CostEntry): 'operating' | 'financing' | 'investment' {
+  const { treatment } = CATEGORIES[c.category];
+  if (treatment === 'improvement' || treatment === 'furniture') return 'investment';
+  return treatment === 'interest' || treatment === 'financing' ? 'financing' : 'operating';
+}
+
 /**
  * The owner's part of the costs paid in `year` up to the end of month
- * `through` (12: the whole year): improvements and furniture apart from the
- * rest. A cost of the whole home is the let part's only by the let share, as
- * in the tax. Each sum is rounded before the share is taken, so a month's
- * running total and the year's agree to the cent.
+ * `through` (12: the whole year), by kind. Each sum is rounded before the
+ * share is taken, so a month's running total and the year's agree to the cent.
  */
 function costsPaid(ledger: InvestmentLedger, year: number, through = 12) {
-  let running = 0;
-  let investments = 0;
+  const sums = { operating: 0, financing: 0, investment: 0 };
   for (const c of ledger.costs) {
     if (yearOf(c.date) !== year || Number(c.date.slice(5, 7)) > through) continue;
-    const { treatment, shared } = CATEGORIES[c.category];
-    const amount = shared ? (c.amount * ledger.settings.letSharePct) / 100 : c.amount;
-    if (treatment === 'improvement' || treatment === 'furniture') investments += amount;
-    else running += amount;
+    sums[kindOf(c)] += letPart(ledger, c);
   }
-  const part = (n: number) => round2((n * ledger.mySharePct) / 100);
-  return { runningCosts: part(round2(running)), investmentCosts: part(round2(investments)) };
+  const part = (n: number) => round2((round2(n) * ledger.mySharePct) / 100);
+  const operatingCosts = part(sums.operating);
+  const financingCosts = part(sums.financing);
+  return {
+    operatingCosts,
+    financingCosts,
+    runningCosts: round2(operatingCosts + financingCosts),
+    investmentCosts: part(sums.investment),
+  };
+}
+
+/** The owner's part of the year's costs, by category, the largest first; improvements and loan interest included. */
+export function costsByCategory(ledger: InvestmentLedger, year: number): { category: CostCategory; amount: number }[] {
+  const sums = new Map<CostCategory, number>();
+  for (const c of ledger.costs) {
+    if (yearOf(c.date) === year) sums.set(c.category, (sums.get(c.category) ?? 0) + letPart(ledger, c));
+  }
+  return [...sums]
+    .map(([category, sum]) => ({ category, amount: round2((round2(sum) * ledger.mySharePct) / 100) }))
+    .sort((a, b) => b.amount - a.amount);
 }
 
 export function investmentYear(ledger: InvestmentLedger, year: number, today: Date = new Date()): InvestmentYear {
-  const tax = ownerShare(computeTax(ledger, year, today), ledger.mySharePct);
-  const { runningCosts, investmentCosts } = costsPaid(ledger, year);
+  const whole = computeTax(ledger, year, today);
+  const tax = ownerShare(whole, ledger.mySharePct);
+  const { runningCosts, operatingCosts, financingCosts, investmentCosts } = costsPaid(ledger, year);
+  const logged = whole.paidMonths + whole.vacantMonths + whole.unpaidMonths;
 
   const profitBeforeTax = round2(tax.rentIncome - runningCosts - investmentCosts);
   const taxEffect = round2(tax.estimatedTax - tax.deficitCredit);
@@ -144,6 +182,9 @@ export function investmentYear(ledger: InvestmentLedger, year: number, today: Da
     taxableIncome: tax.netIncome,
     rentIncome: tax.rentIncome,
     runningCosts,
+    operatingCosts,
+    financingCosts,
+    netOperatingIncome: round2(tax.rentIncome - operatingCosts),
     investments: investmentCosts,
     profitBeforeTax,
     tax: taxEffect,
@@ -151,6 +192,7 @@ export function investmentYear(ledger: InvestmentLedger, year: number, today: Da
     amortization,
     cashFlow: round2(profitAfterTax - amortization),
     loanBalance: latest?.balance ?? null,
+    occupancy: logged ? Math.round((whole.paidMonths / logged) * 100) : null,
   };
 }
 
@@ -203,14 +245,15 @@ export function investmentSummary(ledger: InvestmentLedger, year: number, today:
     loanAmount,
     equityInvested,
     loanBalance: current.loanBalance,
+    loanNow: owed,
     marketValue,
     valueChange: marketValue === null ? null : round2(marketValue - price),
     equityNow: marketValue === null ? null : round2(marketValue - owed),
     totalReturn: marketValue === null ? null : round2(totals.profitAfterTax + marketValue - invested),
     ratios: {
       grossYield: ratio(current.rentIncome, price),
-      returnBeforeTax: ratio(current.profitBeforeTax, invested),
-      returnOnEquity: loanAmount > 0 ? ratio(current.profitAfterTax, equityInvested) : null,
+      netYield: ratio(current.netOperatingIncome, invested),
+      cashOnCash: ratio(round2(current.cashFlow + current.tax), equityInvested),
       loanToValue: marketValue === null ? null : ratio(owed, marketValue),
     },
   };

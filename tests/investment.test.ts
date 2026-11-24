@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { cashByMonth, investmentSummary, investmentYear, type InvestmentLedger } from '@/lib/domain/investment';
+import { cashByMonth, costsByCategory, investmentSummary, investmentYear, type InvestmentLedger } from '@/lib/domain/investment';
 import { defaultSettings, type CostEntry, type RentEntry } from '@/lib/domain/types';
 
 const today = new Date('2026-11-24T12:00:00Z');
@@ -59,6 +59,33 @@ describe("a year's profit", () => {
 
   it('takes every cost paid in the year, the loan interest logged with them included', () => {
     expect(investmentYear(year2025, 2025, today).runningCosts).toBe(650);
+  });
+
+  it('splits the running costs into the apartment’s own and its financing, and takes the own ones off the rent for the net operating income', () => {
+    // Loan interest and financing charges pay for the money, not the flat: net operating income is before them.
+    const y = investmentYear(year2025, 2025, today);
+    expect(y.operatingCosts).toBe(400);
+    expect(y.financingCosts).toBe(250);
+    expect(y.netOperatingIncome).toBe(2000);
+  });
+
+  it('counts a financing charge with the loan interest, deductible or not', () => {
+    const y = investmentYear(ledger({ costs: [cost('2025-03-01', 'financing_charge', 120), cost('2025-03-01', 'water_charge', 30)] }), 2025, today);
+    expect(y.financingCosts).toBe(120);
+    expect(y.operatingCosts).toBe(30);
+  });
+
+  it('gives the occupancy as the paid months out of the months logged, and none with nothing logged', () => {
+    const logged = ledger({
+      rents: [
+        rent('2025-01', 800, '2025-01-02'),
+        { month: '2025-02', status: 'vacant', amount: 0, receivedDate: '', note: '' },
+        { month: '2025-03', status: 'unpaid', amount: 0, receivedDate: '', note: '' },
+      ],
+    });
+    expect(investmentYear(logged, 2025, today).occupancy).toBe(33);
+    expect(investmentYear(year2025, 2025, today).occupancy).toBe(100);
+    expect(investmentYear(ledger(), 2025, today).occupancy).toBeNull();
   });
 
   it('takes an improvement and furniture in full in the year paid, not spread as the tax spreads them', () => {
@@ -208,6 +235,9 @@ describe('the investment since it was bought', () => {
     expect(investmentSummary(bought, 2025, today).totals).toEqual({
       rentIncome: 1600,
       runningCosts: 200,
+      operatingCosts: 200,
+      financingCosts: 0,
+      netOperatingIncome: 1400,
       investments: 0,
       profitBeforeTax: 1400,
       tax: 420,
@@ -230,6 +260,7 @@ describe('the investment since it was bought', () => {
     expect(s.marketValue).toBe(110000);
     expect(s.valueChange).toBe(10000);
     expect(s.loanBalance).toBe(74000);
+    expect(s.loanNow).toBe(74000);
     expect(s.equityNow).toBe(36000);
     // 980 of profit, and 110 000 worth for 102 000 put in.
     expect(s.totalReturn).toBe(8980);
@@ -238,8 +269,8 @@ describe('the investment since it was bought', () => {
   it("gives the year's yields and the loan's share of the value in percent, to a tenth", () => {
     expect(investmentSummary(bought, 2025, today).ratios).toEqual({
       grossYield: 0.8, // 800 / 100 000
-      returnBeforeTax: 0.6, // 600 / 102 000
-      returnOnEquity: 1.9, // 420 / 22 000
+      netYield: 0.6, // 600 of net operating income / 102 000 put in
+      cashOnCash: -15.5, // (−3 580 left + 180 of tax) / 22 000 of own money
       loanToValue: 67.3, // 74 000 / 110 000
     });
   });
@@ -283,15 +314,17 @@ describe('the investment since it was bought', () => {
     expect(s.valueChange).toBeNull();
     expect(s.equityNow).toBeNull();
     expect(s.totalReturn).toBeNull();
-    expect(s.ratios.returnOnEquity).toBeNull();
     expect(s.ratios.loanToValue).toBeNull();
     expect(s.ratios.grossYield).toBe(0.7);
+    // No loan: all of it is own money. 560 left after 240 of tax, against 120 000.
+    expect(s.ratios.cashOnCash).toBe(0.7);
   });
 
   it('has no yields without a price', () => {
     const s = investmentSummary(ledger({ rents: [rent('2025-01', 800, '2025-01-02')] }), 2025, today);
     expect(s.ratios.grossYield).toBeNull();
-    expect(s.ratios.returnBeforeTax).toBeNull();
+    expect(s.ratios.netYield).toBeNull();
+    expect(s.ratios.cashOnCash).toBeNull();
   });
 
   it('takes the loan at purchase as the balance until a year-end balance is given', () => {
@@ -301,6 +334,7 @@ describe('the investment since it was bought', () => {
       today,
     );
     expect(s.loanBalance).toBeNull();
+    expect(s.loanNow).toBe(50000);
     expect(s.equityNow).toBe(50000);
     expect(s.ratios.loanToValue).toBe(50);
   });
@@ -316,7 +350,7 @@ describe('the investment since it was bought', () => {
       today,
     );
     expect(s.equityInvested).toBe(0);
-    expect(s.ratios.returnOnEquity).toBeNull();
+    expect(s.ratios.cashOnCash).toBeNull();
   });
 });
 
@@ -363,5 +397,44 @@ describe('the money on the account month by month', () => {
     expect(months[0]!.rentIn).toBe(50.01);
     expect(months[1]!.rentIn).toBe(50.0);
     expect(months[11]!.cumulative).toBe(investmentYear(ledger({ mySharePct: 50, rents: [rent('2025-01', 100.01, '2025-01-02'), rent('2025-02', 100.01, '2025-02-02')] }), 2025, today).cashFlow);
+  });
+});
+
+describe('the costs of a year by kind', () => {
+  it('lists every kind paid in the year, the largest first, improvements and loan interest included', () => {
+    const year = ledger({
+      costs: [
+        cost('2025-03-01', 'maintenance_charge', 300),
+        cost('2025-04-01', 'repairs', 100),
+        cost('2025-05-01', 'loan_interest', 250),
+        cost('2025-06-01', 'improvement', 1000),
+        cost('2025-07-01', 'furniture', 2000),
+        cost('2025-08-01', 'repairs', 50),
+        cost('2024-07-01', 'insurance', 999),
+      ],
+    });
+    expect(costsByCategory(year, 2025)).toEqual([
+      { category: 'furniture', amount: 2000 },
+      { category: 'improvement', amount: 1000 },
+      { category: 'maintenance_charge', amount: 300 },
+      { category: 'loan_interest', amount: 250 },
+      { category: 'repairs', amount: 150 },
+    ]);
+  });
+
+  it("is the owner's part, a cost of the whole home by the let share", () => {
+    const shared = ledger({
+      settings: { ...defaultSettings, letSharePct: 60 },
+      mySharePct: 50,
+      costs: [cost('2025-03-01', 'maintenance_charge', 300), cost('2025-04-01', 'repairs', 100)],
+    });
+    expect(costsByCategory(shared, 2025)).toEqual([
+      { category: 'maintenance_charge', amount: 90 },
+      { category: 'repairs', amount: 50 },
+    ]);
+  });
+
+  it('is empty in a year without costs', () => {
+    expect(costsByCategory(ledger(), 2025)).toEqual([]);
   });
 });

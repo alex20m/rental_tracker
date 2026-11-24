@@ -31,13 +31,9 @@ async function openInfo(page: Page, button: Locator) {
   return page.getByRole('note');
 }
 
-/** The parts of one of the money bars: how each is drawn and its width in percent of the longer bar. */
-const parts = (cash: Locator, bar: number) =>
-  cash
-    .locator('.io-bar')
-    .nth(bar)
-    .locator('i')
-    .evaluateAll((els) => els.map((e) => [e.className, Math.round(parseFloat((e as HTMLElement).style.width) * 10) / 10]));
+/** A style length of each element, in percent, to a tenth. */
+const lengths = (marks: Locator, side: 'width' | 'height') =>
+  marks.evaluateAll((els, s) => els.map((e) => Math.round(parseFloat((e as HTMLElement).style[s as 'width']) * 10) / 10), side);
 
 /** Bought in June 2024 for 100 000 € with 80 000 € of loan; 800 € of rent each year, a 200 € repair in March 2025. */
 const bought = {
@@ -59,160 +55,133 @@ const bought = {
 };
 
 test.describe('the apartment as your investment', () => {
-  test('opens on the two answers: the profit after tax and what was left on the account', async ({ page, api }) => {
+  test('opens on the key figures: cash flow and profit, then income, costs, net operating income, yields and occupancy', async ({ page, api }) => {
     api.addApartment({ name: 'Flat' }, bought);
     await openInvestment(page);
 
-    await expect(hero(page)).toContainText('Your profit after tax 2025');
-    await expect(page.getByTestId('net-profit')).toHaveText('420,00 €');
-    await expect(page.getByTestId('net-profit')).not.toHaveClass(/neg/);
-    await expect(hero(page)).toContainText('Left on your account 2025');
     await expect(page.getByTestId('cash-flow')).toHaveText('−3 580,00 €');
     await expect(page.getByTestId('cash-flow')).toHaveClass(/neg/);
-    await expect(hero(page)).toContainText('800 €Rent');
-    await expect(hero(page)).toContainText('200 €Costs');
-    await expect(hero(page)).toContainText('180 €Tax');
+    await expect(page.getByTestId('net-profit')).toHaveText('420,00 €');
+    await expect(page.getByTestId('net-profit')).not.toHaveClass(/neg/);
+    await expect(hero(page).locator('.kpi')).toHaveText([
+      'Rental income800 €',
+      'Costs200 €',
+      'Net operating income600 €',
+      'Gross yield0,8 %',
+      'Net yield0,6 %',
+      'Occupancy100 %',
+    ]);
+    // Every figure explains itself behind an "i", not on the page.
+    const info = await openInfo(page, hero(page).getByRole('button', { name: 'About Net operating income' }));
+    await expect(info).toContainText('before loan interest, financing charges, renovations and tax');
   });
 
-  test('works the cash flow out from the rent to the account, and draws money in against money out', async ({ page, api }) => {
+  test('draws the rent and the costs month by month, a month in words when pointed at or focused', async ({ page, api }) => {
     api.addApartment({ name: 'Flat' }, bought);
     await openInvestment(page);
 
-    const cash = region(page, 'Cash flow 2025');
-    await expect(cash).toContainText('You paid 3 580,00 € more than the rent brought in.');
-    await expect(cash.locator('.io-head')).toHaveText(['Money in800,00 €', 'Money out4 380,00 €']);
-    // One scale, set by the longer bar: the costs and the tax are thin slivers, the repayment most of it, hollow.
-    expect(await parts(cash, 0)).toEqual([['in', 18.3]]);
-    expect(await parts(cash, 1)).toEqual([
-      ['out', 4.6],
-      ['quiet', 4.1],
-      ['loan', 91.3],
-    ]);
-    await expect(cash.locator('.kv')).toHaveText([
-      'Rent received800,00 €',
-      'Costs−200,00 €',
+    const monthly = region(page, 'Income and costs 2025');
+    const readout = monthly.locator('.mc-readout');
+    await expect(readout).toHaveText('2025: rent 800,00 €, costs 200,00 €. Point at or tap a month.');
+    await expect(monthly.locator('.mc-month')).toHaveCount(12);
+    // January's rent is the tallest bar; March's repair a quarter of it.
+    expect(await lengths(monthly.locator('.mc-month').nth(0).locator('i'), 'height')).toEqual([100, 0]);
+    expect(await lengths(monthly.locator('.mc-month').nth(2).locator('i'), 'height')).toEqual([0, 25]);
+
+    const january = monthly.getByRole('button', { name: 'January 2025: rent 800,00 €, costs 0,00 €.' });
+    await january.hover();
+    await expect(readout).toHaveText('January 2025: rent 800,00 €, costs 0,00 €.');
+    await expect(january).toHaveClass(/on/);
+    await page.mouse.move(0, 0);
+    await expect(readout).toHaveText('2025: rent 800,00 €, costs 200,00 €. Point at or tap a month.');
+
+    const march = monthly.getByRole('button', { name: 'March 2025: rent 0,00 €, costs 200,00 €.' });
+    await march.focus();
+    await expect(readout).toHaveText('March 2025: rent 0,00 €, costs 200,00 €.');
+    await march.blur();
+    await expect(readout).toHaveText('2025: rent 800,00 €, costs 200,00 €. Point at or tap a month.');
+  });
+
+  test('works the income statement out from the rent to the cash flow', async ({ page, api }) => {
+    api.addApartment({ name: 'Flat' }, bought);
+    await openInvestment(page);
+
+    const statement = region(page, 'Income statement 2025');
+    await expect(statement.locator('.kv')).toHaveText([
+      'Rental income800,00 €',
+      'Running costs−200,00 €',
+      'Net operating income600,00 €',
       'Profit before tax600,00 €',
       'Estimated tax−180,00 €',
       'Profit after tax420,00 €',
       'Loan repaid−4 000,00 €',
-      'Left on your account−3 580,00 €',
+      'Cash flow−3 580,00 €',
       'Loan left at the end of 202574 000,00 €',
     ]);
     // Taxed on exactly the profit: nothing to explain.
-    await expect(cash.getByRole('button', { name: 'About this year’s tax' })).toHaveCount(0);
+    await expect(statement.getByRole('button', { name: 'About this year’s tax' })).toHaveCount(0);
   });
 
-  test('follows the account through the year, a month in words when it is pointed at or focused', async ({ page, api }) => {
+  test('lists the costs by kind, the largest first, each a bar against the largest', async ({ page, api }) => {
+    api.addApartment(
+      { name: 'Flat' },
+      {
+        costs: [
+          { id: 'a', date: '2025-03-01', category: 'repairs', description: '', amount: 200, hasReceipt: false },
+          { id: 'b', date: '2025-04-01', category: 'improvement', description: '', amount: 800, hasReceipt: false },
+          { id: 'c', date: '2025-05-01', category: 'repairs', description: '', amount: 200, hasReceipt: false },
+        ],
+      },
+    );
+    await openInvestment(page);
+
+    const kinds = region(page, 'Costs by kind 2025');
+    await expect(kinds.locator('li')).toHaveText(['Basic improvement800,00 €', 'Repairs & upkeep400,00 €']);
+    expect(await lengths(kinds.locator('.kind-bar i'), 'width')).toEqual([100, 50]);
+  });
+
+  test('compares the cash flow of each year, the year looked at marked', async ({ page, api }) => {
     api.addApartment({ name: 'Flat' }, bought);
     await openInvestment(page);
 
-    const months = region(page, 'Month by month 2025');
-    await expect(months.locator('.io-head')).toHaveText('On your account since January−3 580,00 €');
-    const monthsInfo = await openInfo(page, months.getByRole('button', { name: 'About the months' }));
-    await expect(monthsInfo).toContainText('The tax and the loan repayment are spread evenly over the months.');
-    await page.keyboard.press('Escape');
-    const readout = months.locator('.cum-readout');
-    await expect(readout).toHaveText('Point at or tap a month to see it.');
-    await expect(months.locator('.cum-dot')).toHaveCount(0);
-
-    // January: the rent in; out a twelfth of the 180 € tax and of the 4 000 € repaid.
-    const january = months.getByRole('button', { name: /^January 2025/ });
-    await expect(january).toHaveAccessibleName('January 2025: in 800,00 €, out 348,33 €. On your account since January: 451,67 €.');
-    await january.hover();
-    await expect(readout).toHaveText('January 2025: in 800,00 €, out 348,33 €. On your account since January: 451,67 €.');
-    await expect(months.locator('.cum-dot')).toHaveCount(1);
-    await page.mouse.move(0, 0);
-    await expect(readout).toHaveText('Point at or tap a month to see it.');
-
-    // March, from the keyboard: the 200 € repair, and the account already below zero.
-    await months.getByRole('button', { name: /^March 2025/ }).focus();
-    await expect(readout).toHaveText('March 2025: in 0,00 €, out 548,33 €. On your account since January: −445,00 €.');
-    await months.getByRole('button', { name: /^March 2025/ }).blur();
-    await expect(readout).toHaveText('Point at or tap a month to see it.');
-    await expect(months.getByRole('button', { name: /^[A-Z][a-z]+ 2025: / })).toHaveCount(12);
-  });
-
-  test.describe('in Swedish', () => {
-    test.use({ locale: 'sv-SE' });
-
-    test('opens the sentence about a month with a capital, though Swedish writes the month in lower case', async ({ page, api }) => {
-      api.addApartment({ name: 'Flat' }, bought);
-      await page.clock.setFixedTime(new Date(`${YEAR}-12-15T12:00:00`));
-      await page.goto('/');
-      const toggle = page.getByRole('button', { name: 'Meny', exact: true });
-      const nav = page.getByRole('navigation', { name: 'Avsnitt' });
-      await toggle.or(nav).first().waitFor();
-      if (await toggle.isVisible()) await toggle.click();
-      await nav.getByRole('button', { name: 'Investering', exact: true }).click();
-
-      const months = region(page, 'Månad för månad 2025');
-      await months.getByRole('button', { name: /^Januari 2025/ }).focus();
-      await expect(months.locator('.cum-readout')).toHaveText(
-        'Januari 2025: in 800,00 €, ut 348,33 €. På kontot sedan januari: 451,67 €.',
-      );
-    });
-  });
-
-  test('compares the years by what was left, or by the profit, with the year looked at marked', async ({ page, api }) => {
-    api.addApartment({ name: 'Flat' }, bought);
-    await openInvestment(page);
-
-    const years = region(page, 'Year by year');
-    await expect(years.getByRole('radio', { name: 'Left on your account' })).toBeChecked();
+    const years = region(page, 'Cash flow by year');
     await expect(years.locator('.pc-labels li')).toHaveText(['2024−1 440 €', '2025−3 580 €']);
     await expect(years.locator('.pc-labels li.now')).toHaveText('2025−3 580 €');
     await expect(years.locator('.pc-col i').first()).toHaveClass(/down/);
     await expect(years.locator('.kv')).toHaveText('In all 2024–2025−5 020,00 €');
-
-    await years.getByRole('radio', { name: 'Profit after tax' }).click();
-
-    await expect(years.locator('.pc-labels li')).toHaveText(['2024560 €', '2025420 €']);
-    await expect(years.locator('.pc-col i').first()).not.toHaveClass(/down/);
-    await expect(years.locator('.kv')).toHaveText('In all 2024–2025980,00 €');
   });
 
-  test('shows what you own beside the bank, and the loan shrinking year by year', async ({ page, api }) => {
+  test('sets the value against the loan, with what is yours and the returns on your own money', async ({ page, api }) => {
     api.addApartment({ name: 'Flat' }, bought);
     await openInvestment(page);
 
-    const own = region(page, 'What you own');
-    // The amounts are on the page; the sentence that puts them together is behind the "i".
-    await expect(own).not.toContainText('Your part is worth');
-    const ownInfo = await openInfo(page, own.getByRole('button', { name: 'About what you own' }));
-    await expect(ownInfo).toHaveText(
-      'Your part is worth about 110 000,00 €, as you estimated it. Of that, 36 000,00 € is yours and 74 000,00 € is still the bank’s.',
-    );
-    await expect(own.locator('.legend')).toHaveText('Yours 36 000,00 €The bank’s 74 000,00 €');
-    expect(await own.locator('.equity i.quiet').evaluate((e) => (e as HTMLElement).style.width)).toBe('67.3%');
-    await expect(own).toContainText('Your loan has gone from 80 000,00 € to 74 000,00 €.');
-    await expect(own.locator('.pc-labels li')).toHaveText(['Bought80 000 €', '202478 000 €', '202574 000 €']);
+    const value = region(page, 'Value and loan');
+    await expect(value.locator('.legend')).toHaveText('Your equity 36 000,00 €Loan 74 000,00 €');
+    expect(await value.locator('.equity i.quiet').evaluate((e) => (e as HTMLElement).style.width)).toBe('67.3%');
+    await expect(value.locator('.kpi')).toHaveText([
+      'Estimated value110 000 €',
+      'Loan74 000 €',
+      'Loan to value67,3 %',
+      // (−3 580 left + 180 of tax) against 22 000 of own money.
+      'Cash-on-cash return−15,5 %',
+    ]);
   });
 
-  test('keeps the ratios and the full account since the purchase further down', async ({ page, api }) => {
+  test('keeps the full account since the purchase further down', async ({ page, api }) => {
     api.addApartment({ name: 'Flat' }, bought);
     await openInvestment(page);
-
-    const ratios = region(page, 'Key figures 2025');
-    await expect(ratios).not.toContainText('For comparing');
-    const ratiosInfo = await openInfo(page, ratios.getByRole('button', { name: 'About the key figures' }));
-    await expect(ratiosInfo).toHaveText('For comparing the apartment with other investments.');
-    await page.keyboard.press('Escape');
-    await expect(ratios).toContainText('0,8 %Gross yield');
-    await expect(ratios).toContainText('0,6 %Return before tax');
-    await expect(ratios).toContainText('1,9 %Return on equity');
-    await expect(ratios).toContainText('67,3 %Loan to value');
 
     const since = region(page, 'Since you bought it');
-    await expect(since).toContainText('Invested (price and acquisition costs)102 000,00 €');
-    await expect(since).toContainText('Loan at the purchase−80 000,00 €');
-    await expect(since).toContainText('Your own money put in22 000,00 €');
-    await expect(since).toContainText('Profit after tax, in all980,00 €');
-    await expect(since).toContainText('Loan repaid, in all6 000,00 €');
-    await expect(since).toContainText('Left on your account, in all−5 020,00 €');
-    await expect(since).toContainText('Estimated value now110 000,00 €');
-    await expect(since).toContainText('Change in value10 000,00 €');
-    await expect(since).toContainText('Your equity now36 000,00 €');
-    await expect(since).toContainText('Total return8 980,00 €');
+    await expect(since.locator('.kv')).toHaveText([
+      'Invested (price and acquisition costs)102 000,00 €',
+      'Loan at the purchase−80 000,00 €',
+      'Your own money put in22 000,00 €',
+      'Profit after tax, in all980,00 €',
+      'Loan repaid, in all6 000,00 €',
+      'Cash flow, in all−5 020,00 €',
+      'Change in value10 000,00 €',
+      'Total return8 980,00 €',
+    ]);
 
     await expect(page.getByLabel('Loan at the purchase (€)')).toHaveValue('80000');
     await expect(page.getByLabel('Estimated value now (€)')).toHaveValue('110000');
@@ -233,71 +202,92 @@ test.describe('the apartment as your investment', () => {
     );
     await openInvestment(page);
 
-    await expect(hero(page)).toContainText('Your loss after tax 2025');
     await expect(page.getByTestId('net-profit')).toHaveText('−2 910,00 €');
     await expect(page.getByTestId('net-profit')).toHaveClass(/neg/);
+    // No price and no month logged this year: nothing to divide by.
+    await expect(hero(page).locator('.kpi .v')).toHaveText(['0 €', '3 000 €', '0 €', '—', '—', '—']);
 
-    const cash = region(page, 'Cash flow 2025');
-    await expect(cash).toContainText('You paid 2 910,00 € more than the rent brought in.');
-    await expect(cash.locator('.io-head')).toHaveText(['Money in90,00 €', 'Money out3 000,00 €']);
-    // The credit comes in, grey like the tax it comes from; no rent, so no green.
-    expect(await parts(cash, 0)).toEqual([['quiet', 3]]);
-    await expect(cash).toContainText('Basic improvements and furniture−3 000,00 €');
-    await expect(cash).toContainText('Estimated deficit credit90,00 €');
-    await expect(cash).not.toContainText('Estimated tax');
-    // The why is behind the "i" beside the tax, not spelled out on the page.
-    await expect(cash).not.toContainText('Why is the tax');
-    const cashInfo = await openInfo(page, cash.getByRole('button', { name: 'About this year’s tax' }));
-    await expect(cashInfo).toHaveText(
+    const statement = region(page, 'Income statement 2025');
+    await expect(statement).toContainText('Basic improvements and furniture−3 000,00 €');
+    await expect(statement).toContainText('Estimated deficit credit90,00 €');
+    await expect(statement).not.toContainText('Estimated tax');
+    await expect(statement).not.toContainText('Loan interest');
+    await expect(statement).not.toContainText('Loan left');
+    const info = await openInfo(page, statement.getByRole('button', { name: 'About this year’s tax' }));
+    await expect(info).toHaveText(
       'Why is the tax this size? It is worked out on −300,00 €, not on the profit before tax: 2 700,00 € of this year’s costs is deducted only in later years (a basic improvement over up to ten years, an expensive piece of furniture a quarter a year), or not at all. Those later deductions lower your tax in the years to come.',
     );
-    // Nothing to repay, no balance to show.
-    await expect(cash).not.toContainText('Loan left');
+    await page.keyboard.press('Escape');
 
-    const years = region(page, 'Year by year');
+    const years = region(page, 'Cash flow by year');
     await expect(years.locator('.pc-labels li')).toHaveText(['2024350 €', '2025−2 910 €']);
     await expect(years.locator('.pc-col i').nth(1)).toHaveClass(/down/);
 
-    // Without a price, a loan or a value there is nothing to divide by, and nothing to say about them.
-    await expect(region(page, 'Key figures 2025').getByText('—', { exact: true })).toHaveCount(4);
-    await expect(region(page, 'What you own')).toHaveCount(0);
+    const value = region(page, 'Value and loan');
+    await expect(value).toContainText('Add the estimated value below to see your equity.');
+    await expect(value.locator('.equity')).toHaveCount(0);
+    await expect(value.locator('.kpi .v')).toHaveText(['—', '—', '—', '—']);
     const since = region(page, 'Since you bought it');
     await expect(since).not.toContainText('Loan at the purchase');
     await expect(since).not.toContainText('Total return');
-    await expect(since).toContainText('Add the estimated value below to see more.');
     await expect(form(page).getByText('Saved', { exact: true })).toHaveCount(0);
   });
 
-  test('explains a tax smaller than the profit: part of an earlier improvement is deducted this year', async ({ page, api }) => {
+  test('explains a tax smaller than the profit, and keeps loan interest apart from the running costs', async ({ page, api }) => {
     api.addApartment(
       { name: 'Flat' },
       {
         rents: [{ month: '2025-01', status: 'paid', amount: 1000, receivedDate: '2025-01-02', note: '' }],
-        costs: [{ id: 'c1', date: '2024-04-01', category: 'improvement', description: '', amount: 1000, hasReceipt: false }],
+        costs: [
+          { id: 'c1', date: '2024-04-01', category: 'improvement', description: '', amount: 1000, hasReceipt: false },
+          { id: 'c2', date: '2025-02-01', category: 'loan_interest', description: '', amount: 100, hasReceipt: false },
+        ],
       },
     );
     await openInvestment(page);
 
-    const cash = region(page, 'Cash flow 2025');
-    await expect(cash).toContainText('730,00 € was left on your account.');
-    const cashInfo = await openInfo(page, cash.getByRole('button', { name: 'About this year’s tax' }));
-    await expect(cashInfo).toHaveText(
-      'Why is the tax this small? It is worked out on 900,00 €, less than the profit before tax: 100,00 € is this year’s part of earlier improvements, furniture or depreciation, deducted although no money left your account for it this year.',
+    const statement = region(page, 'Income statement 2025');
+    // Net operating income is before the interest; the interest comes after it.
+    await expect(statement).toContainText('Net operating income1 000,00 €');
+    await expect(statement).toContainText('Loan interest and financing charges−100,00 €');
+    await expect(statement).toContainText('Profit before tax900,00 €');
+    const info = await openInfo(page, statement.getByRole('button', { name: 'About this year’s tax' }));
+    await expect(info).toHaveText(
+      'Why is the tax this small? It is worked out on 800,00 €, less than the profit before tax: 100,00 € is this year’s part of earlier improvements, furniture or depreciation, deducted although no money left your account for it this year.',
     );
   });
 
-  test('shows only the year’s money for an apartment with nothing logged yet', async ({ page, api }) => {
+  test('shows the empty year plainly for an apartment with nothing logged yet', async ({ page, api }) => {
     api.addApartment({ name: 'Flat' });
     await openInvestment(page);
 
-    await expect(hero(page)).toContainText('Your profit after tax 2025');
     await expect(page.getByTestId('net-profit')).toHaveText('0,00 €');
     await expect(page.getByTestId('cash-flow')).toHaveText('0,00 €');
-    await expect(region(page, 'Cash flow 2025').locator('.io-bar i')).toHaveCount(0);
-    await expect(region(page, 'Month by month 2025').locator('.io-head')).toHaveText('On your account since January0,00 €');
-    await expect(region(page, 'Year by year')).toHaveCount(0);
-    await expect(region(page, 'What you own')).toHaveCount(0);
+    await expect(region(page, 'Income and costs 2025').locator('.mc-readout')).toHaveText(
+      '2025: rent 0,00 €, costs 0,00 €. Point at or tap a month.',
+    );
+    await expect(region(page, 'Costs by kind 2025')).toContainText('No costs logged this year.');
+    await expect(region(page, 'Cash flow by year')).toHaveCount(0);
     await expect(page.getByLabel('Loan at the purchase (€)')).toHaveValue('');
+  });
+
+  test.describe('in Swedish', () => {
+    test.use({ locale: 'sv-SE' });
+
+    test('opens the sentence about a month with a capital, though Swedish writes the month in lower case', async ({ page, api }) => {
+      api.addApartment({ name: 'Flat' }, bought);
+      await page.clock.setFixedTime(new Date(`${YEAR}-12-15T12:00:00`));
+      await page.goto('/');
+      const toggle = page.getByRole('button', { name: 'Meny', exact: true });
+      const nav = page.getByRole('navigation', { name: 'Avsnitt' });
+      await toggle.or(nav).first().waitFor();
+      if (await toggle.isVisible()) await toggle.click();
+      await nav.getByRole('button', { name: 'Investering', exact: true }).click();
+
+      const monthly = region(page, 'Intäkter och kostnader 2025');
+      await monthly.getByRole('button', { name: /^Januari 2025/ }).focus();
+      await expect(monthly.locator('.mc-readout')).toHaveText('Januari 2025: hyra 800,00 €, kostnader 0,00 €.');
+    });
   });
 
   test('saves the loan, the value and the year’s statement, and then only what changed', async ({ page, api }) => {
@@ -316,9 +306,9 @@ test.describe('the apartment as your investment', () => {
       { call: `PUT /api/apartments/${apt.id}/investment`, body: { loanAmount: 80000, marketValue: 120000 } },
       { call: `PUT /api/apartments/${apt.id}/investment/loan/2025`, body: { amortization: 3000, balance: 77000.5 } },
     ]);
-    await expect(region(page, 'Cash flow 2025')).toContainText('Loan repaid−3 000,00 €');
-    await expect(region(page, 'Cash flow 2025')).toContainText('Loan left at the end of 202577 000,50 €');
-    await expect(region(page, 'Since you bought it')).toContainText('Estimated value now120 000,00 €');
+    await expect(region(page, 'Income statement 2025')).toContainText('Loan repaid−3 000,00 €');
+    await expect(region(page, 'Income statement 2025')).toContainText('Loan left at the end of 202577 000,50 €');
+    await expect(region(page, 'Value and loan').locator('.kpi').first()).toHaveText('Estimated value120 000 €');
 
     api.calls.length = 0;
     await page.getByLabel('Estimated value now (€)').fill('125000');
@@ -344,21 +334,18 @@ test.describe('the apartment as your investment', () => {
     );
     await openInvestment(page);
     await expect(page.getByLabel('Estimated value now (€)')).toHaveValue('');
-    // A loan but no value: the loan's years, and no split of a value nobody gave.
-    const own = region(page, 'What you own');
-    await expect(own).toContainText('Your loan has gone from 80 000,00 € to 79 000,00 €.');
-    await expect(own.locator('.equity')).toHaveCount(0);
-    await expect(own.getByRole('button', { name: 'About what you own' })).toHaveCount(0);
+    const value = region(page, 'Value and loan');
+    await expect(value.locator('.kpi').nth(1)).toHaveText('Loan79 000 €');
 
     for (const label of ['Loan at the purchase (€)', 'Repaid in 2025 (€)', 'Loan left 31.12.2025 (€)']) {
       await page.getByLabel(label).fill('');
     }
     await save(page).click();
 
-    // The balance goes from the page only once both are saved and read back. The button is no sign:
+    // The loan goes from the page only once both are saved and read back. The button is no sign:
     // it is disabled while saving as well as once there is nothing left to save.
-    await expect(region(page, 'Cash flow 2025')).not.toContainText('Loan left');
-    await expect(own).toHaveCount(0);
+    await expect(value.locator('.kpi').nth(1)).toHaveText('Loan—');
+    await expect(region(page, 'Income statement 2025')).not.toContainText('Loan left');
     await expect(save(page)).toBeDisabled();
     await expect(form(page).getByText('Saved', { exact: true })).toHaveCount(0);
     expect(apt.myInvestment).toBeNull();
@@ -377,14 +364,14 @@ test.describe('the apartment as your investment', () => {
     );
     await openInvestment(page);
     await expect(page.getByLabel('Repaid in 2025 (€)')).toHaveValue('');
-    await expect(region(page, 'Cash flow 2025')).toContainText('Loan left at the end of 202550 000,00 €');
+    await expect(region(page, 'Income statement 2025')).toContainText('Loan left at the end of 202550 000,00 €');
 
     // 2024 is offered only because the loan has a statement for it.
     await page.getByLabel('Tax year').selectOption('2024');
 
     await expect(page.getByLabel('Repaid in 2024 (€)')).toHaveValue('1000');
     await expect(page.getByLabel('Loan left 31.12.2024 (€)')).toHaveValue('50000');
-    await expect(region(page, 'Cash flow 2024')).toContainText('Loan repaid−1 000,00 €');
+    await expect(region(page, 'Income statement 2024')).toContainText('Loan repaid−1 000,00 €');
 
     await page.getByLabel('Repaid in 2024 (€)').fill('1200');
     await page.getByLabel('Tax year').selectOption('2025');
@@ -394,8 +381,8 @@ test.describe('the apartment as your investment', () => {
     // A year still to come has its statement, but no months behind it yet.
     await page.getByLabel('Tax year').selectOption('2026');
     await expect(page.getByLabel('Repaid in 2026 (€)')).toHaveValue('500');
-    await expect(region(page, 'Cash flow 2026')).toBeVisible();
-    await expect(region(page, 'Month by month 2026')).toHaveCount(0);
+    await expect(region(page, 'Income statement 2026')).toBeVisible();
+    await expect(region(page, 'Income and costs 2026')).toHaveCount(0);
   });
 
   test('says why the loan could not be saved and keeps what was typed', async ({ page, api }) => {

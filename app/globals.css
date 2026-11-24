@@ -351,38 +351,31 @@ a.btn.primary { color: var(--brand-ink); }
 .legend { flex-wrap: wrap; row-gap: var(--space-2xs); }
 .legend i.net { background: var(--bar-net); }
 .legend i.quiet { background: var(--bar-quiet); }
-/* The investment's money in against money out: two bars on one scale, each part a colour named in the rows under them. */
-.io-says { margin: 0 0 var(--space-sm); }
-.io + .io { margin-top: var(--space-xs); }
-.io-head { display: flex; justify-content: space-between; gap: var(--space-sm); font-weight: 600; }
-.io-head .num { font-variant-numeric: tabular-nums; }
-.io-bar { display: flex; gap: 2px; height: 20px; margin: var(--space-2xs) 0 var(--space-sm); }
-.io-bar i { border-radius: 4px; background: var(--bar-rent); }
-.io-bar i.out { background: var(--bar-cost); }
-.io-bar i.quiet { background: var(--bar-quiet); }
-/* The loan repayment is hollow: money that left the account but is still the owner's, as a smaller loan. */
-.io-bar i.loan { background: transparent; box-shadow: inset 0 0 0 2px var(--bar-quiet); }
-.swatch { display: inline-block; flex: none; width: 10px; height: 10px; margin-right: var(--space-xs); border-radius: 2px; background: var(--bar-rent); }
-.swatch.out { background: var(--bar-cost); }
-.swatch.quiet { background: var(--bar-quiet); }
-.swatch.loan { background: transparent; box-shadow: inset 0 0 0 2px var(--bar-quiet); }
-/* The investment's opening: the profit and what was left on the account, the two answers, stacked on a phone. */
+/* The investment's opening: cash flow and profit side by side (stacked on a phone), then the key figures in a grid. */
 .duo { display: grid; gap: var(--space-md); }
 .duo .big { font-size: var(--text-3xl); }
-/* The account through the year: a line from zero on the first of January, a hairline at zero, a month to point at. */
-.cum { position: relative; height: 160px; margin: var(--space-xs) 0 var(--space-2xs); }
-.cum svg { display: block; width: 100%; height: 100%; overflow: visible; }
-.cum-area { fill: var(--bar-quiet); opacity: 0.25; }
-.cum-line { fill: none; stroke: var(--bar-net); stroke-width: 2; stroke-linejoin: round; vector-effect: non-scaling-stroke; }
-.cum-zero { position: absolute; left: 0; right: 0; height: 1px; background: var(--line); }
-.cum-guide { position: absolute; top: 0; bottom: 0; width: 1px; margin-left: -0.5px; background: var(--muted); }
-.cum-dot { position: absolute; width: 10px; height: 10px; margin: -5px 0 0 -5px; border-radius: 50%; background: var(--bar-net); box-shadow: 0 0 0 2px var(--card); }
-.cum-hits { position: absolute; inset: 0; display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); }
-.cum-hit { border: 0; background: none; padding: 0; cursor: pointer; }
-.cum-hit:focus-visible { outline-offset: -2px; }
-.cum-months { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); margin: 0; padding: 0; list-style: none; }
-.cum-months li { text-align: right; font-size: var(--text-xs); color: var(--muted); overflow: hidden; white-space: nowrap; }
-.cum-readout { min-height: 3em; margin: var(--space-sm) 0 0; }
+.kpis { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-md) var(--space-sm); margin-top: var(--space-md); padding-top: var(--space-md); border-top: 1px solid var(--line); }
+.kpis.in-panel { margin-top: var(--space-md); }
+.kpi .l { display: flex; align-items: center; gap: var(--space-3xs); min-height: 24px; font-size: var(--text-sm); color: var(--muted); }
+.kpi .l .info { margin-block: calc(-1 * var(--space-2xs)); }
+.kpi .v { font-family: var(--font-display); font-size: var(--text-xl); line-height: 1.1; font-weight: 700; letter-spacing: var(--tracking-display); font-variant-numeric: proportional-nums; }
+/* Rent and costs month by month: a pair of bars per month, each month a button to read it by. */
+.mc { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); gap: 2px; margin-top: var(--space-xs); }
+.mc-month { display: flex; flex-direction: column; align-items: stretch; gap: var(--space-2xs); padding: 0; border: 0; border-radius: var(--radius-input); background: none; cursor: pointer; }
+.mc-month.on { background: var(--tint); }
+.mc-month:focus-visible { outline-offset: -2px; }
+.mc-bars { display: flex; align-items: flex-end; justify-content: center; gap: 2px; height: 120px; padding: 0 2px; border-bottom: 1px solid var(--line); }
+.mc-bars i { flex: 1; max-width: 12px; border-radius: 4px 4px 0 0; background: var(--bar-rent); }
+.mc-bars i.out { background: var(--bar-cost); }
+.mc-name { font-size: var(--text-xs); color: var(--muted); text-align: center; overflow: hidden; white-space: nowrap; }
+.mc-month.on .mc-name { color: var(--text); font-weight: 600; }
+.mc-readout { min-height: 3em; margin: var(--space-sm) 0 0; }
+/* The year's costs by kind: the largest first, each a bar against the largest. */
+.kinds { list-style: none; margin: var(--space-xs) 0 0; padding: 0; display: grid; gap: var(--space-sm); }
+.kind-head { display: flex; justify-content: space-between; gap: var(--space-sm); font-size: var(--text-sm); }
+.kind-head .num { font-variant-numeric: tabular-nums; white-space: nowrap; }
+.kind-bar { display: block; height: 10px; margin-top: var(--space-2xs); }
+.kind-bar i { display: block; height: 100%; border-radius: 4px; background: var(--bar-cost); }
 /* What the owner's part is worth: their own equity, then the loan still on it, in one bar. */
 .equity { display: flex; gap: 2px; height: 16px; margin: var(--space-xs) 0 0; border-radius: 4px; overflow: hidden; }
 .equity i { display: block; background: var(--bar-quiet); }
@@ -398,10 +391,7 @@ a.btn.primary { color: var(--brand-ink); }
 .pc-labels li { flex: 1; max-width: 64px; text-align: center; font-size: var(--text-xs); color: var(--muted); }
 .pc-labels b { display: block; color: var(--text); font-weight: 600; white-space: nowrap; }
 .pc-labels li.now { color: var(--text); font-weight: 700; }
-.pc-plot.short { height: 90px; }
-.panel > .seg { margin-bottom: var(--space-md); }
 .years-total { margin-top: var(--space-sm); }
-.loan-years { margin-top: var(--space-lg); }
 
 /* ── Notices ── a note in the tray; red only when something failed ── */
 .alert { border-radius: var(--radius-input); padding: var(--space-sm) var(--space-md); font-size: var(--text-sm); background: var(--tray); color: var(--text); }
@@ -499,6 +489,8 @@ a.btn.primary { color: var(--brand-ink); }
 @media (min-width: 640px) {
   .duo { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .duo .big { font-size: calc(var(--text-3xl) * 1.2); }
+  .kpis { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .kpis.in-panel { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .app { max-width: 720px; padding-left: var(--space-lg); padding-right: var(--space-lg); }
   .topbar { margin: 0 calc(-1 * var(--space-lg)); padding-left: var(--space-lg); padding-right: var(--space-lg); }
   .months { grid-template-columns: repeat(4, minmax(0, 1fr)); }
