@@ -75,15 +75,51 @@ test.describe('the apartment as your investment', () => {
     const tops = await hero(page).locator('.kpi').evaluateAll((els) => els.map((e) => e.getBoundingClientRect().top));
     expect(tops[1]).toBe(tops[0]);
     expect(tops[3]).toBe(tops[2]);
-    // One column from top to bottom, on a desktop too: every card starts at the same left edge, one under another.
-    const cards = await page.locator('main > section.panel').evaluateAll((els) =>
-      els.map((e) => ({ left: e.getBoundingClientRect().left, top: e.getBoundingClientRect().top })),
-    );
-    expect(new Set(cards.map((c) => c.left)).size).toBe(1);
-    expect(cards.map((c) => c.top)).toEqual([...cards.map((c) => c.top)].sort((a, b) => a - b));
+
     // Every figure explains itself behind an "i", not on the page.
     const info = await openInfo(page, hero(page).getByRole('button', { name: 'About Net operating income' }));
     await expect(info).toContainText('before loan interest, financing charges, renovations and tax');
+  });
+
+  /** Where each of the page's sections sits: the opening and every card. */
+  const boxes = (page: Page) =>
+    page.locator('main > section').evaluateAll((els) =>
+      els.map((e) => {
+        const r = e.getBoundingClientRect();
+        return { left: Math.round(r.left), top: Math.round(r.top), width: Math.round(r.width) };
+      }),
+    );
+
+  test.describe('on a laptop', () => {
+    test.use({ viewport: { width: 1280, height: 800 } });
+
+    test('sits in two columns from the top, like Home and Tax, the opening heading the left one', async ({ page, api }) => {
+      api.addApartment({ name: 'Flat' }, bought);
+      await openInvestment(page);
+      await expect(hero(page)).toBeVisible();
+
+      const [opening, ...cards] = await boxes(page);
+      const columns = [...new Set([opening!, ...cards].map((b) => b.left))].sort((a, b) => a - b);
+      expect(columns).toHaveLength(2);
+      // Not a band across the page: the opening is one column wide, at the top of the left one.
+      expect(opening!.left).toBe(columns[0]);
+      expect(opening!.width).toBe(cards[0]!.width);
+      expect(opening!.top).toBeLessThanOrEqual(Math.min(...cards.map((c) => c.top)));
+    });
+  });
+
+  test.describe('on a phone', () => {
+    test.use({ viewport: { width: 400, height: 800 } });
+
+    test('is one column, a section under another', async ({ page, api }) => {
+      api.addApartment({ name: 'Flat' }, bought);
+      await openInvestment(page);
+      await expect(hero(page)).toBeVisible();
+
+      const all = await boxes(page);
+      expect(new Set(all.map((b) => b.left)).size).toBe(1);
+      expect(all.map((b) => b.top)).toEqual([...all.map((b) => b.top)].sort((a, b) => a - b));
+    });
   });
 
   test('draws the rent and the costs month by month, a month in words when pointed at or focused', async ({ page, api }) => {

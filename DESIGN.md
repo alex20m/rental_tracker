@@ -229,10 +229,10 @@ column does not also have. Beside a column of cards, the bare summary starts
   two answers side by side (`.duo`, stacked on a phone), cash flow and profit
   after tax, and under a hairline the key figures two across (`.kpis`) in
   pairs that share a row: rental income and costs, gross and net yield, net
-  operating income and occupancy. It is one column at every width, like
-  Settings, at most 760px wide on a desktop so the charts have room: a
-  dashboard reads top to bottom, and two columns of cards under a full-width
-  opening read as a jumble. Each figure's explanation is
+  operating income and occupancy. From 960px it sits in two columns like Home
+  and Tax, the opening at the top of the left one rather than a band across
+  both: a full-width opening over two columns of cards read as one column
+  turning into two. Each figure's explanation is
   behind its "i". Then the cards: income and costs month by month, the income
   statement, costs by kind, cash flow by year, value and loan, and the full
   account since the purchase; the form last.
