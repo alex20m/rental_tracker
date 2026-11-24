@@ -366,7 +366,6 @@ a.btn.primary { color: var(--brand-ink); }
 .swatch.out { background: var(--bar-cost); }
 .swatch.quiet { background: var(--bar-quiet); }
 .swatch.loan { background: transparent; box-shadow: inset 0 0 0 2px var(--bar-quiet); }
-.tax-note { margin: var(--space-2xs) 0 var(--space-sm); padding: var(--space-sm) var(--space-md); background: var(--tray); border-radius: var(--radius-input); }
 /* The investment's opening: the profit and what was left on the account, the two answers, stacked on a phone. */
 .duo { display: grid; gap: var(--space-md); }
 .duo .big { font-size: var(--text-3xl); }

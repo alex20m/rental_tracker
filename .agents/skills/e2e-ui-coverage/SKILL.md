@@ -141,6 +141,14 @@ test would catch.
 - **Timers and dates.** `page.clock.setFixedTime` for "today"-dependent UI;
   `page.clock.install()` then `runFor()` for a delayed callback (an object URL
   revoked after a download). Waiting real seconds is slow and flaky.
+- **A popover that closes on scroll can be closed by the click that opens
+  it.** When the button is off screen, Playwright scrolls it into view and
+  clicks; the scroll's own event can arrive after the click and close the
+  popover at once, so the test fails only now and then, and more often on a
+  phone viewport where more of the page is off screen. A person scrolls first
+  and taps later, so the app is not wrong. Scroll the button into view, wait
+  two animation frames for the scroll to settle, then click; put that in one
+  helper so every popover test does it.
 - **A race with the initial load.** Registering a failure after `goto` can be
   consumed by a request the first render is still making. Wait for the screen
   to settle before arming it.

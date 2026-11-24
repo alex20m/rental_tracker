@@ -233,8 +233,8 @@ column does not also have. Beside a column of cards, the bare summary starts
   saying what was left; rent is `--bar-rent`, costs `--bar-cost`, the tax (or
   a deficit credit) `--bar-quiet`, and the loan repayment a hollow
   `--bar-quiet` outline, since that money is still the owner's. A swatch of
-  the same kind names each in the rows under the bars. A note on the tray
-  (`.tax-note`) explains a tax that does not follow the profit. Month by month
+  the same kind names each in the rows under the bars, and an "i" beside the
+  tax explains a tax that does not follow the profit. Month by month
   (`.cum`): the money on the account as one `--bar-net` line from zero on the
   first of January, over a faint `--bar-quiet` area, with a hairline at zero;
   each month is a button the width of a twelfth, and pointing at or focusing
@@ -285,6 +285,11 @@ the rest follow the light mapping.
   `1–28` keep the en dash.
 - Labels in sentence case, never tracked capitals.
 - English, Swedish and Finnish change together (`lib/i18n/`).
+- **Explanations live behind the "i", always.** The page itself carries
+  figures, labels and at most one short sentence per card (a one-line answer
+  such as "1 234 € was left on your account"). Anything longer, why a figure is
+  what it is, how it was worked out, what to do about it, goes in an `Info`
+  popover beside the heading, row or label it explains.
 
 ## Accessibility
 
@@ -306,6 +311,9 @@ the rest follow the light mapping.
 
 ## Changelog
 
+- **2026-11:** Explanations live behind the "i", always: a card shows figures
+  and at most one short sentence. The investment page's tax note, month
+  introduction, ratio introduction and value sentence moved into popovers.
 - **2026-11:** The investment page's charts: money in against money out with
   the loan repayment hollow, the account month by month, the years one series
   at a time, the value split into equity and loan and the loan by year, and a

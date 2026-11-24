@@ -158,16 +158,16 @@ export default function Investment({ apt, year, onChanged }: Props) {
           <span>
             {swatch('tax')}
             {y.tax < 0 ? t('inv.row.credit') : t('inv.row.tax')}
+            {deferred !== 0 && (
+              <Info about={t('inv.taxWhyAbout')}>
+                {deferred > 0
+                  ? t('inv.taxLater', { taxable: eur(y.taxableIncome), amount: eur(deferred) })
+                  : t('inv.taxEarlier', { taxable: eur(y.taxableIncome), amount: eur(-deferred) })}
+              </Info>
+            )}
           </span>
           <span className="num">{eur(-y.tax)}</span>
         </div>
-        {deferred !== 0 && (
-          <p className="msg tax-note">
-            {deferred > 0
-              ? t('inv.taxLater', { taxable: eur(y.taxableIncome), amount: eur(deferred) })
-              : t('inv.taxEarlier', { taxable: eur(y.taxableIncome), amount: eur(-deferred) })}
-          </p>
-        )}
         <div className="kv sum">
           <span>{t('inv.row.afterTax')}</span>
           <span className="num">{eur(y.profitAfterTax)}</span>
@@ -193,8 +193,7 @@ export default function Investment({ apt, year, onChanged }: Props) {
 
       {months.length > 0 && (
         <section className="panel" aria-label={t('inv.months', { year })}>
-          <Heading>{t('inv.months', { year })}</Heading>
-          <p className="msg io-says">{t('inv.monthsLead')}</p>
+          <Heading info={<Info about={t('inv.monthsAbout')}>{t('inv.monthsInfo')}</Info>}>{t('inv.months', { year })}</Heading>
           <div className="io-head">
             <span>{t('inv.accountSoFar')}</span>
             <span className="num">{eur(months[months.length - 1]!.cumulative)}</span>
@@ -277,16 +276,23 @@ export default function Investment({ apt, year, onChanged }: Props) {
 
       {(s.marketValue !== null || loanPoints.length > 1) && (
         <section className="panel" aria-label={t('inv.own')}>
-          <Heading>{t('inv.own')}</Heading>
+          <Heading
+            info={
+              s.marketValue !== null && (
+                <Info about={t('inv.ownAbout')}>
+                  {t('inv.ownInfo', {
+                    value: eur(s.marketValue),
+                    equity: eur(s.equityNow!),
+                    loan: eur(s.marketValue - s.equityNow!),
+                  })}
+                </Info>
+              )
+            }
+          >
+            {t('inv.own')}
+          </Heading>
           {s.marketValue !== null && (
             <>
-              <p className="msg io-says">
-                {t('inv.ownSays', {
-                  value: eur(s.marketValue),
-                  equity: eur(s.equityNow!),
-                  loan: eur(s.marketValue - s.equityNow!),
-                })}
-              </p>
               <div className="equity" aria-hidden="true">
                 <i className="net" />
                 <i className="quiet" style={{ width: `${Math.min(100, s.ratios.loanToValue!)}%` }} />
@@ -329,8 +335,7 @@ export default function Investment({ apt, year, onChanged }: Props) {
       )}
 
       <section className="panel" aria-label={t('inv.ratios', { year })}>
-        <Heading>{t('inv.ratios', { year })}</Heading>
-        <p className="msg io-says">{t('inv.ratiosLead')}</p>
+        <Heading info={<Info about={t('inv.ratiosAbout')}>{t('inv.ratiosInfo')}</Info>}>{t('inv.ratios', { year })}</Heading>
         <div className="stats two insights">
           <div className="stat">
             <div className="v">{ratio(s.ratios.grossYield)}</div>
