@@ -152,6 +152,24 @@ export interface Ledger {
   costs: CostEntry[];
 }
 
+/**
+ * The owner's own loan in one year, from the bank's annual statement: what was
+ * paid off and what was left at the end of the year. The interest is not here —
+ * it is a cost, logged with the apartment's other costs if the owner wants it
+ * counted. Personal: no other owner sees it, and the amounts are the owner's own.
+ */
+export interface LoanYear {
+  year: number;
+  amortization: number; // EUR paid off the loan during the year
+  balance: number; // EUR left on the loan at the end of the year
+}
+
+/** What the owner tells about their own investment besides the ledger: both optional, both their own part. */
+export interface InvestmentDetails {
+  loanAmount: number; // EUR borrowed for the purchase; 0 = not given
+  marketValue: number; // EUR the owner's part is worth now, as they estimate it; 0 = not given
+}
+
 /** A ledger with what the sale of the apartment is worked out from. */
 export interface SaleLedger extends Ledger {
   acquisitionCosts: AcquisitionCost[];
@@ -198,6 +216,10 @@ export interface ApartmentView extends Ledger {
   mySale: SaleDetails | null;
   /** The viewer keeps a photo of their purchase (the deed of sale), whether or not a purchase is entered. */
   myPurchaseHasPhoto: boolean;
+  /** The viewer's own loan and estimated value, or null while they have entered neither. */
+  myInvestment: InvestmentDetails | null;
+  /** The viewer's own loan, year by year, oldest first. */
+  myLoanYears: LoanYear[];
   /** The viewer's own ownership share, in percent. */
   mySharePct: number;
 }

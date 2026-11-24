@@ -20,6 +20,8 @@ import type {
   ApartmentView,
   CostCategory,
   CostEntry,
+  InvestmentDetails,
+  LoanYear,
   Owner,
   PendingInvite,
   PortfolioItem,
@@ -194,11 +196,13 @@ export function portfolio(db: Queryable, clock: () => Date = () => new Date()) {
 
   const owns = async (userId: string, apartmentId: string) => (await myShare(userId, apartmentId)) !== null;
 
-  /** Erases what one owner kept for themselves in an apartment they no longer own: their sale, its photo and acquisition costs. */
+  /** Erases what one owner kept for themselves in an apartment they no longer own: their sale, its photo, acquisition costs, loan and value. */
   async function forgetPersonal(apartmentId: string, userId: string) {
     await db.query('delete from sales where apartment_id = $1 and user_id = $2', [apartmentId, userId]);
     await db.query('delete from purchase_photos where apartment_id = $1 and user_id = $2', [apartmentId, userId]);
     await db.query('delete from acquisition_costs where apartment_id = $1 and user_id = $2', [apartmentId, userId]);
+    await db.query('delete from investments where apartment_id = $1 and user_id = $2', [apartmentId, userId]);
+    await db.query('delete from loan_years where apartment_id = $1 and user_id = $2', [apartmentId, userId]);
   }
 
   return {
@@ -261,7 +265,8 @@ export function portfolio(db: Queryable, clock: () => Date = () => new Date()) {
       if (share === null) return null;
       await bookDue(apartmentId);
 
-      const [settingsRows, owners, invites, rents, costs, recurring, acquisitionCosts, sales, purchasePhotos] = await Promise.all([
+      const [settingsRows, owners, invites, rents, costs, recurring, acquisitionCosts, sales, purchasePhotos, investments, loanYears] =
+        await Promise.all([
         db.query<ApartmentSettings & { checklist: string }>(
           `select ${SETTINGS_COLUMNS}, a.checklist from apartments a where a.id = $1`,
           [apartmentId],
@@ -309,6 +314,16 @@ export function portfolio(db: Queryable, clock: () => Date = () => new Date()) {
           [apartmentId, userId],
         ),
         db.query('select 1 from purchase_photos where apartment_id = $1 and user_id = $2', [apartmentId, userId]),
+        db.query<InvestmentDetails>(
+          `select loan_amount::float8 as "loanAmount", market_value::float8 as "marketValue"
+             from investments where apartment_id = $1 and user_id = $2`,
+          [apartmentId, userId],
+        ),
+        db.query<LoanYear>(
+          `select year, amortization::float8 as amortization, balance::float8 as balance
+             from loan_years where apartment_id = $1 and user_id = $2 order by year`,
+          [apartmentId, userId],
+        ),
       ]);
       if (!settingsRows[0]) return null;
       const { checklist, ...settings } = settingsRows[0];
@@ -316,7 +331,7 @@ export function portfolio(db: Queryable, clock: () => Date = () => new Date()) {
       // A cost has a category and the rent has none; leave the key out rather than send null.
       for (const r of recurring) if (r.category === null) delete r.category;
 
-      return { id: apartmentId, settings, checklist: parseChecklist(checklist), owners, invites, rents, costs, recurring, acquisitionCosts, mySale: sales[0] ?? null, myPurchaseHasPhoto: purchasePhotos.length > 0, mySharePct: share };
+      return { id: apartmentId, settings, checklist: parseChecklist(checklist), owners, invites, rents, costs, recurring, acquisitionCosts, mySale: sales[0] ?? null, myPurchaseHasPhoto: purchasePhotos.length > 0, myInvestment: investments[0] ?? null, myLoanYears: loanYears, mySharePct: share };
     },
 
     async updateSettings(userId: string, apartmentId: string, patch: Partial<ApartmentSettings>): Promise<boolean> {
@@ -527,6 +542,36 @@ export function portfolio(db: Queryable, clock: () => Date = () => new Date()) {
           where apartment_id = $1 and user_id = $2 and purchase_date is null and purchase_price = 0
             and sale_date is null and sale_price = 0 and sale_costs = 0`,
         [apartmentId, userId],
+      );
+      return true;
+    },
+
+    /** The owner's own loan at the purchase and estimate of their part's value. A row with nothing in it is removed. */
+    async putInvestment(userId: string, apartmentId: string, details: InvestmentDetails): Promise<boolean> {
+      if (!(await owns(userId, apartmentId))) return false;
+      if (details.loanAmount === 0 && details.marketValue === 0) {
+        await db.query('delete from investments where apartment_id = $1 and user_id = $2', [apartmentId, userId]);
+        return true;
+      }
+      await db.query(
+        `insert into investments (apartment_id, user_id, loan_amount, market_value) values ($1, $2, $3, $4)
+         on conflict (apartment_id, user_id) do update set loan_amount = excluded.loan_amount, market_value = excluded.market_value`,
+        [apartmentId, userId, details.loanAmount, details.marketValue],
+      );
+      return true;
+    },
+
+    /** One year of the owner's own loan, replacing what was there; an empty year is removed. */
+    async putLoanYear(userId: string, apartmentId: string, year: number, loan: Omit<LoanYear, 'year'>): Promise<boolean> {
+      if (!(await owns(userId, apartmentId))) return false;
+      if (loan.amortization === 0 && loan.balance === 0) {
+        await db.query('delete from loan_years where apartment_id = $1 and user_id = $2 and year = $3', [apartmentId, userId, year]);
+        return true;
+      }
+      await db.query(
+        `insert into loan_years (apartment_id, user_id, year, amortization, balance) values ($1, $2, $3, $4, $5)
+         on conflict (apartment_id, user_id, year) do update set amortization = excluded.amortization, balance = excluded.balance`,
+        [apartmentId, userId, year, loan.amortization, loan.balance],
       );
       return true;
     },
@@ -825,6 +870,8 @@ export function portfolio(db: Queryable, clock: () => Date = () => new Date()) {
       await db.query('delete from sales where user_id = $1', [userId]);
       await db.query('delete from purchase_photos where user_id = $1', [userId]);
       await db.query('delete from acquisition_costs where user_id = $1', [userId]);
+      await db.query('delete from investments where user_id = $1', [userId]);
+      await db.query('delete from loan_years where user_id = $1', [userId]);
       await db.query('delete from apartment_owners where user_id = $1', [userId]);
       await db.query('delete from apartment_invites where email = lower($1)', [email]);
 

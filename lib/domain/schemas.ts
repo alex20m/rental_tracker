@@ -133,6 +133,15 @@ export const saleSchema = z
 
 export const salePatchSchema = z.union([purchaseSchema, saleSchema]);
 
+/** An owner's own loan at the purchase and their estimate of what their part is worth; 0 is "not given". */
+export const investmentSchema = z.object({ loanAmount: money, marketValue: money }).strict();
+
+/** A tax year in a URL, as the loan statements are given by year. */
+export const loanYearParam = z.string().regex(/^\d{4}$/, 'Expected a year').transform(Number).pipe(z.number().int().min(1900).max(2100));
+
+/** One year of the owner's own loan, from the bank's annual statement. Its interest is a cost, logged with the others. */
+export const loanYearSchema = z.object({ amortization: money, balance: money }).strict();
+
 /** What counts towards the cost of acquiring the owner's part, for when it is sold; any day, since it may be years old. */
 export const acquisitionSchema = z
   .object({

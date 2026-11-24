@@ -26,6 +26,8 @@ function apartment(over: Partial<ApartmentView> = {}): ApartmentView {
     acquisitionCosts: [],
     mySale: null,
     myPurchaseHasPhoto: false,
+    myInvestment: null,
+    myLoanYears: [],
     mySharePct: 100,
     ...over,
   };
