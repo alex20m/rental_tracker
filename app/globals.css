@@ -489,8 +489,6 @@ a.btn.primary { color: var(--brand-ink); }
 @media (min-width: 640px) {
   .duo { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .duo .big { font-size: calc(var(--text-3xl) * 1.2); }
-  .kpis { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-  .kpis.in-panel { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .app { max-width: 720px; padding-left: var(--space-lg); padding-right: var(--space-lg); }
   .topbar { margin: 0 calc(-1 * var(--space-lg)); padding-left: var(--space-lg); padding-right: var(--space-lg); }
   .months { grid-template-columns: repeat(4, minmax(0, 1fr)); }
@@ -504,6 +502,8 @@ a.btn.primary { color: var(--brand-ink); }
 
 /* Desktops: a sidebar instead of the drawer, and two columns per page. */
 @media (min-width: 960px) {
+  /* The opening's key figures come in pairs: two or four across keeps each pair on one row. */
+  .kpis:not(.in-panel) { grid-template-columns: repeat(4, minmax(0, 1fr)); }
   .app.shell { max-width: none; margin: 0 0 0 232px; padding: 0 var(--space-xl) var(--space-2xl); }
   .shell > .topbar, .shell > .page, .shell > .alert { max-width: 1040px; margin-left: auto; margin-right: auto; }
   .shell > .topbar { padding: var(--space-lg) 0 var(--space-md); }

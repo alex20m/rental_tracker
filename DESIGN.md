@@ -228,9 +228,8 @@ column does not also have. Beside a column of cards, the bare summary starts
   landlord rather than an analyst. The opening (bare, like any page's) has the
   two answers side by side (`.duo`, stacked on a phone), cash flow and profit
   after tax, and under a hairline the key figures in a grid (`.kpis`, two
-  across on a phone, three from 640px): gross yield and net yield first, side
-  by side at either width, then occupancy, rental income, costs and net
-  operating income. Each figure's explanation is
+  across, four from 960px) in pairs that share a row at every width: rental
+  income and costs, gross and net yield, net operating income and occupancy. Each figure's explanation is
   behind its "i". Then the cards: income and costs month by month, the income
   statement, costs by kind, cash flow by year, value and loan, and the full
   account since the purchase; the form last.
