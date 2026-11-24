@@ -108,6 +108,23 @@ test.describe('the apartment as your investment', () => {
     });
   });
 
+  test.describe('in Swedish on a narrow phone', () => {
+    test.use({ locale: 'sv-SE', viewport: { width: 360, height: 800 } });
+
+    test('lines the loan fields up in their rows, though a label beside them wraps', async ({ page, api }) => {
+      api.addApartment({ name: 'Flat' }, bought);
+      await page.clock.setFixedTime(new Date(`${YEAR}-12-15T12:00:00`));
+      await page.goto('/');
+      await page.getByRole('button', { name: 'Meny', exact: true }).click();
+      await page.getByRole('navigation', { name: 'Avsnitt' }).getByRole('button', { name: 'Investering', exact: true }).click();
+
+      const top = (label: string) => page.getByLabel(label).evaluate((e) => Math.round(e.getBoundingClientRect().top));
+      // "Lånesaldo 31.12.2025 (€)" takes two lines at this width; its field still sits level with the one beside it.
+      expect(await top('Lånesaldo 31.12.2025 (€)')).toBe(await top('Amorterat 2025 (€)'));
+      expect(await top('Uppskattat värde nu (€)')).toBe(await top('Lån vid köpet (€)'));
+    });
+  });
+
   test.describe('on a phone', () => {
     test.use({ viewport: { width: 400, height: 800 } });
 

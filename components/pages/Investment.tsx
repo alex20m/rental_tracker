@@ -388,7 +388,7 @@ function LoanForm({ apt, year, onChanged }: Props) {
       >
         {t('inv.details')}
       </Heading>
-      <div className="cols">
+      <div className="cols fields">
         <div>
           <label htmlFor="inv-loan">{t('inv.loanAmount')}</label>
           {field('inv-loan', loanAmount, setLoanAmount)}
@@ -398,7 +398,7 @@ function LoanForm({ apt, year, onChanged }: Props) {
           {field('inv-value', marketValue, setMarketValue)}
         </div>
       </div>
-      <div className="cols">
+      <div className="cols fields">
         <div>
           <label htmlFor="inv-amortization">{t('inv.amortization', { year })}</label>
           {field('inv-amortization', amortization, setAmortization)}

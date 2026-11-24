@@ -195,6 +195,9 @@ column does not also have. Beside a column of cards, the bare summary starts
   field beside it. Hover lifts 1px with a shadow; press scales to 0.97.
   Disabled: tint fill, muted text, not-allowed cursor.
 - **Fields:** 48px, `--field-edge` border, 14px radius, focus ring inside.
+  Fields side by side (`.cols.fields`) line up in their row whatever their
+  labels do: a label that wraps to two lines on a phone leaves its field level
+  with the one beside it.
   Selects draw `--chevron` 16px in from the right. Labels sit above, 14px,
   weight 500.
 - **Segmented control** (`.seg`): a pill tray; the chosen segment is raised.
@@ -312,6 +315,9 @@ the rest follow the light mapping.
 
 ## Changelog
 
+- **2026-11:** Fields side by side line up even when a label beside them wraps
+  (`.cols.fields`); the investment page's loan fields stood out of line on a
+  narrow phone.
 - **2026-11:** The investment page redone as a dashboard: key figures first
   (cash flow, profit, income, costs, net operating income, yields,
   occupancy), then income and costs by month, the income statement, costs by
