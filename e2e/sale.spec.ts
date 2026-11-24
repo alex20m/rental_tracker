@@ -647,3 +647,25 @@ test.describe('photos on the Sale page', () => {
     await expect(sheet.getByRole('button', { name: 'Download' })).toHaveCount(0);
   });
 });
+
+test.describe('the sale page in Swedish on a narrow phone', () => {
+  test.use({ locale: 'sv-SE', viewport: { width: 320, height: 800 } });
+
+  test('lines the purchase and the sale fields up in their rows, though a label beside them wraps', async ({ page, api }) => {
+    api.addApartment(FLAT);
+    await page.goto('/');
+    await page.getByRole('button', { name: 'Meny', exact: true }).click();
+    await page.getByRole('navigation', { name: 'Avsnitt' }).getByRole('button', { name: 'Försäljning', exact: true }).click();
+
+    const box = (label: string) =>
+      page.getByLabel(label, { exact: true }).evaluate((e) => {
+        const r = e.getBoundingClientRect();
+        return { top: Math.round(r.top), height: Math.round(r.height) };
+      });
+    const label = (text: string) => page.locator('label', { hasText: text }).evaluate((e) => Math.round(e.getBoundingClientRect().height));
+    // At this width "Ditt försäljningspris (€)" takes two lines and "Försäljningsdag" one.
+    expect(await label('Ditt försäljningspris (€)')).toBeGreaterThan(await label('Försäljningsdag'));
+    expect((await box('Ditt försäljningspris (€)')).top).toBe((await box('Försäljningsdag')).top);
+    expect((await box('Ditt inköpspris (€)')).top).toBe((await box('Köpdatum')).top);
+  });
+});

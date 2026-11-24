@@ -145,7 +145,7 @@ export default function Sale({ apt, onChanged }: Props) {
           {t('sale.purchaseHeading')}
         </Heading>
         <div>
-          <div className="cols">
+          <div className="cols fields">
             <div>
               <label htmlFor="sale-purchase-date">{t('sale.purchaseDate')}</label>
               <input id="sale-purchase-date" type="date" value={purchaseDate} onChange={(e) => setPurchaseDate(e.target.value)} />
@@ -202,7 +202,7 @@ export default function Sale({ apt, onChanged }: Props) {
           {t('sale.details')}
         </Heading>
         <div>
-          <div className="cols">
+          <div className="cols fields">
             <div>
               <label htmlFor="sale-date">{t('sale.date')}</label>
               <input id="sale-date" type="date" value={saleDate} onChange={(e) => setSaleDate(e.target.value)} />

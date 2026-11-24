@@ -316,8 +316,8 @@ the rest follow the light mapping.
 ## Changelog
 
 - **2026-11:** Fields side by side line up even when a label beside them wraps
-  (`.cols.fields`); the investment page's loan fields stood out of line on a
-  narrow phone.
+  (`.cols.fields`); the investment page's loan fields and the sale page's
+  purchase and sale fields stood out of line on a narrow phone.
 - **2026-11:** The investment page redone as a dashboard: key figures first
   (cash flow, profit, income, costs, net operating income, yields,
   occupancy), then income and costs by month, the income statement, costs by
