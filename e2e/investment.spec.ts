@@ -64,13 +64,16 @@ test.describe('the apartment as your investment', () => {
     await expect(page.getByTestId('net-profit')).toHaveText('420,00 €');
     await expect(page.getByTestId('net-profit')).not.toHaveClass(/neg/);
     await expect(hero(page).locator('.kpi')).toHaveText([
-      'Rental income800 €',
-      'Costs200 €',
-      'Net operating income600 €',
       'Gross yield0,8 %',
       'Net yield0,6 %',
       'Occupancy100 %',
+      'Rental income800 €',
+      'Costs200 €',
+      'Net operating income600 €',
     ]);
+    // Gross and net yield side by side, on a phone's two columns as on a desktop's three.
+    const [gross, net] = await hero(page).locator('.kpi').evaluateAll((els) => els.slice(0, 2).map((e) => e.getBoundingClientRect().top));
+    expect(net).toBe(gross);
     // Every figure explains itself behind an "i", not on the page.
     const info = await openInfo(page, hero(page).getByRole('button', { name: 'About Net operating income' }));
     await expect(info).toContainText('before loan interest, financing charges, renovations and tax');
@@ -205,7 +208,7 @@ test.describe('the apartment as your investment', () => {
     await expect(page.getByTestId('net-profit')).toHaveText('−2 910,00 €');
     await expect(page.getByTestId('net-profit')).toHaveClass(/neg/);
     // No price and no month logged this year: nothing to divide by.
-    await expect(hero(page).locator('.kpi .v')).toHaveText(['0 €', '3 000 €', '0 €', '—', '—', '—']);
+    await expect(hero(page).locator('.kpi .v')).toHaveText(['—', '—', '—', '0 €', '3 000 €', '0 €']);
 
     const statement = region(page, 'Income statement 2025');
     await expect(statement).toContainText('Basic improvements and furniture−3 000,00 €');

@@ -87,12 +87,13 @@ export default function Investment({ apt, year, onChanged }: Props) {
           </div>
         </div>
         <div className="kpis">
-          {kpi(t('inv.kpi.rent'), t('inv.kpi.rentInfo'), eurWhole(y.rentIncome))}
-          {kpi(t('inv.kpi.costs'), t('inv.kpi.costsInfo'), eurWhole(costs))}
-          {kpi(t('inv.kpi.noi'), t('inv.kpi.noiInfo'), eurWhole(y.netOperatingIncome))}
+          {/* Gross and net yield first and side by side, two or three across alike. */}
           {kpi(t('inv.kpi.gross'), t('inv.kpi.grossInfo'), ratio(s.ratios.grossYield))}
           {kpi(t('inv.kpi.net'), t('inv.kpi.netInfo'), ratio(s.ratios.netYield))}
           {kpi(t('inv.kpi.occupancy'), t('inv.kpi.occupancyInfo'), y.occupancy === null ? '—' : `${y.occupancy} %`)}
+          {kpi(t('inv.kpi.rent'), t('inv.kpi.rentInfo'), eurWhole(y.rentIncome))}
+          {kpi(t('inv.kpi.costs'), t('inv.kpi.costsInfo'), eurWhole(costs))}
+          {kpi(t('inv.kpi.noi'), t('inv.kpi.noiInfo'), eurWhole(y.netOperatingIncome))}
         </div>
       </section>
 
