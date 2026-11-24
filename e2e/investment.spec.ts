@@ -71,10 +71,16 @@ test.describe('the apartment as your investment', () => {
       'Net operating income600 €',
       'Occupancy100 %',
     ]);
-    // Income beside costs and gross beside net yield, on a phone's two columns as on a desktop's four.
+    // Income beside costs and gross beside net yield, two across at any width.
     const tops = await hero(page).locator('.kpi').evaluateAll((els) => els.map((e) => e.getBoundingClientRect().top));
     expect(tops[1]).toBe(tops[0]);
     expect(tops[3]).toBe(tops[2]);
+    // One column from top to bottom, on a desktop too: every card starts at the same left edge, one under another.
+    const cards = await page.locator('main > section.panel').evaluateAll((els) =>
+      els.map((e) => ({ left: e.getBoundingClientRect().left, top: e.getBoundingClientRect().top })),
+    );
+    expect(new Set(cards.map((c) => c.left)).size).toBe(1);
+    expect(cards.map((c) => c.top)).toEqual([...cards.map((c) => c.top)].sort((a, b) => a - b));
     // Every figure explains itself behind an "i", not on the page.
     const info = await openInfo(page, hero(page).getByRole('button', { name: 'About Net operating income' }));
     await expect(info).toContainText('before loan interest, financing charges, renovations and tax');

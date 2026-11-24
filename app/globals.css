@@ -502,8 +502,6 @@ a.btn.primary { color: var(--brand-ink); }
 
 /* Desktops: a sidebar instead of the drawer, and two columns per page. */
 @media (min-width: 960px) {
-  /* The opening's key figures come in pairs: two or four across keeps each pair on one row. */
-  .kpis:not(.in-panel) { grid-template-columns: repeat(4, minmax(0, 1fr)); }
   .app.shell { max-width: none; margin: 0 0 0 232px; padding: 0 var(--space-xl) var(--space-2xl); }
   .shell > .topbar, .shell > .page, .shell > .alert { max-width: 1040px; margin-left: auto; margin-right: auto; }
   .shell > .topbar { padding: var(--space-lg) 0 var(--space-md); }
@@ -524,11 +522,13 @@ a.btn.primary { color: var(--brand-ink); }
   .page-home > .hero, .page-portfolio > .hero, .page-tax > .hero { padding-top: var(--space-lg); }
 
   /* Columns, not a grid: sections of unequal height pack without gaps. */
-  .page-home, .page-portfolio, .page-tax, .page-sale, .page-investment { display: block; column-count: 2; column-gap: var(--space-xl); }
-  .page-home > *, .page-portfolio > *, .page-tax > *, .page-sale > *, .page-investment > * { break-inside: avoid; margin-bottom: var(--space-lg); }
+  .page-home, .page-portfolio, .page-tax, .page-sale { display: block; column-count: 2; column-gap: var(--space-xl); }
+  .page-home > *, .page-portfolio > *, .page-tax > *, .page-sale > * { break-inside: avoid; margin-bottom: var(--space-lg); }
   /* Pages that are one short list read better narrow than stretched across the screen. */
   .shell > .page-settings, .shell > .page-account, .shell > .page-checklist { max-width: 640px; margin-left: 0; }
-  .page > .notice, .page > .allset, .page > .btn.block, .page > .empty, .page > .pagehead, .page > .seg, .page-sale > .hero, .page-investment > .hero { column-span: all; }
+  /* The investment page reads top to bottom, a dashboard in one column: wide enough for its charts, no wider. */
+  .shell > .page-investment { max-width: 760px; margin-left: 0; }
+  .page > .notice, .page > .allset, .page > .btn.block, .page > .empty, .page > .pagehead, .page > .seg, .page-sale > .hero { column-span: all; }
   .months { grid-template-columns: repeat(6, minmax(0, 1fr)); }
   .bars { height: 150px; gap: var(--space-sm); }
   .fab { right: var(--space-xl); bottom: var(--space-xl); }
