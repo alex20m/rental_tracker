@@ -103,6 +103,8 @@ chrome token to that.
 | `--bad-soft` | 95% 0.03 27 | 28% 0.05 27 | Unpaid month tiles, error notes. |
 | `--bar-rent` | 52% 0.13 150 | 62% 0.13 150 | Rent bars in the chart. |
 | `--bar-cost` | 78% 0.15 80 | 84% 0.13 82 | Cost bars in the chart (yellow). |
+| `--bar-net` | 25% 0 0 | 90% 0 0 | A result in the investment's charts: a profit, what is left, the owner's equity. |
+| `--bar-quiet` | 68% 0 0 | 50% 0 0 | The loan, and the second series beside a result (what was left on the account). |
 | `--field-edge` | 62% 0 0 | 46% 0 0 | A field's border, kept at 3:1. |
 | `--scrim` | 0% 0 0 / 0.38 | 0% 0 0 / 0.62 | Behind dialogs and the menu. |
 | `--knob` | 100% 0 0 | 96% 0 0 | A switch's bead. |
@@ -112,6 +114,10 @@ chrome token to that.
 2.08:1 dark; the test asks for at least 1.8:1), so the chart still reads for
 someone who cannot tell red from green. Never draw two data series in red and
 green of similar lightness.
+
+`--bar-net` and `--bar-quiet` are greys: a result or a loan is not a status, so
+they stay in the logo's black and white, at least 3:1 apart and each visible on
+the card (the theme test holds both).
 
 ### Status, in one place
 
@@ -218,6 +224,17 @@ column does not also have. Beside a column of cards, the bare summary starts
   their card; the better one has a 2px ink outline.
 - **Chart:** rent and cost bars per month on one baseline; bars grow from it
   on load.
+- **Investment charts:** the year as a bridge (`.flow`): one row per step,
+  its label and amount over a 12px bar on one scale shared by every row, with
+  a hairline at zero. Money in is `--bar-rent`, money out `--bar-cost`, the
+  loan repayment `--bar-quiet`, and each result (before tax, after tax, what is
+  left) `--bar-net`, standing on zero with a rule above its row. Under "Since
+  you bought it", the estimated value as one bar split into the loan
+  (`--bar-quiet`) and the owner's equity (`--bar-net`), with a legend carrying
+  the amounts. "By year" has a column chart, each year's profit and what was
+  left side by side on one zero line, rounded at the end away from zero; the
+  list under it is the table view, and each column names its figures on hover.
+  Every bar is `aria-hidden`: the rows and the list say the same in text.
 - **Dialogs** (`Sheet`): the title stays put while the body scrolls; Escape,
   the backdrop and × close it, from the first frame it is on screen. The page
   behind holds still while one is open (the lock is on `<html>`, since the
@@ -283,6 +300,10 @@ the rest follow the light mapping.
 
 ## Changelog
 
+- **2026-11:** The investment page's charts: the year as a bridge from the
+  rent to what is left on the account, the value split into loan and equity,
+  and the years side by side. Two grey chart tokens, `--bar-net` for a result
+  and `--bar-quiet` for the loan, since neither is a status colour.
 - **2026-11:** Sheets hold the page behind them still, which they had
   only claimed to: the scroll lock sat on `<body>`, where it does nothing once
   the root clips overflow. A long value in a key-value row (a cost's

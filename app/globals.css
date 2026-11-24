@@ -55,6 +55,10 @@
      so they stay apart for someone who cannot tell red from green. */
   --bar-rent: oklch(52% 0.13 150);
   --bar-cost: oklch(78% 0.15 80);
+  /* The investment's charts: a result (a profit, what is left) in ink, and the loan, and a second series beside a
+     result, in a quiet grey. Neither is a status, so both stay grey. */
+  --bar-net: oklch(25% 0 0);
+  --bar-quiet: oklch(68% 0 0);
   /* The dropdown's chevron, in the ink colour: drawn by the page so it can stand clear of the field's edge. */
   --chevron: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1.5 1.75 6 6.25l4.5-4.5' fill='none' stroke='%230a0a0a' stroke-width='1.75' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
   --shadow-inset: inset 0 1px 2px oklch(0% 0 0 / 0.06);
@@ -69,7 +73,7 @@
     --color-ink: oklch(96% 0 0); --color-ink-2: oklch(84% 0 0); --color-muted: oklch(70% 0 0);
     --color-rule: oklch(27% 0 0);
     --color-accent: oklch(96% 0 0); --color-accent-deep: oklch(96% 0 0); --color-accent-soft: oklch(27% 0 0); --color-accent-ink: oklch(14.5% 0 0);
-    --color-focus: oklch(92% 0 0); --brand-deep: oklch(84% 0 0); --bar-rent: oklch(62% 0.13 150); --bar-cost: oklch(84% 0.13 82); --good: oklch(78% 0.13 150); --good-soft: oklch(29% 0.06 150); --warn: oklch(82% 0.12 80); --warn-soft: oklch(30% 0.06 75); --color-error: oklch(74% 0.14 27);
+    --color-focus: oklch(92% 0 0); --brand-deep: oklch(84% 0 0); --bar-rent: oklch(62% 0.13 150); --bar-cost: oklch(84% 0.13 82); --bar-net: oklch(90% 0 0); --bar-quiet: oklch(50% 0 0); --good: oklch(78% 0.13 150); --good-soft: oklch(29% 0.06 150); --warn: oklch(82% 0.12 80); --warn-soft: oklch(30% 0.06 75); --color-error: oklch(74% 0.14 27);
     --surface: oklch(18.5% 0 0); --bad-soft: oklch(28% 0.05 27); --knob: oklch(96% 0 0); --tint: oklch(17.5% 0 0); --tray: oklch(21% 0 0); --raised: oklch(27% 0 0);
     --field-edge: oklch(46% 0 0);
     --chevron: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1.5 1.75 6 6.25l4.5-4.5' fill='none' stroke='%23f2f2f2' stroke-width='1.75' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
@@ -86,7 +90,7 @@
   --color-ink: oklch(96% 0 0); --color-ink-2: oklch(84% 0 0); --color-muted: oklch(70% 0 0);
   --color-rule: oklch(27% 0 0);
   --color-accent: oklch(96% 0 0); --color-accent-deep: oklch(96% 0 0); --color-accent-soft: oklch(27% 0 0); --color-accent-ink: oklch(14.5% 0 0);
-  --color-focus: oklch(92% 0 0); --brand-deep: oklch(84% 0 0); --bar-rent: oklch(62% 0.13 150); --bar-cost: oklch(84% 0.13 82); --good: oklch(78% 0.13 150); --good-soft: oklch(29% 0.06 150); --warn: oklch(82% 0.12 80); --warn-soft: oklch(30% 0.06 75); --color-error: oklch(74% 0.14 27);
+  --color-focus: oklch(92% 0 0); --brand-deep: oklch(84% 0 0); --bar-rent: oklch(62% 0.13 150); --bar-cost: oklch(84% 0.13 82); --bar-net: oklch(90% 0 0); --bar-quiet: oklch(50% 0 0); --good: oklch(78% 0.13 150); --good-soft: oklch(29% 0.06 150); --warn: oklch(82% 0.12 80); --warn-soft: oklch(30% 0.06 75); --color-error: oklch(74% 0.14 27);
   --surface: oklch(18.5% 0 0); --bad-soft: oklch(28% 0.05 27); --knob: oklch(96% 0 0); --tint: oklch(17.5% 0 0); --tray: oklch(21% 0 0); --raised: oklch(27% 0 0);
   --field-edge: oklch(46% 0 0);
   --chevron: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1.5 1.75 6 6.25l4.5-4.5' fill='none' stroke='%23f2f2f2' stroke-width='1.75' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
@@ -344,6 +348,35 @@ a.btn.primary { color: var(--brand-ink); }
 .legend { display: flex; gap: var(--space-md); margin-top: var(--space-sm); font-size: var(--text-sm); color: var(--muted); }
 .legend i { display: inline-block; width: 10px; height: 10px; margin-right: var(--space-xs); border-radius: 2px; background: var(--bar-rent); }
 .legend i.cost { background: var(--bar-cost); }
+.legend { flex-wrap: wrap; row-gap: var(--space-2xs); }
+.legend i.net { background: var(--bar-net); }
+.legend i.quiet { background: var(--bar-quiet); }
+/* The investment's year as a bridge: each row its label and amount, over a bar on one shared scale. */
+.flow { list-style: none; margin: var(--space-xs) 0 var(--space-xs); padding: 0; display: grid; gap: var(--space-sm); }
+.flow-head { display: flex; justify-content: space-between; gap: var(--space-sm); font-size: var(--text-sm); color: var(--text-2); }
+.flow-head .num { font-variant-numeric: tabular-nums; white-space: nowrap; }
+.flow-row.total { padding-top: var(--space-xs); border-top: 1px solid var(--line); }
+.flow-row.total .flow-head { font-size: var(--text-md); font-weight: 700; color: var(--text); }
+.flow-track { position: relative; height: 12px; margin-top: var(--space-2xs); }
+.flow-zero { position: absolute; top: -4px; bottom: -4px; width: 1px; background: var(--line); }
+.flow-bar { position: absolute; top: 0; bottom: 0; border-radius: 4px; background: var(--bar-cost); }
+.flow-bar.in { background: var(--bar-rent); }
+.flow-bar.quiet { background: var(--bar-quiet); }
+.flow-bar.total { background: var(--bar-net); }
+/* What the owner's part is worth: the loan still on it, then their own equity, in one bar. */
+.equity { display: flex; gap: 2px; height: 16px; margin: var(--space-xs) 0 0; border-radius: 4px; overflow: hidden; }
+.equity i { display: block; background: var(--bar-quiet); }
+.equity i.net { flex: 1; background: var(--bar-net); }
+.equity + .legend { margin-bottom: var(--space-sm); }
+/* Each year's profit and what was left, side by side on one zero line. */
+.yc-plot { position: relative; display: flex; gap: var(--space-xs); height: 140px; }
+.yc-zero { position: absolute; left: 0; right: 0; height: 1px; background: var(--line); }
+.yc-col { position: relative; flex: 1; max-width: 72px; }
+.yc-col i { position: absolute; left: 0; width: calc(50% - 1px); border-radius: 4px 4px 0 0; background: var(--bar-net); }
+.yc-col i.quiet { left: auto; right: 0; background: var(--bar-quiet); }
+.yc-col i.down { border-radius: 0 0 4px 4px; }
+.yc-labels { display: flex; gap: var(--space-xs); margin-top: var(--space-2xs); }
+.yc-labels span { flex: 1; max-width: 72px; text-align: center; font-size: var(--text-xs); color: var(--muted); }
 
 /* ── Notices ── a note in the tray; red only when something failed ── */
 .alert { border-radius: var(--radius-input); padding: var(--space-sm) var(--space-md); font-size: var(--text-sm); background: var(--tray); color: var(--text); }

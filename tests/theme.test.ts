@@ -148,6 +148,21 @@ describe('the Mono theme', () => {
     }
   });
 
+  it('draws a result in ink and the loan in a quiet grey, apart from each other and visible on the card', () => {
+    for (const scheme of ['light', 'dark'] as const) {
+      for (const name of ['bar-net', 'bar-quiet']) {
+        // Neither is a status: both stay in the logo's black and white.
+        const [r, g, b] = rgb(token(name, scheme));
+        expect(r === g && g === b, `${name} ${scheme} is grey`).toBe(true);
+      }
+      // They are the two series of one chart, and the two parts of one bar.
+      expect(contrast(token('bar-net', scheme), token('bar-quiet', scheme)), `result and loan bars ${scheme}`).toBeGreaterThanOrEqual(3);
+      // A graphic a reader has to see: 3:1 for the result, and the grey clearly off the card.
+      expect(contrast(token('bar-net', scheme), token('card', scheme)), `result bars on the card ${scheme}`).toBeGreaterThanOrEqual(3);
+      expect(contrast(token('bar-quiet', scheme), token('card', scheme)), `loan bars on the card ${scheme}`).toBeGreaterThanOrEqual(2.5);
+    }
+  });
+
   it('gives rounded surfaces and one soft shadow for what floats', () => {
     expect(token('radius', 'light')).toBe('20px');
     expect(token('shadow', 'light')).not.toBe('none');
