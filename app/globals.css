@@ -351,32 +351,32 @@ a.btn.primary { color: var(--brand-ink); }
 .legend { flex-wrap: wrap; row-gap: var(--space-2xs); }
 .legend i.net { background: var(--bar-net); }
 .legend i.quiet { background: var(--bar-quiet); }
-/* The investment's year as a bridge: each row its label and amount, over a bar on one shared scale. */
-.flow { list-style: none; margin: var(--space-xs) 0 var(--space-xs); padding: 0; display: grid; gap: var(--space-sm); }
-.flow-head { display: flex; justify-content: space-between; gap: var(--space-sm); font-size: var(--text-sm); color: var(--text-2); }
-.flow-head .num { font-variant-numeric: tabular-nums; white-space: nowrap; }
-.flow-row.total { padding-top: var(--space-xs); border-top: 1px solid var(--line); }
-.flow-row.total .flow-head { font-size: var(--text-md); font-weight: 700; color: var(--text); }
-.flow-track { position: relative; height: 12px; margin-top: var(--space-2xs); }
-.flow-zero { position: absolute; top: -4px; bottom: -4px; width: 1px; background: var(--line); }
-.flow-bar { position: absolute; top: 0; bottom: 0; border-radius: 4px; background: var(--bar-cost); }
-.flow-bar.in { background: var(--bar-rent); }
-.flow-bar.quiet { background: var(--bar-quiet); }
-.flow-bar.total { background: var(--bar-net); }
-/* What the owner's part is worth: the loan still on it, then their own equity, in one bar. */
+/* The investment's money in against money out: two bars on one scale, each part a colour named in the rows under them. */
+.io-says { margin: 0 0 var(--space-sm); }
+.io + .io { margin-top: var(--space-xs); }
+.io-head { display: flex; justify-content: space-between; gap: var(--space-sm); font-weight: 600; }
+.io-head .num { font-variant-numeric: tabular-nums; }
+.io-bar { display: flex; gap: 2px; height: 20px; margin: var(--space-2xs) 0 var(--space-sm); }
+.io-bar i { border-radius: 4px; background: var(--bar-rent); }
+.io-bar i.out { background: var(--bar-cost); }
+.io-bar i.quiet { background: var(--bar-quiet); }
+.swatch { display: inline-block; flex: none; width: 10px; height: 10px; margin-right: var(--space-xs); border-radius: 2px; background: var(--bar-rent); }
+.swatch.out { background: var(--bar-cost); }
+.swatch.quiet { background: var(--bar-quiet); }
+/* What the owner's part is worth: their own equity, then the loan still on it, in one bar. */
 .equity { display: flex; gap: 2px; height: 16px; margin: var(--space-xs) 0 0; border-radius: 4px; overflow: hidden; }
 .equity i { display: block; background: var(--bar-quiet); }
 .equity i.net { flex: 1; background: var(--bar-net); }
 .equity + .legend { margin-bottom: var(--space-sm); }
-/* Each year's profit and what was left, side by side on one zero line. */
-.yc-plot { position: relative; display: flex; gap: var(--space-xs); height: 140px; }
-.yc-zero { position: absolute; left: 0; right: 0; height: 1px; background: var(--line); }
-.yc-col { position: relative; flex: 1; max-width: 72px; }
-.yc-col i { position: absolute; left: 0; width: calc(50% - 1px); border-radius: 4px 4px 0 0; background: var(--bar-net); }
-.yc-col i.quiet { left: auto; right: 0; background: var(--bar-quiet); }
-.yc-col i.down { border-radius: 0 0 4px 4px; }
-.yc-labels { display: flex; gap: var(--space-xs); margin-top: var(--space-2xs); }
-.yc-labels span { flex: 1; max-width: 72px; text-align: center; font-size: var(--text-xs); color: var(--muted); }
+/* Each year's profit after tax on one zero line, the year and its amount written under its column. */
+.pc-plot { position: relative; display: flex; gap: var(--space-sm); height: 120px; }
+.pc-zero { position: absolute; left: 0; right: 0; height: 1px; background: var(--line); }
+.pc-col { position: relative; flex: 1; max-width: 64px; }
+.pc-col i { position: absolute; left: 0; right: 0; border-radius: 4px 4px 0 0; background: var(--bar-net); }
+.pc-col i.down { border-radius: 0 0 4px 4px; }
+.pc-labels { display: flex; gap: var(--space-sm); margin: var(--space-xs) 0 0; padding: 0; list-style: none; }
+.pc-labels li { flex: 1; max-width: 64px; text-align: center; font-size: var(--text-xs); color: var(--muted); }
+.pc-labels b { display: block; color: var(--text); font-weight: 600; white-space: nowrap; }
 
 /* ── Notices ── a note in the tray; red only when something failed ── */
 .alert { border-radius: var(--radius-input); padding: var(--space-sm) var(--space-md); font-size: var(--text-sm); background: var(--tray); color: var(--text); }

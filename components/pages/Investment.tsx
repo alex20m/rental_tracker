@@ -6,7 +6,7 @@ import { api } from '@/lib/client/api';
 import { investmentSummary } from '@/lib/domain/investment';
 import { eur, pct } from '@/lib/domain/tax';
 import { eurWhole } from '@/lib/ui/format';
-import { columnChart, flowChart, type FlowKey } from '@/lib/ui/charts';
+import { inOutChart, profitChart, type SegmentKey } from '@/lib/ui/charts';
 import { useI18n } from '@/components/I18nProvider';
 import { ErrorNote, Heading, Info, Money } from '@/components/ui';
 
@@ -14,32 +14,40 @@ type Props = { apt: ApartmentView; year: number; onChanged: () => Promise<void> 
 
 const text = (n: number) => (n ? String(n) : '');
 
+/** How each part of the money-in and money-out bars is drawn: rent green, costs yellow, the tax grey. */
+const DRAWN: Record<SegmentKey, string> = { rent: 'in', costs: 'out', tax: 'quiet', credit: 'quiet' };
+
 /**
- * The apartment as the viewer's investment: the year's profit before and after
- * tax, what was left on their account once the loan was paid down, a few
- * ratios, and everything since they bought it. All of it is the viewer's own
- * part; the loan and the value they enter here are theirs alone, and the
- * loan's interest is not one of them: it is a cost, logged on the Costs page if
- * they want it counted.
+ * The apartment as the viewer's investment, for a landlord rather than an
+ * analyst: first whether it earned them money this year and where the rent
+ * went, then what was left after the loan, what they own and how the years
+ * compare; the ratios and the full account since the purchase come last. All
+ * of it is the viewer's own part; the loan and the value they enter here are
+ * theirs alone, and the loan's interest is not one of them: it is a cost,
+ * logged on the Costs page if they want it counted.
  */
 export default function Investment({ apt, year, onChanged }: Props) {
   const { t } = useI18n();
   const s = investmentSummary(apt, year);
   const y = s.year;
+  const money = inOutChart(y);
+  const profits = profitChart(s.years);
   const ratio = (n: number | null) => (n === null ? '—' : pct(n));
-  const flow = flowChart(y);
-  const years = columnChart(s.years);
-  const label = (key: FlowKey) =>
-    ({
-      rent: t('inv.row.rent'),
-      running: t('inv.row.running'),
-      investments: t('inv.row.investments'),
-      beforeTax: t('inv.row.beforeTax'),
-      tax: y.tax < 0 ? t('inv.row.credit') : t('inv.row.tax'),
-      afterTax: t('inv.row.afterTax'),
-      amortization: t('inv.row.amortization'),
-      cash: t('inv.row.cash'),
-    })[key];
+  const swatch = (key: SegmentKey) => <i className={'swatch ' + DRAWN[key]} />;
+
+  const bar = (label: string, side: typeof money.in) => (
+    <div className="io">
+      <div className="io-head">
+        <span>{label}</span>
+        <span className="num">{eur(side.total)}</span>
+      </div>
+      <div className="io-bar" aria-hidden="true">
+        {side.segments.map((seg) => (
+          <i key={seg.key} className={DRAWN[seg.key]} style={{ width: `${seg.width}%` }} />
+        ))}
+      </div>
+    </div>
+  );
 
   return (
     <>
@@ -53,46 +61,146 @@ export default function Investment({ apt, year, onChanged }: Props) {
         </div>
         <div className="stats">
           <div className="stat">
-            <div className="v">{eurWhole(y.profitBeforeTax)}</div>
-            <div className="l">{t('inv.beforeTax')}</div>
+            <div className="v">{eurWhole(y.rentIncome)}</div>
+            <div className="l">{t('common.rent')}</div>
+          </div>
+          <div className="stat">
+            <div className="v">{eurWhole(y.runningCosts + y.investments)}</div>
+            <div className="l">{t('common.costs')}</div>
           </div>
           <div className="stat">
             <div className="v">{eurWhole(y.tax)}</div>
             <div className="l">{t('inv.taxShort')}</div>
           </div>
-          <div className="stat">
-            <div className="v">{eurWhole(y.cashFlow)}</div>
-            <div className="l">{t('inv.leftShort')}</div>
-          </div>
         </div>
       </section>
 
-      <section className="panel" aria-label={t('inv.flow', { year })}>
-        <Heading info={<Info about={t('inv.flowAbout')}>{t('inv.flowInfo')}</Info>}>{t('inv.flow', { year })}</Heading>
-        <ol className="flow">
-          {flow.steps.map((step) => (
-            <li key={step.key} className={'flow-row' + (step.kind === 'total' ? ' total' : '')}>
-              <div className="flow-head">
-                <span>{label(step.key)}</span>
-                <span className="num">{eur(step.value)}</span>
-              </div>
-              <div className="flow-track" aria-hidden="true">
-                <b className="flow-zero" style={{ left: `${flow.zero}%` }} />
-                <i className={'flow-bar ' + step.kind} style={{ left: `${step.left}%`, width: `${step.width}%` }} />
-              </div>
-            </li>
-          ))}
-        </ol>
-        {y.loanBalance !== null && (
-          <div className="kv faded">
-            <span>{t('inv.row.balance', { year })}</span>
-            <span className="num">{eur(y.loanBalance)}</span>
+      <section className="panel" aria-label={t('inv.money', { year })}>
+        <Heading info={<Info about={t('inv.moneyAbout')}>{t('inv.moneyInfo')}</Info>}>{t('inv.money', { year })}</Heading>
+        <p className="msg io-says">
+          {y.profitAfterTax < 0
+            ? t('inv.shortfall', { amount: eur(-y.profitAfterTax) })
+            : t('inv.surplus', { amount: eur(y.profitAfterTax) })}
+        </p>
+        {bar(t('inv.moneyIn'), money.in)}
+        {bar(t('inv.moneyOut'), money.out)}
+        <div className="kv">
+          <span>
+            {swatch('rent')}
+            {t('inv.row.rent')}
+          </span>
+          <span className="num">{eur(y.rentIncome)}</span>
+        </div>
+        <div className="kv">
+          <span>
+            {swatch('costs')}
+            {t('inv.row.running')}
+          </span>
+          <span className="num">{eur(-y.runningCosts)}</span>
+        </div>
+        {y.investments !== 0 && (
+          <div className="kv">
+            <span>
+              {swatch('costs')}
+              {t('inv.row.investments')}
+            </span>
+            <span className="num">{eur(-y.investments)}</span>
           </div>
         )}
+        <div className="kv sum">
+          <span>{t('inv.row.beforeTax')}</span>
+          <span className="num">{eur(y.profitBeforeTax)}</span>
+        </div>
+        <div className="kv">
+          <span>
+            {swatch('tax')}
+            {y.tax < 0 ? t('inv.row.credit') : t('inv.row.tax')}
+          </span>
+          <span className="num">{eur(-y.tax)}</span>
+        </div>
+        <div className="kv sum">
+          <span>{t('inv.row.afterTax')}</span>
+          <span className="num">{eur(y.profitAfterTax)}</span>
+        </div>
       </section>
+
+      {(y.amortization > 0 || y.loanBalance !== null) && (
+        <section className="panel" aria-label={t('inv.loan', { year })}>
+          <Heading>{t('inv.loan', { year })}</Heading>
+          <p className="msg io-says">{t('inv.loanNote')}</p>
+          <div className="kv">
+            <span>{t('inv.row.afterTax')}</span>
+            <span className="num">{eur(y.profitAfterTax)}</span>
+          </div>
+          <div className="kv">
+            <span>{t('inv.row.amortization')}</span>
+            <span className="num">{eur(-y.amortization)}</span>
+          </div>
+          <div className="kv sum">
+            <span>{t('inv.row.cash')}</span>
+            <span className="num">{eur(y.cashFlow)}</span>
+          </div>
+          {y.loanBalance !== null && (
+            <div className="kv faded">
+              <span>{t('inv.row.balance', { year })}</span>
+              <span className="num">{eur(y.loanBalance)}</span>
+            </div>
+          )}
+        </section>
+      )}
+
+      {s.marketValue !== null && (
+        <section className="panel" aria-label={t('inv.own')}>
+          <Heading>{t('inv.own')}</Heading>
+          <p className="msg io-says">
+            {t('inv.ownSays', {
+              value: eur(s.marketValue),
+              equity: eur(s.equityNow!),
+              loan: eur(s.marketValue - s.equityNow!),
+            })}
+          </p>
+          <div className="equity" aria-hidden="true">
+            <i className="net" />
+            <i className="quiet" style={{ width: `${Math.min(100, s.ratios.loanToValue!)}%` }} />
+          </div>
+          <div className="legend">
+            <span>
+              <i className="net" />
+              {t('inv.legend.equity', { amount: eur(s.equityNow!) })}
+            </span>
+            <span>
+              <i className="quiet" />
+              {t('inv.legend.loan', { amount: eur(s.marketValue - s.equityNow!) })}
+            </span>
+          </div>
+        </section>
+      )}
+
+      {s.years.length > 1 && (
+        <section className="panel" aria-label={t('inv.profitYears')}>
+          <Heading>{t('inv.profitYears')}</Heading>
+          <div className="pc-plot" aria-hidden="true">
+            <b className="pc-zero" style={{ bottom: `${profits.zero}%` }} />
+            {profits.columns.map((c) => (
+              <div className="pc-col" key={c.year}>
+                <i className={c.down ? 'down' : undefined} style={{ bottom: `${c.bottom}%`, height: `${c.height}%` }} />
+              </div>
+            ))}
+          </div>
+          <ol className="pc-labels">
+            {profits.columns.map((c) => (
+              <li key={c.year}>
+                {c.year}
+                <b>{eurWhole(c.value)}</b>
+              </li>
+            ))}
+          </ol>
+        </section>
+      )}
 
       <section className="panel" aria-label={t('inv.ratios', { year })}>
         <Heading>{t('inv.ratios', { year })}</Heading>
+        <p className="msg io-says">{t('inv.ratiosLead')}</p>
         <div className="stats two insights">
           <div className="stat">
             <div className="v">{ratio(s.ratios.grossYield)}</div>
@@ -161,20 +269,6 @@ export default function Investment({ apt, year, onChanged }: Props) {
           </p>
         ) : (
           <>
-            <div className="equity" aria-hidden="true">
-              <i className="quiet" style={{ width: `${Math.min(100, s.ratios.loanToValue!)}%` }} />
-              <i className="net" />
-            </div>
-            <div className="legend">
-              <span>
-                <i className="quiet" />
-                {t('inv.legend.loan', { amount: eur(s.marketValue - s.equityNow!) })}
-              </span>
-              <span>
-                <i className="net" />
-                {t('inv.legend.equity', { amount: eur(s.equityNow!) })}
-              </span>
-            </div>
             <div className="kv">
               <span>{t('inv.row.marketValue')}</span>
               <span className="num">{eur(s.marketValue)}</span>
@@ -197,57 +291,6 @@ export default function Investment({ apt, year, onChanged }: Props) {
           </>
         )}
       </section>
-
-      {s.years.length > 0 && (
-        <section className="panel" aria-label={t('inv.byYear')}>
-          <Heading>{t('inv.byYear')}</Heading>
-          <div className="years-chart" aria-hidden="true">
-            <div className="yc-plot">
-              <b className="yc-zero" style={{ bottom: `${years.zero}%` }} />
-              {years.columns.map((c, i) => (
-                <div
-                  className="yc-col"
-                  key={c.year}
-                  title={t('inv.columnTitle', {
-                    year: c.year,
-                    profit: eur(s.years[i]!.profitAfterTax),
-                    cash: eur(s.years[i]!.cashFlow),
-                  })}
-                >
-                  <i className={'net' + (c.profit.down ? ' down' : '')} style={{ bottom: `${c.profit.bottom}%`, height: `${c.profit.height}%` }} />
-                  <i className={'quiet' + (c.cash.down ? ' down' : '')} style={{ bottom: `${c.cash.bottom}%`, height: `${c.cash.height}%` }} />
-                </div>
-              ))}
-            </div>
-            <div className="yc-labels">
-              {years.columns.map((c) => (
-                <span key={c.year}>{c.year}</span>
-              ))}
-            </div>
-          </div>
-          <div className="legend">
-            <span>
-              <i className="net" />
-              {t('inv.row.afterTax')}
-            </span>
-            <span>
-              <i className="quiet" />
-              {t('inv.row.cash')}
-            </span>
-          </div>
-          <ul className="list">
-            {[...s.years].reverse().map((r) => (
-              <li className="row" key={r.year}>
-                <div className="main">
-                  <div className="t">{r.year}</div>
-                  <div className="s">{t('inv.yearCash', { amount: eur(r.cashFlow) })}</div>
-                </div>
-                <div className="strong num">{eur(r.profitAfterTax)}</div>
-              </li>
-            ))}
-          </ul>
-        </section>
-      )}
 
       <LoanForm key={year} apt={apt} year={year} onChanged={onChanged} />
     </>
