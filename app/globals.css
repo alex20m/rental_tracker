@@ -472,11 +472,11 @@ a.btn.primary { color: var(--brand-ink); }
   .page-home > .hero, .page-portfolio > .hero, .page-tax > .hero { padding-top: var(--space-lg); }
 
   /* Columns, not a grid: sections of unequal height pack without gaps. */
-  .page-home, .page-portfolio, .page-tax, .page-sale { display: block; column-count: 2; column-gap: var(--space-xl); }
-  .page-home > *, .page-portfolio > *, .page-tax > *, .page-sale > * { break-inside: avoid; margin-bottom: var(--space-lg); }
+  .page-home, .page-portfolio, .page-tax, .page-sale, .page-investment { display: block; column-count: 2; column-gap: var(--space-xl); }
+  .page-home > *, .page-portfolio > *, .page-tax > *, .page-sale > *, .page-investment > * { break-inside: avoid; margin-bottom: var(--space-lg); }
   /* Pages that are one short list read better narrow than stretched across the screen. */
   .shell > .page-settings, .shell > .page-account, .shell > .page-checklist { max-width: 640px; margin-left: 0; }
-  .page > .notice, .page > .allset, .page > .btn.block, .page > .empty, .page > .pagehead, .page > .seg, .page-sale > .hero { column-span: all; }
+  .page > .notice, .page > .allset, .page > .btn.block, .page > .empty, .page > .pagehead, .page > .seg, .page-sale > .hero, .page-investment > .hero { column-span: all; }
   .months { grid-template-columns: repeat(6, minmax(0, 1fr)); }
   .bars { height: 150px; gap: var(--space-sm); }
   .fab { right: var(--space-xl); bottom: var(--space-xl); }

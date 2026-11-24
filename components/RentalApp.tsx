@@ -14,12 +14,13 @@ import RentLog from '@/components/pages/RentLog';
 import Costs from '@/components/pages/Costs';
 import Tax from '@/components/pages/Tax';
 import Sale from '@/components/pages/Sale';
+import Investment from '@/components/pages/Investment';
 import Checklist from '@/components/pages/Checklist';
 import SettingsPage from '@/components/pages/SettingsPage';
 import AccountPage from '@/components/pages/AccountPage';
 import InstallPopup from '@/components/InstallPopup';
 
-export type Tab = 'home' | 'rent' | 'costs' | 'tax' | 'sale' | 'checklist' | 'settings' | 'portfolio' | 'account';
+export type Tab = 'home' | 'rent' | 'costs' | 'tax' | 'investment' | 'sale' | 'checklist' | 'settings' | 'portfolio' | 'account';
 /** Where a tap can lead: a page. */
 export type Destination = Tab;
 export type Go = (to: Destination) => void;
@@ -157,6 +158,7 @@ export default function RentalApp() {
       // Rent counts in the year it was received, which is not always the year of its month.
       a.rents.forEach((r) => set.add(Number(r.month.slice(0, 4))).add(Number(r.receivedDate.slice(0, 4))));
       a.costs.forEach((c) => set.add(Number(c.date.slice(0, 4))));
+      a.myLoanYears.forEach((l) => set.add(l.year));
     }
     return [...set].filter(Boolean).sort((a, b) => b - a);
   }, [details, thisYear]);
@@ -294,6 +296,7 @@ export default function RentalApp() {
           {apt && tab === 'tax' && (
             <Tax apt={apt} year={year} taxpayerName={account.name} scope={scope} onScope={setScope} go={go} />
           )}
+          {apt && tab === 'investment' && <Investment apt={apt} year={year} onChanged={reloadSelected} />}
           {apt && tab === 'sale' && <Sale apt={apt} onChanged={reloadSelected} />}
           {apt && tab === 'checklist' && <Checklist apt={apt} onChanged={reloadSelected} />}
           {apt && tab === 'settings' && (

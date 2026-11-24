@@ -64,7 +64,7 @@ export class FakeApi {
   /** An apartment as the viewer sees it, owned by them alone unless `owners` says otherwise. */
   addApartment(
     settings: Partial<ApartmentSettings> = {},
-    more: Partial<Pick<ApartmentView, 'owners' | 'invites' | 'rents' | 'costs' | 'recurring' | 'acquisitionCosts' | 'mySale' | 'myPurchaseHasPhoto' | 'mySharePct' | 'checklist'>> = {},
+    more: Partial<Pick<ApartmentView, 'owners' | 'invites' | 'rents' | 'costs' | 'recurring' | 'acquisitionCosts' | 'mySale' | 'myPurchaseHasPhoto' | 'myInvestment' | 'myLoanYears' | 'mySharePct' | 'checklist'>> = {},
   ): ApartmentView {
     const id = uuid();
     const apt: ApartmentView = {
@@ -77,6 +77,8 @@ export class FakeApi {
       acquisitionCosts: [],
       mySale: null,
       myPurchaseHasPhoto: false,
+      myInvestment: null,
+      myLoanYears: [],
       rents: [],
       costs: [],
       mySharePct: 100,
@@ -304,6 +306,19 @@ export class FakeApi {
         apt.costs = apt.costs.filter((c) => c !== cost);
         return ok;
       }
+    }
+    if (sub === 'investment' && !subId && method === 'PUT') {
+      const details = body as unknown as NonNullable<ApartmentView['myInvestment']>;
+      apt.myInvestment = details.loanAmount || details.marketValue ? details : null;
+      return ok;
+    }
+    if (sub === 'investment' && subId === 'loan' && leaf && method === 'PUT') {
+      const year = Number(leaf);
+      const loan = body as { amortization: number; balance: number };
+      apt.myLoanYears = apt.myLoanYears.filter((l) => l.year !== year);
+      if (loan.amortization || loan.balance) apt.myLoanYears.push({ year, ...loan });
+      apt.myLoanYears.sort((a, b) => a.year - b.year);
+      return ok;
     }
     if (sub === 'sale' && subId === 'purchase-photo') {
       const photo = photoRoute(method, body, this.purchasePhotos, id, (has) => (apt.myPurchaseHasPhoto = has));

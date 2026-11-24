@@ -11,6 +11,8 @@ import type {
   ApartmentSettings,
   ApartmentView,
   CostCategory,
+  InvestmentDetails,
+  LoanYear,
   SaleDetails,
   PortfolioItem,
   RentStatus,
@@ -94,6 +96,12 @@ export const api = {
   purchasePhotoUrl: (id: string) => `${apt(id)}/sale/purchase-photo`,
   putPurchasePhoto: (id: string, dataUrl: string) => call('PUT', `${apt(id)}/sale/purchase-photo`, { dataUrl }),
   deletePurchasePhoto: (id: string) => call('DELETE', `${apt(id)}/sale/purchase-photo`),
+
+  /** The viewer's own loan at the purchase and estimated value of their part. */
+  saveInvestment: (id: string, details: InvestmentDetails) => call('PUT', `${apt(id)}/investment`, details),
+  /** One year of the viewer's own loan, from the bank's statement; saving it empty removes it. */
+  saveLoanYear: (id: string, year: number, loan: Omit<LoanYear, 'year'>) =>
+    call('PUT', `${apt(id)}/investment/loan/${year}`, loan),
 
   createRecurring: (id: string, entry: RecurringInput) => call<{ id: string }>('POST', `${apt(id)}/recurring`, entry),
   updateRecurring: (id: string, entryId: string, patch: RecurringPatch) => call('PUT', `${apt(id)}/recurring/${entryId}`, patch),
