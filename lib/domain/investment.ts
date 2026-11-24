@@ -40,6 +40,13 @@ export interface InvestmentFlows {
 
 export interface InvestmentYear extends InvestmentFlows {
   year: number;
+  /**
+   * What the tax is worked out on: the rent less the year's deductions as the
+   * tax takes them, which spreads improvements and furniture over years. It
+   * differs from the profit before tax in a year one is paid, and in the years
+   * after, while its parts are still deducted.
+   */
+  taxableIncome: number;
   /** The loan left at the end of the year, from the latest statement given; null before the first. */
   loanBalance: number | null;
 }
@@ -99,23 +106,30 @@ const yearOf = (date: string) => Number(date.slice(0, 4));
 /** A percentage to a tenth, or null when there is nothing to divide by. */
 const ratio = (part: number, whole: number) => (whole > 0 ? Math.round((part / whole) * 1000) / 10 : null);
 
-export function investmentYear(ledger: InvestmentLedger, year: number, today: Date = new Date()): InvestmentYear {
-  const s = ledger.settings;
-  const part = (n: number) => round2((n * ledger.mySharePct) / 100);
-  const tax = ownerShare(computeTax(ledger, year, today), ledger.mySharePct);
-
+/**
+ * The owner's part of the costs paid in `year` up to the end of month
+ * `through` (12: the whole year): improvements and furniture apart from the
+ * rest. A cost of the whole home is the let part's only by the let share, as
+ * in the tax. Each sum is rounded before the share is taken, so a month's
+ * running total and the year's agree to the cent.
+ */
+function costsPaid(ledger: InvestmentLedger, year: number, through = 12) {
   let running = 0;
   let investments = 0;
   for (const c of ledger.costs) {
-    if (yearOf(c.date) !== year) continue;
+    if (yearOf(c.date) !== year || Number(c.date.slice(5, 7)) > through) continue;
     const { treatment, shared } = CATEGORIES[c.category];
-    // A cost of the whole home is the let part's only by the let share, as in the tax.
-    const amount = shared ? (c.amount * s.letSharePct) / 100 : c.amount;
+    const amount = shared ? (c.amount * ledger.settings.letSharePct) / 100 : c.amount;
     if (treatment === 'improvement' || treatment === 'furniture') investments += amount;
     else running += amount;
   }
-  const runningCosts = part(round2(running));
-  const investmentCosts = part(round2(investments));
+  const part = (n: number) => round2((n * ledger.mySharePct) / 100);
+  return { runningCosts: part(round2(running)), investmentCosts: part(round2(investments)) };
+}
+
+export function investmentYear(ledger: InvestmentLedger, year: number, today: Date = new Date()): InvestmentYear {
+  const tax = ownerShare(computeTax(ledger, year, today), ledger.mySharePct);
+  const { runningCosts, investmentCosts } = costsPaid(ledger, year);
 
   const profitBeforeTax = round2(tax.rentIncome - runningCosts - investmentCosts);
   const taxEffect = round2(tax.estimatedTax - tax.deficitCredit);
@@ -127,6 +141,7 @@ export function investmentYear(ledger: InvestmentLedger, year: number, today: Da
 
   return {
     year,
+    taxableIncome: tax.netIncome,
     rentIncome: tax.rentIncome,
     runningCosts,
     investments: investmentCosts,
@@ -199,4 +214,69 @@ export function investmentSummary(ledger: InvestmentLedger, year: number, today:
       loanToValue: marketValue === null ? null : ratio(owed, marketValue),
     },
   };
+}
+
+/** One month of the account: what came in and went out in it, and the running total from the start of the year. */
+export interface CashMonth {
+  month: number;
+  rentIn: number;
+  costsOut: number;
+  /** A twelfth of the year's tax (negative: of a deficit credit), however it is really paid. */
+  taxOut: number;
+  /** A twelfth of the year's repayment, as banks take it monthly. */
+  amortization: number;
+  net: number;
+  cumulative: number;
+}
+
+/**
+ * The year's cash flow month by month, to this month in the current year and
+ * none in a year to come. Rent counts in the month it was received and a cost
+ * in the month it was paid; the tax and the loan repayment are known only for
+ * the year, so each month carries a twelfth of them. Every running total is
+ * worked out from the year's own sums, so December's is the year's cash flow
+ * to the cent.
+ */
+export function cashByMonth(ledger: InvestmentLedger, year: number, today: Date = new Date()): CashMonth[] {
+  const thisYear = today.getFullYear();
+  const last = year < thisYear ? 12 : year === thisYear ? today.getMonth() + 1 : 0;
+  const y = investmentYear(ledger, year, today);
+  const part = (n: number) => round2((n * ledger.mySharePct) / 100);
+  const prefix = `${year}-`;
+
+  const totals = (m: number) => {
+    const rent = part(
+      round2(
+        ledger.rents
+          .filter((r) => r.status === 'paid' && r.receivedDate.startsWith(prefix) && Number(r.receivedDate.slice(5, 7)) <= m)
+          .reduce((a, r) => a + r.amount, 0),
+      ),
+    );
+    const { runningCosts, investmentCosts } = costsPaid(ledger, year, m);
+    return {
+      rent,
+      costs: round2(runningCosts + investmentCosts),
+      tax: round2((y.tax * m) / 12),
+      amortization: round2((y.amortization * m) / 12),
+    };
+  };
+
+  const months: CashMonth[] = [];
+  let before = totals(0);
+  for (let m = 1; m <= last; m++) {
+    const now = totals(m);
+    const cumulative = round2(now.rent - now.costs - now.tax - now.amortization);
+    const previous = round2(before.rent - before.costs - before.tax - before.amortization);
+    months.push({
+      month: m,
+      rentIn: round2(now.rent - before.rent),
+      costsOut: round2(now.costs - before.costs),
+      taxOut: round2(now.tax - before.tax),
+      amortization: round2(now.amortization - before.amortization),
+      net: round2(cumulative - previous),
+      cumulative,
+    });
+    before = now;
+  }
+  return months;
 }

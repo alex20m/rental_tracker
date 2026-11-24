@@ -360,9 +360,30 @@ a.btn.primary { color: var(--brand-ink); }
 .io-bar i { border-radius: 4px; background: var(--bar-rent); }
 .io-bar i.out { background: var(--bar-cost); }
 .io-bar i.quiet { background: var(--bar-quiet); }
+/* The loan repayment is hollow: money that left the account but is still the owner's, as a smaller loan. */
+.io-bar i.loan { background: transparent; box-shadow: inset 0 0 0 2px var(--bar-quiet); }
 .swatch { display: inline-block; flex: none; width: 10px; height: 10px; margin-right: var(--space-xs); border-radius: 2px; background: var(--bar-rent); }
 .swatch.out { background: var(--bar-cost); }
 .swatch.quiet { background: var(--bar-quiet); }
+.swatch.loan { background: transparent; box-shadow: inset 0 0 0 2px var(--bar-quiet); }
+.tax-note { margin: var(--space-2xs) 0 var(--space-sm); padding: var(--space-sm) var(--space-md); background: var(--tray); border-radius: var(--radius-input); }
+/* The investment's opening: the profit and what was left on the account, the two answers, stacked on a phone. */
+.duo { display: grid; gap: var(--space-md); }
+.duo .big { font-size: var(--text-3xl); }
+/* The account through the year: a line from zero on the first of January, a hairline at zero, a month to point at. */
+.cum { position: relative; height: 160px; margin: var(--space-xs) 0 var(--space-2xs); }
+.cum svg { display: block; width: 100%; height: 100%; overflow: visible; }
+.cum-area { fill: var(--bar-quiet); opacity: 0.25; }
+.cum-line { fill: none; stroke: var(--bar-net); stroke-width: 2; stroke-linejoin: round; vector-effect: non-scaling-stroke; }
+.cum-zero { position: absolute; left: 0; right: 0; height: 1px; background: var(--line); }
+.cum-guide { position: absolute; top: 0; bottom: 0; width: 1px; margin-left: -0.5px; background: var(--muted); }
+.cum-dot { position: absolute; width: 10px; height: 10px; margin: -5px 0 0 -5px; border-radius: 50%; background: var(--bar-net); box-shadow: 0 0 0 2px var(--card); }
+.cum-hits { position: absolute; inset: 0; display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); }
+.cum-hit { border: 0; background: none; padding: 0; cursor: pointer; }
+.cum-hit:focus-visible { outline-offset: -2px; }
+.cum-months { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); margin: 0; padding: 0; list-style: none; }
+.cum-months li { text-align: right; font-size: var(--text-xs); color: var(--muted); overflow: hidden; white-space: nowrap; }
+.cum-readout { min-height: 3em; margin: var(--space-sm) 0 0; }
 /* What the owner's part is worth: their own equity, then the loan still on it, in one bar. */
 .equity { display: flex; gap: 2px; height: 16px; margin: var(--space-xs) 0 0; border-radius: 4px; overflow: hidden; }
 .equity i { display: block; background: var(--bar-quiet); }
@@ -377,6 +398,11 @@ a.btn.primary { color: var(--brand-ink); }
 .pc-labels { display: flex; gap: var(--space-sm); margin: var(--space-xs) 0 0; padding: 0; list-style: none; }
 .pc-labels li { flex: 1; max-width: 64px; text-align: center; font-size: var(--text-xs); color: var(--muted); }
 .pc-labels b { display: block; color: var(--text); font-weight: 600; white-space: nowrap; }
+.pc-labels li.now { color: var(--text); font-weight: 700; }
+.pc-plot.short { height: 90px; }
+.panel > .seg { margin-bottom: var(--space-md); }
+.years-total { margin-top: var(--space-sm); }
+.loan-years { margin-top: var(--space-lg); }
 
 /* ── Notices ── a note in the tray; red only when something failed ── */
 .alert { border-radius: var(--radius-input); padding: var(--space-sm) var(--space-md); font-size: var(--text-sm); background: var(--tray); color: var(--text); }
@@ -472,6 +498,8 @@ a.btn.primary { color: var(--brand-ink); }
 
 /* Tablets and small laptops: a roomier column and centred dialogs. */
 @media (min-width: 640px) {
+  .duo { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .duo .big { font-size: calc(var(--text-3xl) * 1.2); }
   .app { max-width: 720px; padding-left: var(--space-lg); padding-right: var(--space-lg); }
   .topbar { margin: 0 calc(-1 * var(--space-lg)); padding-left: var(--space-lg); padding-right: var(--space-lg); }
   .months { grid-template-columns: repeat(4, minmax(0, 1fr)); }

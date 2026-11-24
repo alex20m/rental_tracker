@@ -224,17 +224,28 @@ column does not also have. Beside a column of cards, the bare summary starts
   their card; the better one has a 2px ink outline.
 - **Chart:** rent and cost bars per month on one baseline; bars grow from it
   on load.
-- **Investment charts:** kept plain, for a landlord rather than an analyst,
-  the plain ones first and the ratios lower down. Money in against money out
-  (`.io`): two 20px bars on one scale, each with its label and total above it
-  and a sentence above both saying what was left; rent is `--bar-rent`, costs
-  `--bar-cost`, the tax (or a deficit credit) `--bar-quiet`, each named by a
-  swatch in the rows under the bars. What the owner owns: one bar split into
-  their equity (`--bar-net`) and the bank's part (`--bar-quiet`), with a
-  sentence and a legend carrying the amounts. Profit by year: one series of
-  `--bar-net` columns on a zero line, rounded at the end away from zero, the
-  year and its amount written under each column. Every bar is `aria-hidden`:
-  the text beside it says the same.
+- **Investment page:** kept plain, for a landlord rather than an analyst; the
+  plain answers first, the ratios and the full account last. Its opening has
+  two figures side by side (`.duo`, stacked on a phone), the profit after tax
+  and what was left on the account, since both answer the page's question.
+- **Investment charts:** money in against money out (`.io`): two 20px bars on
+  one scale, each with its label and total above it and a sentence above both
+  saying what was left; rent is `--bar-rent`, costs `--bar-cost`, the tax (or
+  a deficit credit) `--bar-quiet`, and the loan repayment a hollow
+  `--bar-quiet` outline, since that money is still the owner's. A swatch of
+  the same kind names each in the rows under the bars. A note on the tray
+  (`.tax-note`) explains a tax that does not follow the profit. Month by month
+  (`.cum`): the money on the account as one `--bar-net` line from zero on the
+  first of January, over a faint `--bar-quiet` area, with a hairline at zero;
+  each month is a button the width of a twelfth, and pointing at or focusing
+  one puts a dot and a guide on it and says the month in words under the
+  chart. Year by year: one series at a time, chosen with a segmented control,
+  as `--bar-net` columns rounded at the end away from zero, the year and its
+  amount under each column and the year looked at in bold. What the owner
+  owns: one bar split into their equity (`--bar-net`) and the bank's part
+  (`--bar-quiet`), with a sentence and a legend carrying the amounts, and the
+  loan's balance by year as `--bar-quiet` columns. Every bar is `aria-hidden`;
+  the text beside it, or the month buttons' names, say the same.
 - **Key-value rows** (`.kv`): the label on the left, never narrower than its
   longest word; the value on the right, right-aligned, and a long one (a
   description) wraps under itself.
@@ -295,8 +306,10 @@ the rest follow the light mapping.
 
 ## Changelog
 
-- **2026-11:** The investment page's charts: money in against money out, the
-  value split into equity and loan, and the profit of each year. Two grey chart
+- **2026-11:** The investment page's charts: money in against money out with
+  the loan repayment hollow, the account month by month, the years one series
+  at a time, the value split into equity and loan and the loan by year, and a
+  two-figure opening for the profit and what was left on the account. Two grey chart
   tokens, `--bar-net` for a result
   and `--bar-quiet` for the loan, since neither is a status colour.
 - **2026-11:** Sheets hold the page behind them still, which they had

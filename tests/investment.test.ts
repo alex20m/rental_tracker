@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { investmentSummary, investmentYear, type InvestmentLedger } from '@/lib/domain/investment';
+import { cashByMonth, investmentSummary, investmentYear, type InvestmentLedger } from '@/lib/domain/investment';
 import { defaultSettings, type CostEntry, type RentEntry } from '@/lib/domain/types';
 
 const today = new Date('2026-11-24T12:00:00Z');
@@ -72,8 +72,17 @@ describe("a year's profit", () => {
   it("takes off the tax the Tax page estimates, which spreads the improvement and furniture", () => {
     // Taxed: 2 400 − 650 − 100 (a tenth of the improvement) − 500 (a quarter of the furniture) = 1 150 → 30 %.
     const y = investmentYear(year2025, 2025, today);
+    expect(y.taxableIncome).toBe(1150);
     expect(y.tax).toBe(345);
     expect(y.profitAfterTax).toBe(-1595);
+  });
+
+  it('lets the tax deduct a part of an earlier year’s improvement, though no money left this year', () => {
+    const y = investmentYear(ledger({ costs: [cost('2025-06-01', 'improvement', 1000)] }), 2026, today);
+    expect(y.profitBeforeTax).toBe(0);
+    expect(y.taxableIncome).toBe(-100);
+    expect(y.tax).toBe(-30);
+    expect(y.profitAfterTax).toBe(30);
   });
 
   it('adds the deficit credit of a year at a loss instead of taking off tax', () => {
@@ -308,5 +317,51 @@ describe('the investment since it was bought', () => {
     );
     expect(s.equityInvested).toBe(0);
     expect(s.ratios.returnOnEquity).toBeNull();
+  });
+});
+
+describe('the money on the account month by month', () => {
+  // A rent of 800 € a month, December's paid in January; a repair in February
+  // and an improvement in March; 1 200 € paid off the loan in the year.
+  const spring = ledger({
+    rents: [
+      rent('2024-12', 800, '2025-01-05'),
+      rent('2025-01', 800, '2025-01-02'),
+      rent('2025-02', 800, '2025-02-02'),
+      rent('2025-03', 800, '2025-03-02'),
+    ],
+    costs: [cost('2025-02-10', 'repairs', 300), cost('2025-03-01', 'improvement', 1200)],
+    myLoanYears: [{ year: 2025, amortization: 1200, balance: 50000 }],
+  });
+
+  it('runs to this month in the current year, each month its rent in, its costs out and a twelfth of the tax and the repayment', () => {
+    // The year: 3 200 € of rent, 1 500 € of costs, tax 30 % of 3 200 − 300 − 120 = 834 €.
+    expect(cashByMonth(spring, 2025, new Date('2025-03-15T12:00:00Z'))).toEqual([
+      { month: 1, rentIn: 1600, costsOut: 0, taxOut: 69.5, amortization: 100, net: 1430.5, cumulative: 1430.5 },
+      { month: 2, rentIn: 800, costsOut: 300, taxOut: 69.5, amortization: 100, net: 330.5, cumulative: 1761 },
+      { month: 3, rentIn: 800, costsOut: 1200, taxOut: 69.5, amortization: 100, net: -569.5, cumulative: 1191.5 },
+    ]);
+  });
+
+  it('runs all twelve months of a past year and ends on what was left on the account', () => {
+    const months = cashByMonth(spring, 2025, today);
+    expect(months).toHaveLength(12);
+    expect(months[11]!.cumulative).toBe(-334);
+    expect(investmentYear(spring, 2025, today).cashFlow).toBe(-334);
+  });
+
+  it('has no months yet in a year that has not begun', () => {
+    expect(cashByMonth(spring, 2027, today)).toEqual([]);
+  });
+
+  it("is the owner's part, rounded so the months add up to the year", () => {
+    const months = cashByMonth(
+      ledger({ mySharePct: 50, rents: [rent('2025-01', 100.01, '2025-01-02'), rent('2025-02', 100.01, '2025-02-02')] }),
+      2025,
+      today,
+    );
+    expect(months[0]!.rentIn).toBe(50.01);
+    expect(months[1]!.rentIn).toBe(50.0);
+    expect(months[11]!.cumulative).toBe(investmentYear(ledger({ mySharePct: 50, rents: [rent('2025-01', 100.01, '2025-01-02'), rent('2025-02', 100.01, '2025-02-02')] }), 2025, today).cashFlow);
   });
 });
